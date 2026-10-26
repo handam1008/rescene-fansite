@@ -69,3 +69,30 @@ export function MoreLink({ href, children }: { href: string; children: ReactNode
     </Link>
   );
 }
+
+/** 입력창 공통 스타일 */
+export const inputClass =
+  "w-full border border-lilac-200 bg-white px-3 py-2 text-sm outline-none focus:border-lilac-500";
+
+export const buttonClass =
+  "inline-flex items-center justify-center border border-lilac-300 bg-lilac-200 px-4 py-2 text-sm font-semibold text-ink transition hover:bg-lilac-300 disabled:cursor-not-allowed disabled:opacity-50";
+
+export function FormMessage({ error, message }: { error?: string; message?: string }) {
+  if (error) {
+    return <p className="border border-blush-400 bg-blush-100 px-3 py-2 text-sm text-ink">{error}</p>;
+  }
+  if (message) {
+    return <p className="border border-mint-dream-200 bg-mint-dream-100 px-3 py-2 text-sm text-ink">{message}</p>;
+  }
+  return null;
+}
+
+/** Supabase 환경 변수가 없을 때 회원·포카·게시판 자리에 보여주는 안내 */
+export function SupabaseNotice() {
+  return (
+    <EmptyState>
+      <p className="font-semibold text-ink">준비 중이에요</p>
+      <p className="mt-1">회원 기능이 아직 연결되지 않았어요. 곧 열릴 예정이에요!</p>
+    </EmptyState>
+  );
+}

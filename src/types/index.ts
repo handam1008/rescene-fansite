@@ -30,6 +30,10 @@ export type Comeback = SampleFlag & {
   /** 발매 일시 (ISO 8601). D-day 카운트다운 기준 */
   releaseDate: string;
   description?: string;
+  /** 수록곡 순서대로 (선택) */
+  tracklist?: string[];
+  /** 출처 기사·공지 링크 (선택) */
+  sourceUrl?: string;
   teasers: TeaserEvent[];
 };
 
@@ -84,3 +88,43 @@ export type Vote = SampleFlag & {
 };
 
 export type VoteStatus = "upcoming" | "ongoing" | "ended";
+
+/* ───────── 2단계: Supabase 테이블 (supabase/migrations/0001_init.sql) ───────── */
+
+export type Author = { nickname: string } | null;
+
+export type Photocard = {
+  id: number;
+  user_id: string;
+  member: string;
+  album: string | null;
+  description: string | null;
+  image_path: string;
+  created_at: string;
+  profiles: Author;
+};
+
+export type PostSummary = {
+  id: number;
+  title: string;
+  created_at: string;
+  profiles: Author;
+  comments: { count: number }[];
+};
+
+export type Post = {
+  id: number;
+  user_id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  profiles: Author;
+};
+
+export type PostComment = {
+  id: number;
+  user_id: string;
+  content: string;
+  created_at: string;
+  profiles: Author;
+};
