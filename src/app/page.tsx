@@ -1,4 +1,5 @@
 import Countdown from "@/components/Countdown";
+import HomeHero from "@/components/HomeHero";
 import { VoteStatusBadge } from "@/components/VoteCard";
 import { EmptyState, MoreLink, SampleBadge } from "@/components/ui";
 import { getLatestComeback, getSongs, getVotes } from "@/lib/data";
@@ -18,15 +19,7 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-8">
-      <section className="card relative overflow-hidden px-6 py-10 text-center sm:py-14">
-        <p className="relative text-xs font-semibold tracking-[0.3em] text-lilac-500">
-          UNOFFICIAL FANSITE
-        </p>
-        <h1 className="text-dreamy relative mt-2 text-4xl font-extrabold sm:text-5xl">RESCENE</h1>
-        <p className="relative mt-3 text-sm text-ink-soft">
-          리센느의 컴백 · 신곡 · 투표 소식을 한눈에
-        </p>
-      </section>
+      <HomeHero />
 
       <div className="grid gap-5 md:grid-cols-3">
         {/* 컴백 */}
