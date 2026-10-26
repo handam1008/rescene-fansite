@@ -18,9 +18,11 @@ export async function getLatestComeback(): Promise<Comeback | null> {
   return comebacks[0] ?? null;
 }
 
-/** 발매일 최신순 */
-export async function getSongs(): Promise<Song[]> {
-  return [...songs].sort((a, b) => time(b.releaseDate) - time(a.releaseDate));
+/** 발매된 곡만, 발매일 최신순 */
+export async function getSongs(now: Date = new Date()): Promise<Song[]> {
+  return songs
+    .filter((song) => time(song.releaseDate) <= now.getTime())
+    .sort((a, b) => time(b.releaseDate) - time(a.releaseDate));
 }
 
 export function getVoteStatus(vote: Vote, now: Date = new Date()): VoteStatus {

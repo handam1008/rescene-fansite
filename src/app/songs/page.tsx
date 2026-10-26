@@ -6,6 +6,9 @@ import { formatDate, platformLabels } from "@/lib/format";
 
 export const metadata: Metadata = { title: "신곡" };
 
+// 발매 시각이 지난 곡이 자동으로 나타나도록 1시간마다 다시 생성
+export const revalidate = 3600;
+
 export default async function SongsPage() {
   const [latest, ...previous] = await getSongs();
 
@@ -52,9 +55,24 @@ export default async function SongsPage() {
             {previous.map((song) => (
               <li key={song.id} className="card p-4">
                 {song.youtubeId && (
-                  <div className="mb-3">
-                    <YouTubeEmbed videoId={song.youtubeId} title={`${song.title} 뮤직비디오`} />
-                  </div>
+                  // 이전 곡은 가벼운 썸네일만 보여주고, 누르면 유튜브에서 재생
+                  <a
+                    href={`https://www.youtube.com/watch?v=${song.youtubeId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative mb-3 block aspect-video overflow-hidden bg-lilac-100"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- 유튜브 썸네일 */}
+                    <img
+                      src={`https://i.ytimg.com/vi/${song.youtubeId}/hqdefault.jpg`}
+                      alt={`${song.title} 뮤직비디오 썸네일`}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center bg-ink/10 text-3xl text-white group-hover:bg-ink/25">
+                      ▶
+                    </span>
+                  </a>
                 )}
                 <div className="flex items-start justify-between gap-2">
                   <div>

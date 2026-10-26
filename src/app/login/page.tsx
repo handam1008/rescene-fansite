@@ -1,0 +1,29 @@
+import type { Metadata } from "next";
+import AuthForm from "@/components/AuthForm";
+import { PageHeader, SupabaseNotice } from "@/components/ui";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+
+export const metadata: Metadata = { title: "로그인" };
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; error?: string }>;
+}) {
+  const { next, error } = await searchParams;
+
+  return (
+    <div className="mx-auto max-w-md">
+      <PageHeader eyebrow="Login" title="로그인" />
+      {isSupabaseConfigured ? (
+        <AuthForm
+          mode="login"
+          next={next}
+          initialError={error === "confirm" ? "인증 링크가 만료됐어요. 다시 가입하거나 로그인해 주세요." : undefined}
+        />
+      ) : (
+        <SupabaseNotice />
+      )}
+    </div>
+  );
+}

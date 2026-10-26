@@ -4,10 +4,7 @@ export default function YouTubeEmbed({ videoId, title }: { videoId?: string; tit
     return (
       <div className="flex aspect-video w-full flex-col items-center justify-center gap-1 border-2 border-dashed border-lilac-200 bg-lilac-50/70 p-4 text-center text-sm text-ink-soft">
         <span className="text-2xl" aria-hidden>▶</span>
-        <span>뮤직비디오 자리 (예시)</span>
-        <span className="text-xs">
-          src/data/songs.ts 의 youtubeId에 공식 유튜브 영상 ID를 넣어주세요
-        </span>
+        <span>뮤직비디오 준비 중</span>
       </div>
     );
   }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import AuthStatus from "./AuthStatus";
 
 type NavItem = { label: string; href?: string };
 
@@ -11,8 +12,8 @@ const navItems: NavItem[] = [
   { label: "컴백", href: "/comeback" },
   { label: "신곡", href: "/songs" },
   { label: "투표", href: "/votes" },
-  { label: "포카" },
-  { label: "게시판" },
+  { label: "포카", href: "/photocards" },
+  { label: "게시판", href: "/board" },
 ];
 
 export default function Header() {
@@ -21,9 +22,14 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-20 border-b border-lilac-200 bg-white">
       <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <Link href="/" className="text-dreamy text-xl font-extrabold tracking-wide">
-          RESCENE ✦ 팬사이트
-        </Link>
+        <div className="flex items-center justify-between gap-3">
+          <Link href="/" className="text-dreamy text-xl font-extrabold tracking-wide">
+            RESCENE ✦ 팬사이트
+          </Link>
+          <div className="sm:hidden">
+            <AuthStatus />
+          </div>
+        </div>
         <nav aria-label="주요 메뉴" className="no-scrollbar -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
           <ul className="flex gap-1.5 whitespace-nowrap">
             {navItems.map((item) => {
@@ -63,6 +69,9 @@ export default function Header() {
             })}
           </ul>
         </nav>
+        <div className="hidden sm:block">
+          <AuthStatus />
+        </div>
       </div>
     </header>
   );

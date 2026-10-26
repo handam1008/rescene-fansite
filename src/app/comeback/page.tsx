@@ -49,6 +49,26 @@ export default async function ComebackPage() {
           {comeback.description && (
             <p className="mt-4 text-sm leading-relaxed text-ink-soft">{comeback.description}</p>
           )}
+          {comeback.tracklist && comeback.tracklist.length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm font-semibold text-ink-soft">트랙리스트</p>
+              <ol className="mt-1 list-inside list-decimal text-sm">
+                {comeback.tracklist.map((track) => (
+                  <li key={track}>{track}</li>
+                ))}
+              </ol>
+            </div>
+          )}
+          {comeback.sourceUrl && (
+            <a
+              href={comeback.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-block text-xs text-ink-soft underline"
+            >
+              출처 기사 ↗
+            </a>
+          )}
 
           <div className="mt-6 bg-gradient-to-br from-lilac-100 via-blush-100 to-sky-dream-100 p-5">
             <p className="mb-2 text-sm font-semibold text-ink-soft">컴백까지 남은 시간</p>
