@@ -12,7 +12,7 @@ const statusStyle: Record<VoteStatus, { label: string; className: string }> = {
 export function VoteStatusBadge({ status }: { status: VoteStatus }) {
   const s = statusStyle[status];
   return (
-    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${s.className}`}>
+    <span className={`px-2.5 py-0.5 text-xs font-bold ${s.className}`}>
       {s.label}
     </span>
   );
@@ -30,7 +30,7 @@ export default function VoteCard({ vote }: { vote: VoteWithStatus }) {
       <h2 className="mt-2 text-lg font-bold">{vote.awardName}</h2>
       {vote.category && <p className="text-sm text-ink-soft">{vote.category}</p>}
 
-      <p className="mt-3 rounded-xl bg-lilac-50 px-3 py-2 text-sm">
+      <p className="mt-3 bg-lilac-50 px-3 py-2 text-sm">
         <span className="font-semibold">투표 기간 </span>
         {formatDateTime(vote.startDate)} ~ {formatDateTime(vote.endDate)}
       </p>
@@ -39,7 +39,7 @@ export default function VoteCard({ vote }: { vote: VoteWithStatus }) {
         <ol className="mt-4 space-y-2">
           {vote.steps.map((step, i) => (
             <li key={i} className="flex gap-3 text-sm">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-lilac-200 text-xs font-bold text-lilac-700">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-lilac-200 text-xs font-bold text-lilac-700">
                 {i + 1}
               </span>
               <span className="pt-0.5">{step}</span>

@@ -2,7 +2,7 @@
 export default function YouTubeEmbed({ videoId, title }: { videoId?: string; title: string }) {
   if (!videoId) {
     return (
-      <div className="flex aspect-video w-full flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-lilac-200 bg-lilac-50/70 p-4 text-center text-sm text-ink-soft">
+      <div className="flex aspect-video w-full flex-col items-center justify-center gap-1 border-2 border-dashed border-lilac-200 bg-lilac-50/70 p-4 text-center text-sm text-ink-soft">
         <span className="text-2xl" aria-hidden>▶</span>
         <span>뮤직비디오 자리 (예시)</span>
         <span className="text-xs">
@@ -12,7 +12,7 @@ export default function YouTubeEmbed({ videoId, title }: { videoId?: string; tit
     );
   }
   return (
-    <div className="aspect-video w-full overflow-hidden rounded-2xl bg-lilac-100 shadow-sm">
+    <div className="aspect-video w-full overflow-hidden bg-lilac-100">
       <iframe
         className="h-full w-full"
         src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}`}

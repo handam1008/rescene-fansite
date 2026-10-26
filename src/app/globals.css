@@ -39,13 +39,10 @@ body {
   background-attachment: fixed;
 }
 
-/* 반투명 유리 느낌 카드 */
+/* 각진 테두리만 있는 평평한 카드 */
 @utility card {
-  border-radius: 1.5rem;
-  border: 1px solid rgb(255 255 255 / 0.7);
-  background-color: rgb(255 255 255 / 0.65);
-  box-shadow: 0 8px 30px -12px rgb(155 132 217 / 0.35);
-  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-lilac-200);
+  background-color: #fff;
 }
 
 @utility text-dreamy {

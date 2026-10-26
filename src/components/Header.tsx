@@ -19,7 +19,7 @@ export default function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-20 border-b border-white/60 bg-white/55 backdrop-blur-md">
+    <header className="sticky top-0 z-20 border-b border-lilac-200 bg-white">
       <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <Link href="/" className="text-dreamy text-xl font-extrabold tracking-wide">
           RESCENE ✦ 팬사이트
@@ -33,10 +33,10 @@ export default function Header() {
                     <span
                       aria-disabled="true"
                       title="준비 중이에요"
-                      className="flex cursor-not-allowed items-center gap-1 rounded-full px-3 py-1.5 text-sm text-ink-soft/60"
+                      className="flex cursor-not-allowed items-center gap-1 px-3 py-1.5 text-sm text-ink-soft/60"
                     >
                       {item.label}
-                      <span className="rounded-full bg-lilac-100 px-1.5 py-0.5 text-[10px] font-medium text-lilac-500">
+                      <span className="bg-lilac-100 px-1.5 py-0.5 text-[10px] font-medium text-lilac-500">
                         준비 중
                       </span>
                     </span>
@@ -50,10 +50,10 @@ export default function Header() {
                   <Link
                     href={item.href}
                     aria-current={active ? "page" : undefined}
-                    className={`block rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+                    className={`block px-3.5 py-1.5 text-sm font-medium transition ${
                       active
-                        ? "bg-lilac-300/60 text-ink shadow-sm"
-                        : "text-ink-soft hover:bg-white/80 hover:text-ink"
+                        ? "border-b-2 border-lilac-500 text-ink"
+                        : "border-b-2 border-transparent text-ink-soft hover:text-ink"
                     }`}
                   >
                     {item.label}

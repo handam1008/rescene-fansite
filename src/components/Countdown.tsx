@@ -66,7 +66,7 @@ export default function Countdown({
       <p className="text-dreamy text-5xl font-extrabold sm:text-6xl">{dLabel}</p>
       <div className="mt-4 grid grid-cols-4 gap-2 sm:gap-3" aria-live="off">
         {units.map(([label, value]) => (
-          <div key={label} className="rounded-2xl bg-white/80 px-2 py-3 text-center shadow-sm">
+          <div key={label} className="bg-white px-2 py-3 text-center">
             <p className="text-2xl font-bold tabular-nums sm:text-3xl">
               {value === undefined ? "--" : String(value).padStart(2, "0")}
             </p>

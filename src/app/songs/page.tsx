@@ -25,7 +25,7 @@ export default async function SongsPage() {
       <section className="card p-4 sm:p-6">
         <YouTubeEmbed videoId={latest.youtubeId} title={`${latest.title} 뮤직비디오`} />
         <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-blush-100 px-2.5 py-0.5 text-xs font-bold text-blush-400">
+          <span className="bg-blush-100 px-2.5 py-0.5 text-xs font-bold text-blush-400">
             LATEST
           </span>
           <SampleBadge show={latest.isSample} />
@@ -73,7 +73,7 @@ export default async function SongsPage() {
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-full border border-lilac-200 bg-white/80 px-3 py-1 text-xs font-medium hover:bg-lilac-100"
+                        className="border border-lilac-200 bg-white px-3 py-1 text-xs font-medium hover:bg-lilac-100"
                       >
                         {platformLabels[link.platform]} ↗
                       </a>

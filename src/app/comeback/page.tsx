@@ -33,7 +33,7 @@ export default async function ComebackPage() {
       <div className="grid gap-5 md:grid-cols-5">
         <section className="card p-6 md:col-span-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-lilac-100 px-2.5 py-0.5 text-xs font-semibold text-lilac-700">
+            <span className="bg-lilac-100 px-2.5 py-0.5 text-xs font-semibold text-lilac-700">
               {comeback.albumType}
             </span>
             <SampleBadge show={comeback.isSample} />
@@ -50,7 +50,7 @@ export default async function ComebackPage() {
             <p className="mt-4 text-sm leading-relaxed text-ink-soft">{comeback.description}</p>
           )}
 
-          <div className="mt-6 rounded-3xl bg-gradient-to-br from-lilac-100 via-blush-100 to-sky-dream-100 p-5">
+          <div className="mt-6 bg-gradient-to-br from-lilac-100 via-blush-100 to-sky-dream-100 p-5">
             <p className="mb-2 text-sm font-semibold text-ink-soft">컴백까지 남은 시간</p>
             <Countdown target={comeback.releaseDate} />
           </div>
@@ -66,7 +66,7 @@ export default async function ComebackPage() {
                   <li key={t.date + t.title} className="relative">
                     <span
                       aria-hidden
-                      className={`absolute top-1.5 -left-[27px] h-3 w-3 rounded-full border-2 border-white ${
+                      className={`absolute top-1.5 -left-[27px] h-3 w-3 border-2 border-white ${
                         done ? "bg-lilac-300" : "bg-blush-400"
                       }`}
                     />
@@ -78,7 +78,7 @@ export default async function ComebackPage() {
                 );
               })}
               <li className="relative">
-                <span aria-hidden className="absolute top-1.5 -left-[27px] h-3 w-3 rounded-full border-2 border-white bg-lilac-500" />
+                <span aria-hidden className="absolute top-1.5 -left-[27px] h-3 w-3 border-2 border-white bg-lilac-500" />
                 <p className="text-xs text-ink-soft">{formatDate(comeback.releaseDate)}</p>
                 <p className="text-sm font-bold text-lilac-700">✦ 컴백 · 음원 발매</p>
               </li>

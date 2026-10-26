@@ -19,8 +19,6 @@ export default async function HomePage() {
   return (
     <div className="space-y-8">
       <section className="card relative overflow-hidden px-6 py-10 text-center sm:py-14">
-        <div aria-hidden className="pointer-events-none absolute -top-16 -left-10 h-48 w-48 rounded-full bg-blush-200/60 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -right-10 -bottom-16 h-48 w-48 rounded-full bg-sky-dream-200/70 blur-3xl" />
         <p className="relative text-xs font-semibold tracking-[0.3em] text-lilac-500">
           UNOFFICIAL FANSITE
         </p>
@@ -60,7 +58,7 @@ export default async function HomePage() {
           </div>
           {latestSong ? (
             <div className="mt-4 flex-1">
-              <div className="flex aspect-[2/1] items-center justify-center rounded-2xl bg-gradient-to-br from-lilac-200 via-blush-100 to-sky-dream-100 text-4xl">
+              <div className="flex aspect-[2/1] items-center justify-center bg-gradient-to-br from-lilac-200 via-blush-100 to-sky-dream-100 text-4xl">
                 ♪
               </div>
               <p className="mt-3 text-lg font-semibold">{latestSong.title}</p>
@@ -82,7 +80,7 @@ export default async function HomePage() {
           {activeVotes.length > 0 ? (
             <ul className="mt-4 flex-1 space-y-3">
               {activeVotes.map((vote) => (
-                <li key={vote.id} className="rounded-2xl bg-white/70 p-3">
+                <li key={vote.id} className="border border-lilac-100 bg-lilac-50 p-3">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <VoteStatusBadge status={vote.status} />
                     <SampleBadge show={vote.isSample} />

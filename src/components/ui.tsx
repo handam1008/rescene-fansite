@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 export function SampleBadge({ show }: { show?: boolean }) {
   if (!show) return null;
   return (
-    <span className="inline-flex shrink-0 items-center rounded-full border border-dashed border-blush-400 bg-blush-100 px-2 py-0.5 text-[11px] font-semibold text-blush-400">
+    <span className="inline-flex shrink-0 items-center border border-dashed border-blush-400 bg-blush-100 px-2 py-0.5 text-[11px] font-semibold text-blush-400">
       예시
     </span>
   );
@@ -50,10 +50,10 @@ export function ExternalButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
+      className={`inline-flex items-center gap-1 px-4 py-2 text-sm font-semibold transition ${
         variant === "solid"
-          ? "bg-gradient-to-r from-lilac-300 to-blush-200 text-ink shadow-sm hover:brightness-105"
-          : "border border-lilac-200 bg-white/80 text-ink hover:bg-lilac-100"
+          ? "border border-lilac-300 bg-lilac-200 text-ink hover:bg-lilac-300"
+          : "border border-lilac-200 bg-white text-ink hover:bg-lilac-100"
       }`}
     >
       {children}
