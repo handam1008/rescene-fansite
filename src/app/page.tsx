@@ -1,18 +1,21 @@
 import Countdown from "@/components/Countdown";
 import HomeHero from "@/components/HomeHero";
+import PopularPosts from "@/components/PopularPosts";
 import { VoteStatusBadge } from "@/components/VoteCard";
 import { EmptyState, MoreLink, SampleBadge } from "@/components/ui";
+import { getPopularPosts } from "@/lib/community";
 import { getLatestComeback, getSongs, getVotes } from "@/lib/data";
 import { formatDate, formatDateTime } from "@/lib/format";
 
-// 투표 진행/종료 상태가 시간에 따라 바뀌므로 1시간마다 다시 생성
-export const revalidate = 3600;
+// 인기글·투표 상태가 시간에 따라 바뀌므로 5분마다 다시 생성
+export const revalidate = 300;
 
 export default async function HomePage() {
-  const [comeback, songs, votes] = await Promise.all([
+  const [comeback, songs, votes, popularPosts] = await Promise.all([
     getLatestComeback(),
     getSongs(),
     getVotes(),
+    getPopularPosts(5),
   ]);
   const latestSong = songs[0];
   const activeVotes = votes.filter((v) => v.status !== "ended").slice(0, 3);
@@ -93,6 +96,8 @@ export default async function HomePage() {
           </div>
         </section>
       </div>
+
+      <PopularPosts posts={popularPosts} />
     </div>
   );
 }

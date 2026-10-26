@@ -108,6 +108,9 @@ export type PostSummary = {
   id: number;
   title: string;
   created_at: string;
+  /** supabase/migrations/0002 실행 전에는 없을 수 있음 */
+  view_count?: number;
+  image_paths?: string[];
   profiles: Author;
   comments: { count: number }[];
 };
@@ -118,6 +121,8 @@ export type Post = {
   title: string;
   content: string;
   created_at: string;
+  view_count?: number;
+  image_paths?: string[];
   profiles: Author;
 };
 

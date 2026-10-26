@@ -52,7 +52,7 @@ supabase/migrations/    DB 테이블·보안 규칙 SQL
 환경 변수가 없으면 이 메뉴들은 "준비 중"으로 보입니다. 연결 방법:
 
 1. https://supabase.com 에서 새 프로젝트를 만든다 (Region: Seoul).
-2. **SQL Editor**에 `supabase/migrations/0001_init.sql` 내용을 붙여넣고 Run.
+2. **SQL Editor**에 `supabase/migrations/` 폴더의 SQL 파일을 번호 순서대로(0001 → 0002) 하나씩 붙여넣고 Run. 여러 번 실행해도 안전합니다.
 3. **Authentication → URL Configuration**의 Site URL에 사이트 주소를, Redirect URLs에 `https://사이트주소/auth/callback`을 넣는다.
 4. **Project Settings → API**의 URL과 anon key를 Vercel **Settings → Environment Variables**에 넣는다:
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` → Redeploy.

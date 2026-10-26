@@ -19,3 +19,6 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 /** 포카 이미지를 저장하는 Storage 버킷 이름 (supabase/migrations 참고) */
 export const PHOTOCARD_BUCKET = "photocards";
+
+/** 게시판 글 사진을 저장하는 Storage 버킷 이름 (supabase/migrations/0002 참고) */
+export const POST_IMAGE_BUCKET = "post-images";

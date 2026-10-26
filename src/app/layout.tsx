@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+// Pretendard 폰트 (필요한 글자 조각만 내려받는 방식, OFL 라이선스)
+import "./fonts/pretendard/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
 
 export const metadata: Metadata = {

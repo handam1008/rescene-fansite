@@ -18,8 +18,9 @@
   --color-ink: #3d3558;
   --color-ink-soft: #6f6890;
 
+  /* Pretendard: src/app/fonts/pretendard 에서 직접 제공 (layout.tsx 에서 불러옴) */
   --font-sans:
-    "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
     "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
 }
 
@@ -29,6 +30,9 @@ html {
 
 body {
   min-height: 100dvh;
+  /* 한글은 자간을 살짝 좁혀야 단정해 보임 */
+  letter-spacing: -0.01em;
+  word-break: keep-all;
   color: var(--color-ink);
   background-color: var(--color-lilac-50);
   /* 몽환적인 그라데이션 배경 */
@@ -37,6 +41,12 @@ body {
     radial-gradient(at 100% 10%, var(--color-sky-dream-100) 0, transparent 50%),
     radial-gradient(at 50% 100%, var(--color-lilac-100) 0, transparent 60%);
   background-attachment: fixed;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.025em;
 }
 
 /* 각진 테두리만 있는 평평한 카드 */
