@@ -38,9 +38,14 @@ export default function AuthStatus() {
 
   if (nickname === null) {
     return (
-      <Link href="/login" className="border border-lilac-300 px-3 py-1 text-sm font-semibold text-lilac-700 hover:bg-lilac-100">
-        로그인
-      </Link>
+      <div className="flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap sm:text-sm">
+        <Link href="/login" className="border border-lilac-300 px-2.5 py-1 text-lilac-700 hover:bg-lilac-100">
+          로그인
+        </Link>
+        <Link href="/signup" className="border border-lilac-300 bg-lilac-200 px-2.5 py-1 text-ink hover:bg-lilac-300">
+          회원가입
+        </Link>
+      </div>
     );
   }
 
