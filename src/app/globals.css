@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+/* 파스텔 팔레트. bg-lilac-200, text-ink-soft 처럼 Tailwind 클래스로 사용 */
+@theme {
+  --color-lilac-50: #f8f5ff;
+  --color-lilac-100: #efe8ff;
+  --color-lilac-200: #e0d4ff;
+  --color-lilac-300: #c9b6f7;
+  --color-lilac-500: #9b84d9;
+  --color-lilac-700: #6a55a8;
+  --color-blush-100: #ffe8f1;
+  --color-blush-200: #ffd3e4;
+  --color-blush-400: #f5a3c4;
+  --color-sky-dream-100: #e3f2ff;
+  --color-sky-dream-200: #cbe6ff;
+  --color-mint-dream-100: #e2f8f1;
+  --color-mint-dream-200: #c6efe2;
+  --color-ink: #3d3558;
+  --color-ink-soft: #6f6890;
+
+  --font-sans:
+    "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  min-height: 100dvh;
+  color: var(--color-ink);
+  background-color: var(--color-lilac-50);
+  /* 몽환적인 그라데이션 배경 */
+  background-image:
+    radial-gradient(at 0% 0%, var(--color-blush-100) 0, transparent 50%),
+    radial-gradient(at 100% 10%, var(--color-sky-dream-100) 0, transparent 50%),
+    radial-gradient(at 50% 100%, var(--color-lilac-100) 0, transparent 60%);
+  background-attachment: fixed;
+}
+
+/* 반투명 유리 느낌 카드 */
+@utility card {
+  border-radius: 1.5rem;
+  border: 1px solid rgb(255 255 255 / 0.7);
+  background-color: rgb(255 255 255 / 0.65);
+  box-shadow: 0 8px 30px -12px rgb(155 132 217 / 0.35);
+  backdrop-filter: blur(12px);
+}
+
+@utility text-dreamy {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-lilac-500),
+    var(--color-blush-400),
+    #7fb6e6
+  );
+  background-clip: text;
+  color: transparent;
+}
+
+/* 메뉴 가로 스크롤 시 스크롤바 숨김 */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
