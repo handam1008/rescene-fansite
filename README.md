@@ -15,6 +15,8 @@ npm run dev     # 개발 서버 → http://localhost:3000
 
 배포 전 확인: `npm run build && npm start`
 
+**Windows**: 폴더의 `start.bat`을 더블클릭하면 최신 코드 받기 → 패키지 확인 → 실행 → 브라우저 열기까지 한 번에 됩니다. 끌 때는 검은 창을 닫으면 됩니다.
+
 ## 내용 수정하기 (data 폴더)
 
 | 파일 | 내용 |
