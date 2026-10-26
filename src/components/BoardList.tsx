@@ -1,0 +1,191 @@
+import Link from "next/link";
+import { POSTS_PER_PAGE, type BoardTab } from "@/lib/community";
+import { formatBoardDate } from "@/lib/format";
+import type { PostSummary } from "@/types";
+
+const DAY = 24 * 60 * 60 * 1000;
+
+function boardHref(tab: BoardTab, page = 1) {
+  const params = new URLSearchParams();
+  if (tab !== "all") params.set("tab", tab);
+  if (page > 1) params.set("page", String(page));
+  const qs = params.toString();
+  return qs ? `/board?${qs}` : "/board";
+}
+
+function ImageIcon() {
+  return (
+    <svg aria-label="사진 있음" viewBox="0 0 16 16" className="inline-block h-3.5 w-3.5 shrink-0 text-lilac-500">
+      <path
+        fill="currentColor"
+        d="M2 3h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm0 1v6.3l3-3 3 3 2-2 4 4V4H2Zm9 1.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"
+      />
+    </svg>
+  );
+}
+
+/** 제목 + 사진 아이콘 + 새 글 표시 + [댓글 수] */
+function PostTitle({ post, now }: { post: PostSummary; now: number }) {
+  const comments = post.comments[0]?.count ?? 0;
+  const isNew = now - new Date(post.created_at).getTime() < DAY;
+  return (
+    <span className="flex min-w-0 items-center gap-1">
+      <span className="truncate">{post.title}</span>
+      {(post.image_paths?.length ?? 0) > 0 && <ImageIcon />}
+      {isNew && (
+        <span aria-label="새 글" className="shrink-0 bg-blush-400 px-1 text-[10px] leading-4 font-bold text-white">
+          N
+        </span>
+      )}
+      {comments > 0 && <span className="shrink-0 text-xs font-bold text-lilac-500">[{comments}]</span>}
+    </span>
+  );
+}
+
+function Pagination({ page, lastPage, tab }: { page: number; lastPage: number; tab: BoardTab }) {
+  if (lastPage <= 1) return null;
+  const start = Math.floor((page - 1) / 10) * 10 + 1;
+  const end = Math.min(start + 9, lastPage);
+  const pages = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  const linkClass = "flex h-8 min-w-8 items-center justify-center px-1.5 hover:bg-lilac-100";
+
+  return (
+    <nav aria-label="페이지" className="mt-4 flex flex-wrap items-center justify-center gap-0.5 text-sm">
+      {start > 1 && (
+        <>
+          <Link href={boardHref(tab, 1)} className={linkClass} aria-label="처음">«</Link>
+          <Link href={boardHref(tab, start - 1)} className={linkClass} aria-label="이전 10페이지">‹</Link>
+        </>
+      )}
+      {pages.map((p) =>
+        p === page ? (
+          <span key={p} aria-current="page" className={`${linkClass} border border-lilac-500 font-bold text-lilac-700`}>
+            {p}
+          </span>
+        ) : (
+          <Link key={p} href={boardHref(tab, p)} className={`${linkClass} text-ink-soft`}>
+            {p}
+          </Link>
+        ),
+      )}
+      {end < lastPage && (
+        <>
+          <Link href={boardHref(tab, end + 1)} className={linkClass} aria-label="다음 10페이지">›</Link>
+          <Link href={boardHref(tab, lastPage)} className={linkClass} aria-label="끝">»</Link>
+        </>
+      )}
+    </nav>
+  );
+}
+
+/**
+ * 디시인사이드 스타일 게시판 목록.
+ * PC: 번호 | 제목 | 글쓴이 | 작성일 | 조회 표 / 휴대폰: 제목 한 줄 + 정보 한 줄
+ */
+export default function BoardList({
+  posts,
+  total,
+  page,
+  tab,
+  writeHref,
+  currentPostId,
+}: {
+  posts: PostSummary[];
+  total: number;
+  page: number;
+  tab: BoardTab;
+  writeHref: string;
+  /** 글 보기 화면 아래 목록에서 지금 보는 글 강조 */
+  currentPostId?: number;
+}) {
+  const now = Date.now();
+  const lastPage = Math.max(1, Math.ceil(total / POSTS_PER_PAGE));
+  const tabs: { key: BoardTab; label: string }[] = [
+    { key: "all", label: "전체글" },
+    { key: "best", label: "인기글" },
+  ];
+  const rowClass = (id: number) => (id === currentPostId ? "bg-lilac-100 font-semibold" : "hover:bg-lilac-50");
+
+  return (
+    <div>
+      <div className="flex items-end justify-between border-b-2 border-lilac-500">
+        <div className="flex">
+          {tabs.map((t) => (
+            <Link
+              key={t.key}
+              href={boardHref(t.key)}
+              aria-current={t.key === tab ? "page" : undefined}
+              className={`px-4 py-2 text-sm font-bold ${
+                t.key === tab ? "bg-lilac-500 text-white" : "text-ink-soft hover:text-ink"
+              }`}
+            >
+              {t.label}
+            </Link>
+          ))}
+        </div>
+        <Link
+          href={writeHref}
+          className="mb-1.5 border border-lilac-500 bg-lilac-500 px-3 py-1.5 text-sm font-bold text-white hover:bg-lilac-700"
+        >
+          글쓰기
+        </Link>
+      </div>
+
+      {posts.length === 0 ? (
+        <p className="border-b border-lilac-200 bg-white py-16 text-center text-sm text-ink-soft">
+          아직 글이 없어요. 첫 글을 남겨주세요!
+        </p>
+      ) : (
+        <>
+          {/* PC: 표 */}
+          <table className="hidden w-full table-fixed border-b border-lilac-200 bg-white text-sm sm:table">
+            <thead className="border-b border-lilac-200 bg-lilac-50 text-xs text-ink-soft">
+              <tr>
+                <th scope="col" className="w-16 py-2 font-medium">번호</th>
+                <th scope="col" className="py-2 font-medium">제목</th>
+                <th scope="col" className="w-32 py-2 font-medium">글쓴이</th>
+                <th scope="col" className="w-20 py-2 font-medium">작성일</th>
+                <th scope="col" className="w-16 py-2 font-medium">조회</th>
+              </tr>
+            </thead>
+            <tbody>
+              {posts.map((post) => (
+                <tr key={post.id} className={`border-b border-lilac-100 last:border-0 ${rowClass(post.id)}`}>
+                  <td className="py-2 text-center text-xs text-ink-soft tabular-nums">{post.id}</td>
+                  <td className="py-2 pr-3">
+                    <Link href={`/board/${post.id}`} className="block hover:underline">
+                      <PostTitle post={post} now={now} />
+                    </Link>
+                  </td>
+                  <td className="truncate py-2 text-center">{post.profiles?.nickname ?? "알 수 없음"}</td>
+                  <td className="py-2 text-center text-xs text-ink-soft tabular-nums">{formatBoardDate(post.created_at)}</td>
+                  <td className="py-2 text-center text-xs text-ink-soft tabular-nums">{post.view_count ?? 0}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* 휴대폰: 두 줄 목록 */}
+          <ul className="border-b border-lilac-200 bg-white sm:hidden">
+            {posts.map((post) => (
+              <li key={post.id} className={`border-b border-lilac-100 last:border-0 ${rowClass(post.id)}`}>
+                <Link href={`/board/${post.id}`} className="block px-3 py-2.5">
+                  <span className="text-[15px]">
+                    <PostTitle post={post} now={now} />
+                  </span>
+                  <span className="mt-0.5 flex gap-2 text-xs text-ink-soft">
+                    <span className="truncate">{post.profiles?.nickname ?? "알 수 없음"}</span>
+                    <span>{formatBoardDate(post.created_at)}</span>
+                    <span>조회 {post.view_count ?? 0}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      <Pagination page={page} lastPage={lastPage} tab={tab} />
+    </div>
+  );
+}

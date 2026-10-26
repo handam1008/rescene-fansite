@@ -17,9 +17,9 @@ export default async function NewPostPage() {
   if (!user) redirect("/login?next=/board/new");
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <PageHeader eyebrow="Board" title="글쓰기" />
-      <PostForm />
+    <div className="mx-auto max-w-3xl">
+      <PageHeader eyebrow="Board" title="게시판" />
+      <PostForm userId={user.id} />
     </div>
   );
 }
