@@ -26,3 +26,12 @@
 5. 배포 후 류한담 재가입 → 운영자 지정:
    `update public.profiles set is_admin = true where nickname = '류한담';`
 6. 잘 되는지 확인한 뒤 예전 프로젝트는 일시 중지(삭제는 나중에)
+
+## 진행 상황 (2026-10-27)
+
+- [x] 새 프로젝트에 0001~0008 실행 (테이블 7, 도감 155장·링크 155, 버킷 4, 정책 36)
+- [x] Auth Site URL·Redirect URL 설정
+- [x] env.ts 기본 URL·publishable 키 교체, vercel.json hnd1
+- [x] 예전 글 2개·회원 2명은 옮기지 않고 새로 시작하기로 함
+- [ ] 배포 후 류한담 재가입 → 운영자 지정
+- [ ] 예전 프로젝트 일시 중지
