@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { sharePath } from "@/lib/image";
 import { CATALOG_BUCKET, PROOF_BUCKET } from "@/lib/supabase/env";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 
@@ -11,7 +12,11 @@ async function requireAdmin() {
   if (!user?.isAdmin) throw new Error("관리자만 할 수 있어요.");
 }
 
-/** 승인. useAsImage=1 이면 이 인증 사진을 도감 카드 이미지로도 씀 (이미지 없는 카드 채우기) */
+/**
+ * 승인. 회원이 공개에 동의했으면:
+ * - 도감 이미지가 빈 카드는 자동으로 이 사진으로 채우고 첫 제공자로 기록 (skipImage=1 이면 승인만)
+ * - 이미 이미지가 있는 카드는 useAsImage=1 일 때만 사진 교체 (첫 제공자는 그대로)
+ */
 export async function approveProof(formData: FormData) {
   await requireAdmin();
   const supabase = await createClient();
@@ -19,24 +24,35 @@ export async function approveProof(formData: FormData) {
     .from("photocard_collections")
     .update({ status: "approved", reject_reason: null, reviewed_at: new Date().toISOString() })
     .eq("id", Number(formData.get("id")))
-    .select("card_id, user_id, photo_path")
+    .select("card_id, user_id, photo_path, share_image")
     .maybeSingle();
 
-  if (entry && formData.get("useAsImage") === "1") {
-    const ext = entry.photo_path.split(".").pop() || "jpg";
-    const dest = `cards/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage
-      .from(PROOF_BUCKET)
-      .copy(entry.photo_path, dest, { destinationBucket: CATALOG_BUCKET });
-    if (!error) {
-      const { data: card } = await supabase.from("photocard_catalog").select("image_path").eq("id", entry.card_id).maybeSingle();
-      // 인증한 회원을 도감 이미지 제공자로 표시
-      await supabase.from("photocard_catalog").update({ image_path: dest, image_contributor: entry.user_id }).eq("id", entry.card_id);
-      if (card?.image_path) await supabase.storage.from(CATALOG_BUCKET).remove([card.image_path]);
+  if (entry?.share_image && formData.get("skipImage") !== "1") {
+    const { data: card } = await supabase
+      .from("photocard_catalog")
+      .select("image_path, first_contributor")
+      .eq("id", entry.card_id)
+      .maybeSingle();
+    const replace = formData.get("useAsImage") === "1";
+    if (card && (!card.image_path || replace)) {
+      // 공개 동의 때 함께 올린 작은 사본을 씀 (원본 화질은 공개하지 않음)
+      const dest = `cards/${crypto.randomUUID()}.jpg`;
+      const { error } = await supabase.storage
+        .from(PROOF_BUCKET)
+        .copy(sharePath(entry.photo_path), dest, { destinationBucket: CATALOG_BUCKET });
+      if (!error) {
+        const first = card.first_contributor ? {} : { first_contributor: entry.user_id, filled_at: new Date().toISOString() };
+        await supabase
+          .from("photocard_catalog")
+          .update({ image_path: dest, image_contributor: entry.user_id, ...first })
+          .eq("id", entry.card_id);
+        if (card.image_path) await supabase.storage.from(CATALOG_BUCKET).remove([card.image_path]);
+      }
     }
   }
   revalidatePath("/admin");
   revalidatePath("/photocards");
+  revalidatePath("/");
 }
 
 export async function rejectProof(formData: FormData) {

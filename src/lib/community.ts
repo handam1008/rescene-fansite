@@ -115,12 +115,57 @@ export async function getCatalogCard(id: number): Promise<CatalogCard | null> {
   return (data as CatalogCard | null) ?? null;
 }
 
-/** 도감 이미지를 제공한 회원 닉네임 (인증 사진이 도감 이미지로 쓰인 경우) */
-export async function getImageContributor(card: CatalogCard): Promise<string | null> {
-  if (!card.image_path || !card.image_contributor) return null;
-  const supabase = await createClient();
-  const { data } = await supabase.from("profiles").select("nickname").eq("id", card.image_contributor).maybeSingle();
-  return data?.nickname ?? null;
+/* 아래 셋은 공개 데이터라 쿠키 없는 클라이언트로 읽음 (홈 화면을 정적으로 유지). 실패하면 빈 값 */
+
+/** 회원 id → 닉네임 (도감 제공자 표시용) */
+export async function getNicknames(ids: (string | null | undefined)[]) {
+  const names = new Map<string, string>();
+  const unique = [...new Set(ids.filter((id): id is string => !!id))];
+  if (unique.length === 0) return names;
+  try {
+    const { data } = await createPublicClient().from("profiles").select("id, nickname").in("id", unique);
+    for (const p of data ?? []) names.set(p.id, p.nickname);
+  } catch {}
+  return names;
+}
+
+export type ContributorRank = { id: string; nickname: string; contributed_count: number; contributor_rank: number };
+
+/** 도감 기여 랭킹 (첫 제공 장수 순). 0006 SQL 전이면 빈 배열 */
+export async function getContributorRanking(limit = 10): Promise<ContributorRank[]> {
+  try {
+    const { data, error } = await createPublicClient()
+      .from("profiles")
+      .select("id, nickname, contributed_count, contributor_rank")
+      .not("contributor_rank", "is", null)
+      .order("contributor_rank")
+      .limit(limit);
+    if (error) return [];
+    return (data ?? []) as ContributorRank[];
+  } catch {
+    return [];
+  }
+}
+
+/** 홈 화면 도감 소식: 전체·채워진 장수와 최근 채워진 카드 */
+export async function getPokedexNews(limit = 5) {
+  try {
+    const supabase = createPublicClient();
+    const [all, recent] = await Promise.all([
+      supabase.from("photocard_catalog").select("image_path"),
+      supabase.from("photocard_catalog").select("*").not("filled_at", "is", null).order("filled_at", { ascending: false }).limit(limit),
+    ]);
+    if (all.error) return null;
+    const cards = (recent.data ?? []) as CatalogCard[];
+    const names = await getNicknames(cards.map((c) => c.first_contributor));
+    return {
+      total: all.data.length,
+      filled: all.data.filter((c) => c.image_path).length,
+      recent: cards.map((card) => ({ card, nickname: card.first_contributor ? names.get(card.first_contributor) : undefined })),
+    };
+  } catch {
+    return null;
+  }
 }
 
 /** 로그인한 사람의 인증 기록 (보안 규칙상 본인 것만 읽힘). card_id → 기록 */

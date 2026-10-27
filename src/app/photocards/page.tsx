@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import CardImage from "@/components/CardImage";
+import PokedexRanking from "@/components/PokedexRanking";
 import { EmptyState, PageHeader, SupabaseNotice } from "@/components/ui";
 import { pokedexMemberName, pokedexMembers } from "@/data/members";
 import { cardSourceUrl, pokedexSets, pokedexSources } from "@/data/pokedex-sets";
-import { nextTitle, titleFor } from "@/data/titles";
-import { getCatalog, getMyCollections } from "@/lib/community";
+import { contributorTitleFor, nextTitle, titleFor } from "@/data/titles";
+import { getCatalog, getContributorRanking, getMyCollections, getNicknames } from "@/lib/community";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/supabase/server";
 import type { CatalogCard, CollectionEntry } from "@/types";
@@ -21,18 +22,19 @@ const statusBadge: Record<CollectionEntry["status"], { label: string; className:
   rejected: { label: "다시 인증", className: "bg-blush-200 text-ink" },
 };
 
-function CardTile({ card, entry }: { card: CatalogCard; entry?: CollectionEntry }) {
+function CardTile({ card, entry, contributor }: { card: CatalogCard; entry?: CollectionEntry; contributor?: string }) {
   const badge = entry ? statusBadge[entry.status] : null;
   return (
     <Link href={`/photocards/${card.id}`} className="group block">
       <div className="relative">
-        <CardImage card={card} dim={entry?.status !== "approved"} />
+        <CardImage card={card} />
         {badge && (
           <span className={`absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[10px] font-bold ${badge.className}`}>{badge.label}</span>
         )}
       </div>
       <p className="mt-1 truncate text-xs font-semibold">{pokedexMemberName(card.member)}</p>
       {card.label && <p className="truncate text-[11px] text-ink-soft">{card.label}</p>}
+      {contributor && <p className="truncate text-[11px] text-lilac-700">📷 {contributor}</p>}
     </Link>
   );
 }
@@ -87,8 +89,11 @@ export default async function PhotocardsPage({
   }
 
   const params = await searchParams;
-  const [catalog, user] = await Promise.all([getCatalog(), getCurrentUser()]);
-  const mine = await getMyCollections(user?.id);
+  const [catalog, user, ranking] = await Promise.all([getCatalog(), getCurrentUser(), getContributorRanking(10)]);
+  const [mine, contributorNames] = await Promise.all([
+    getMyCollections(user?.id),
+    getNicknames(catalog.map((c) => c.first_contributor)),
+  ]);
 
   // 출처 탭: 정해둔 순서대로, 그 외 출처는 뒤에
   const sourceOf = (c: CatalogCard) => c.source ?? "앨범";
@@ -120,6 +125,9 @@ export default async function PhotocardsPage({
     ([a, ca], [b, cb]) => sources.indexOf(sourceOf(ca[0])) - sources.indexOf(sourceOf(cb[0])) || ca[0].id - cb[0].id || a.localeCompare(b),
   );
 
+  const filled = catalog.length - missingImages;
+  const filledPercent = catalog.length ? Math.round((filled / catalog.length) * 100) : 0;
+  const myContribution = contributorTitleFor(user?.contributorRank, user?.contributedCount);
   const approved = catalog.filter((c) => mine.get(c.id)?.status === "approved").length;
   const pendingCount = [...mine.values()].filter((e) => e.status === "pending").length;
   const title = titleFor(user?.collectedCount);
@@ -135,43 +143,75 @@ export default async function PhotocardsPage({
       <PageHeader
         eyebrow="Photocard"
         title="포카 도감"
-        description="내가 가진 실물 포카를 찍어서 인증하면, 확인 후 도감이 채워져요."
+        description="리센느 공식 포토카드를 다 같이 직접 찍은 사진으로 채워가요. 빈 카드를 처음 채우면 첫 제공자로 이름이 남고, 랭킹에 올라요."
       />
 
-      {/* 내 도감 현황 */}
-      <section className="card mb-6 p-5">
+      {/* 다 같이 채우는 도감 */}
+      <section className="mb-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="card p-5">
+          <p className="text-sm font-semibold text-lilac-700">다 같이 채운 리센느 도감</p>
+          <p className="mt-0.5 text-3xl font-extrabold tabular-nums">
+            {filled} <span className="text-base font-semibold text-ink-soft">/ {catalog.length}장 · {filledPercent}%</span>
+          </p>
+          <div className="mt-3 h-3 bg-lilac-100">
+            <div className="h-full bg-gradient-to-r from-lilac-500 to-blush-400" style={{ width: `${filledPercent}%` }} />
+          </div>
+          <p className="mt-3 text-sm leading-relaxed text-ink-soft">
+            {missingImages > 0 ? (
+              <>
+                아직 <b className="text-ink">{missingImages}장</b>이 비어 있어요. 가진 카드를 찍어 인증하면서{" "}
+                <b className="text-ink">도감 이미지 공개</b>에 동의하면, 승인 후 그 사진으로 도감이 채워져요.{" "}
+                <Link href={hrefWith({ needImage: true })} className="font-semibold text-lilac-700 underline">
+                  빈 카드 보기
+                </Link>
+              </>
+            ) : (
+              "🎉 모든 카드가 채워졌어요! 함께해 주신 리마인 여러분 고마워요."
+            )}
+          </p>
+        </div>
+        <div className="card p-5">
+          <h2 className="mb-2 font-bold">🏆 도감 개척 랭킹</h2>
+          <PokedexRanking ranking={ranking} myId={user?.id} />
+          <p className="mt-3 border-t border-lilac-100 pt-2 text-[11px] leading-relaxed text-ink-soft">
+            빈 카드를 처음 채운 장수 순이에요. 1위 <b>👑 도감 개척왕</b>, 2~3위 <b>TOP3</b>, 4~10위 <b>TOP10</b> 칭호가
+            닉네임 옆에 붙어요.
+          </p>
+        </div>
+      </section>
+
+      {/* 내 수집 현황 */}
+      <section className="card mb-6 p-4">
         {user ? (
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-ink-soft">{user.nickname}님의 도감</p>
-              <p className="mt-0.5 text-2xl font-extrabold tabular-nums">
-                {approved} <span className="text-base font-semibold text-ink-soft">/ {catalog.length}장</span>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+              <p className="text-sm">
+                <span className="text-ink-soft">내 수집 </span>
+                <b className="tabular-nums">
+                  {approved} / {catalog.length}
+                </b>
+                {pendingCount > 0 && <span className="ml-1.5 text-xs text-sky-700">확인 중 {pendingCount}</span>}
               </p>
-              {pendingCount > 0 && <p className="text-xs text-sky-700">확인 중 {pendingCount}장</p>}
+              <p className="text-sm">
+                <span className="text-ink-soft">내가 처음 채운 카드 </span>
+                <b className="tabular-nums">{user.contributedCount}장</b>
+                {user.contributorRank && <span className="ml-1 text-xs text-lilac-700">({user.contributorRank}위)</span>}
+              </p>
             </div>
-            <div className="sm:w-1/2">
-              <div className="flex flex-wrap items-center gap-1.5">
-                {title ? (
-                  <span className={`px-2 py-0.5 text-xs font-bold ${title.className}`}>{title.name}</span>
-                ) : (
-                  <span className="text-xs text-ink-soft">아직 칭호가 없어요</span>
-                )}
-                {completed.map((m) => (
-                  <span key={m.slug} className="border border-lilac-500 px-2 py-0.5 text-xs font-bold text-lilac-700">
-                    {m.name} 컴플리트
-                  </span>
-                ))}
-              </div>
-              <div className="mt-2 h-2 bg-lilac-100">
-                <div
-                  className="h-full bg-lilac-500"
-                  style={{ width: `${catalog.length ? Math.round((approved / catalog.length) * 100) : 0}%` }}
-                />
-              </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {myContribution && (
+                <span className={`px-2 py-0.5 text-xs font-bold ${myContribution.className}`}>{myContribution.name}</span>
+              )}
+              {title && <span className={`px-2 py-0.5 text-xs font-bold ${title.className}`}>{title.name}</span>}
+              {completed.map((m) => (
+                <span key={m.slug} className="border border-lilac-500 px-2 py-0.5 text-xs font-bold text-lilac-700">
+                  {m.name} 컴플리트
+                </span>
+              ))}
               {next && (
-                <p className="mt-1 text-xs text-ink-soft">
+                <span className="text-xs text-ink-soft">
                   {next.remaining}장 더 모으면 <b className="text-ink">{next.title.name}</b>
-                </p>
+                </span>
               )}
             </div>
           </div>
@@ -180,7 +220,7 @@ export default async function PhotocardsPage({
             <Link href="/login?next=/photocards" className="font-semibold text-lilac-700 underline">
               로그인
             </Link>
-            하면 내 포카를 인증하고 칭호를 받을 수 있어요.
+            하면 내 포카를 인증해서 도감을 채우고 칭호를 받을 수 있어요.
           </p>
         )}
         {user?.isAdmin && (
@@ -244,6 +284,7 @@ export default async function PhotocardsPage({
         <div className="space-y-10">
           {orderedSets.map(([album, list]) => {
             const got = list.filter((c) => mine.get(c.id)?.status === "approved").length;
+            const setFilled = list.filter((c) => c.image_path).length;
             const meta = pokedexSets[album];
             const link = cardSourceUrl(list[0]);
             return (
@@ -255,7 +296,8 @@ export default async function PhotocardsPage({
                       {!source && <span className="ml-2 text-xs font-semibold text-lilac-500">{sourceOf(list[0])}</span>}
                     </h2>
                     <span className="shrink-0 text-xs text-ink-soft tabular-nums">
-                      {got} / {list.length}
+                      채움 {setFilled} / {list.length}
+                      {user && <span className="ml-2 text-lilac-700">내 수집 {got}</span>}
                     </span>
                   </div>
                   {(meta || link) && (
@@ -273,7 +315,11 @@ export default async function PhotocardsPage({
                 <ul className="grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-6">
                   {list.map((card) => (
                     <li key={card.id}>
-                      <CardTile card={card} entry={mine.get(card.id)} />
+                      <CardTile
+                        card={card}
+                        entry={mine.get(card.id)}
+                        contributor={card.first_contributor ? contributorNames.get(card.first_contributor) : undefined}
+                      />
                     </li>
                   ))}
                 </ul>

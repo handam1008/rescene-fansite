@@ -44,7 +44,7 @@ export default async function AdminPage() {
 
   return (
     <div className="space-y-10">
-      <PageHeader eyebrow="Admin" title="운영자" description="포카 인증을 확인하고, 도감에 공식 포토카드를 등록해요." />
+      <PageHeader eyebrow="Admin" title="운영자" description="포카 인증을 확인하고, 도감에 공식 포토카드를 등록해요. 공개 동의한 인증을 승인하면 빈 카드가 그 사진으로 채워져요." />
 
       {/* 인증 확인 */}
       <section>
@@ -85,27 +85,33 @@ export default async function AdminPage() {
                       {p.photocard_catalog.label && ` · ${p.photocard_catalog.label}`}
                     </p>
                   )}
+                  <p className="text-xs">
+                    {p.share_image ? (
+                      <span className="font-semibold text-lilac-700">✓ 도감 이미지 공개 동의</span>
+                    ) : (
+                      <span className="text-ink-soft">공개 동의 안 함 (수집 인증만)</span>
+                    )}
+                  </p>
                   <div className="mt-auto flex flex-wrap items-end gap-2">
                     <form action={approveProof}>
                       <input type="hidden" name="id" value={p.id} />
                       <button type="submit" className="border border-lilac-500 bg-lilac-500 px-4 py-1.5 font-bold text-white hover:bg-lilac-700">
-                        승인
+                        {p.share_image && !p.photocard_catalog?.image_path ? "승인 + 도감 채우기" : "승인"}
                       </button>
                     </form>
-                    <form action={approveProof}>
-                      <input type="hidden" name="id" value={p.id} />
-                      <input type="hidden" name="useAsImage" value="1" />
-                      <button
-                        type="submit"
-                        className={`border px-3 py-1.5 font-bold ${
-                          p.photocard_catalog?.image_path
-                            ? "border-lilac-200 bg-white text-ink-soft hover:bg-lilac-50"
-                            : "border-lilac-500 bg-white text-lilac-700 hover:bg-lilac-50"
-                        }`}
-                      >
-                        {p.photocard_catalog?.image_path ? "승인 + 도감 이미지 교체" : "승인 + 도감 이미지로 쓰기"}
-                      </button>
-                    </form>
+                    {p.share_image && (
+                      <form action={approveProof}>
+                        <input type="hidden" name="id" value={p.id} />
+                        {p.photocard_catalog?.image_path ? (
+                          <input type="hidden" name="useAsImage" value="1" />
+                        ) : (
+                          <input type="hidden" name="skipImage" value="1" />
+                        )}
+                        <button type="submit" className="border border-lilac-200 bg-white px-3 py-1.5 font-bold text-ink-soft hover:bg-lilac-50">
+                          {p.photocard_catalog?.image_path ? "승인 + 도감 이미지 교체" : "승인만 (사진은 도감에 안 씀)"}
+                        </button>
+                      </form>
+                    )}
                     <form action={rejectProof} className="flex flex-1 gap-2">
                       <input type="hidden" name="id" value={p.id} />
                       <input

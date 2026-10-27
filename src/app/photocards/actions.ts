@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { sharePath } from "@/lib/image";
 import { PROOF_BUCKET } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,7 +19,7 @@ export async function cancelProof(formData: FormData) {
     .eq("status", "pending")
     .select("photo_path")
     .maybeSingle();
-  if (data?.photo_path) await supabase.storage.from(PROOF_BUCKET).remove([data.photo_path]);
+  if (data?.photo_path) await supabase.storage.from(PROOF_BUCKET).remove([data.photo_path, sharePath(data.photo_path)]);
   revalidatePath(`/photocards/${cardId}`);
   revalidatePath("/photocards");
 }

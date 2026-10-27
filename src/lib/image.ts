@@ -36,6 +36,11 @@ export async function shrinkImage(file: File, maxSize = 1600, quality = 0.85): P
   return new File([blob], name, { type: "image/jpeg" });
 }
 
+/** 인증 사진의 공개용(작게 줄인) 사본 경로: "<폴더>/<랜덤>-share.jpg" */
+export function sharePath(photoPath: string) {
+  return photoPath.replace(/\.[^./]+$/, "-share.jpg");
+}
+
 /** 확장자 포함 저장 경로: "<폴더>/<랜덤>.jpg" */
 export function storagePath(folder: string, file: File) {
   const ext = file.type === "image/gif" ? "gif" : file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
