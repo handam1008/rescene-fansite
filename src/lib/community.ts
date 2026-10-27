@@ -103,23 +103,15 @@ export async function getPost(id: number) {
 /** 도감 전체 카드. 도감 SQL(0003) 실행 전이면 빈 배열 */
 export async function getCatalog(): Promise<CatalogCard[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("photocard_catalog")
-    .select("id, album, member, label, image_path, sort")
-    .order("album")
-    .order("sort")
-    .order("id");
+  // "*" : 출처 칸(0004 SQL)이 없어도 동작하도록
+  const { data, error } = await supabase.from("photocard_catalog").select("*").order("sort").order("id");
   if (error) return [];
   return (data ?? []) as CatalogCard[];
 }
 
 export async function getCatalogCard(id: number): Promise<CatalogCard | null> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("photocard_catalog")
-    .select("id, album, member, label, image_path, sort")
-    .eq("id", id)
-    .maybeSingle();
+  const { data } = await supabase.from("photocard_catalog").select("*").eq("id", id).maybeSingle();
   return (data as CatalogCard | null) ?? null;
 }
 

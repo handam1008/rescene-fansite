@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import CardImage from "@/components/CardImage";
 import { EmptyState, PageHeader, SupabaseNotice } from "@/components/ui";
 import { pokedexMemberName, pokedexMembers } from "@/data/members";
+import { pokedexSets, pokedexSources } from "@/data/pokedex-sets";
 import { nextTitle, titleFor } from "@/data/titles";
-import { catalogImageUrl, getCatalog, getMyCollections } from "@/lib/community";
+import { getCatalog, getMyCollections } from "@/lib/community";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/supabase/server";
 import type { CatalogCard, CollectionEntry } from "@/types";
@@ -20,18 +22,11 @@ const statusBadge: Record<CollectionEntry["status"], { label: string; className:
 };
 
 function CardTile({ card, entry }: { card: CatalogCard; entry?: CollectionEntry }) {
-  const collected = entry?.status === "approved";
   const badge = entry ? statusBadge[entry.status] : null;
   return (
     <Link href={`/photocards/${card.id}`} className="group block">
-      <div className="relative aspect-[55/85] overflow-hidden border border-lilac-200 bg-lilac-50">
-        {/* eslint-disable-next-line @next/next/no-img-element -- Supabase Storage 이미지 */}
-        <img
-          src={catalogImageUrl(card.image_path)}
-          alt={`${card.album} ${pokedexMemberName(card.member)} ${card.label}`}
-          loading="lazy"
-          className={`h-full w-full object-cover transition ${collected ? "" : "opacity-35 grayscale group-hover:opacity-60"}`}
-        />
+      <div className="relative">
+        <CardImage card={card} dim={entry?.status !== "approved"} />
         {badge && (
           <span className={`absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[10px] font-bold ${badge.className}`}>{badge.label}</span>
         )}
@@ -42,10 +37,45 @@ function CardTile({ card, entry }: { card: CatalogCard; entry?: CollectionEntry 
   );
 }
 
+function FilterChips({
+  items,
+  activeKey,
+  hrefFor,
+  label,
+}: {
+  items: { key: string; name: string }[];
+  activeKey: string;
+  hrefFor: (key: string) => string;
+  label: string;
+}) {
+  return (
+    <nav aria-label={label} className="no-scrollbar -mx-4 overflow-x-auto px-4">
+      <ul className="flex gap-1.5 whitespace-nowrap">
+        {items.map((f) => {
+          const active = activeKey === f.key;
+          return (
+            <li key={f.key || "all"}>
+              <Link
+                href={hrefFor(f.key)}
+                aria-current={active ? "page" : undefined}
+                className={`block border px-3 py-1 text-sm ${
+                  active ? "border-lilac-500 bg-lilac-500 font-semibold text-white" : "border-lilac-200 bg-white hover:bg-lilac-100"
+                }`}
+              >
+                {f.name}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
 export default async function PhotocardsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ member?: string }>;
+  searchParams: Promise<{ member?: string; source?: string }>;
 }) {
   if (!isSupabaseConfigured) {
     return (
@@ -56,14 +86,33 @@ export default async function PhotocardsPage({
     );
   }
 
-  const { member } = await searchParams;
-  const selected = pokedexMembers.find((m) => m.slug === member)?.slug;
+  const params = await searchParams;
   const [catalog, user] = await Promise.all([getCatalog(), getCurrentUser()]);
   const mine = await getMyCollections(user?.id);
 
-  const cards = selected ? catalog.filter((c) => c.member === selected) : catalog;
-  const albums = new Map<string, CatalogCard[]>();
-  for (const c of cards) albums.set(c.album, [...(albums.get(c.album) ?? []), c]);
+  // 출처 탭: 정해둔 순서대로, 그 외 출처는 뒤에
+  const sourceOf = (c: CatalogCard) => c.source ?? "앨범";
+  const present = [...new Set(catalog.map(sourceOf))];
+  const sources = [...pokedexSources.filter((s) => present.includes(s)), ...present.filter((s) => !pokedexSources.includes(s))];
+  const source = sources.find((s) => s === params.source) ?? "";
+  const member = pokedexMembers.find((m) => m.slug === params.member)?.slug ?? "";
+
+  const hrefWith = (next: { source?: string; member?: string }) => {
+    const q = new URLSearchParams();
+    const s = next.source ?? source;
+    const m = next.member ?? member;
+    if (s) q.set("source", s);
+    if (m) q.set("member", m);
+    const qs = q.toString();
+    return qs ? `/photocards?${qs}` : "/photocards";
+  };
+
+  const cards = catalog.filter((c) => (!source || sourceOf(c) === source) && (!member || c.member === member));
+  const sets = new Map<string, CatalogCard[]>();
+  for (const c of cards) sets.set(c.album, [...(sets.get(c.album) ?? []), c]);
+  const orderedSets = [...sets.entries()].sort(
+    ([a, ca], [b, cb]) => sources.indexOf(sourceOf(ca[0])) - sources.indexOf(sourceOf(cb[0])) || ca[0].id - cb[0].id || a.localeCompare(b),
+  );
 
   const approved = catalog.filter((c) => mine.get(c.id)?.status === "approved").length;
   const pendingCount = [...mine.values()].filter((e) => e.status === "pending").length;
@@ -74,8 +123,6 @@ export default async function PhotocardsPage({
     const theirs = catalog.filter((c) => c.member === m.slug);
     return theirs.length > 0 && theirs.every((c) => mine.get(c.id)?.status === "approved");
   });
-
-  const filters = [{ slug: "", name: "전체" }, ...pokedexMembers];
 
   return (
     <>
@@ -140,26 +187,31 @@ export default async function PhotocardsPage({
         )}
       </section>
 
-      <nav aria-label="멤버 필터" className="no-scrollbar -mx-4 mb-5 overflow-x-auto px-4">
-        <ul className="flex gap-1.5 whitespace-nowrap">
-          {filters.map((f) => {
-            const active = (selected ?? "") === f.slug;
-            return (
-              <li key={f.slug || "all"}>
-                <Link
-                  href={f.slug ? `/photocards?member=${f.slug}` : "/photocards"}
-                  aria-current={active ? "page" : undefined}
-                  className={`block border px-3 py-1 text-sm ${
-                    active ? "border-lilac-500 bg-lilac-500 font-semibold text-white" : "border-lilac-200 bg-white hover:bg-lilac-100"
-                  }`}
-                >
-                  {f.name}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      {/* 출처 탭 (전체 / 앨범 / CU 리센느빵 / 할리스 …) */}
+      <div className="mb-2 flex border-b-2 border-lilac-500">
+        <div className="no-scrollbar flex overflow-x-auto">
+          {[{ key: "", name: "전체" }, ...sources.map((s) => ({ key: s, name: s }))].map((t) => (
+            <Link
+              key={t.key || "all"}
+              href={hrefWith({ source: t.key })}
+              aria-current={source === t.key ? "page" : undefined}
+              className={`shrink-0 px-4 py-2 text-sm font-bold ${
+                source === t.key ? "bg-lilac-500 text-white" : "text-ink-soft hover:text-ink"
+              }`}
+            >
+              {t.name}
+            </Link>
+          ))}
+        </div>
+      </div>
+      <div className="mb-6">
+        <FilterChips
+          label="멤버 필터"
+          items={[{ key: "", name: "모든 멤버" }, ...pokedexMembers.map((m) => ({ key: m.slug, name: m.name }))]}
+          activeKey={member}
+          hrefFor={(key) => hrefWith({ member: key })}
+        />
+      </div>
 
       {catalog.length === 0 ? (
         <EmptyState>
@@ -167,18 +219,35 @@ export default async function PhotocardsPage({
           <p className="mt-1">운영자가 공식 포토카드를 등록하면 여기에 채워져요.</p>
         </EmptyState>
       ) : cards.length === 0 ? (
-        <EmptyState>이 멤버의 카드는 아직 등록되지 않았어요.</EmptyState>
+        <EmptyState>조건에 맞는 카드가 아직 없어요.</EmptyState>
       ) : (
-        <div className="space-y-8">
-          {[...albums.entries()].map(([album, list]) => {
+        <div className="space-y-10">
+          {orderedSets.map(([album, list]) => {
             const got = list.filter((c) => mine.get(c.id)?.status === "approved").length;
+            const meta = pokedexSets[album];
             return (
               <section key={album}>
-                <div className="mb-3 flex items-baseline justify-between border-b-2 border-lilac-500 pb-1.5">
-                  <h2 className="font-bold">{album}</h2>
-                  <span className="text-xs text-ink-soft tabular-nums">
-                    {got} / {list.length}
-                  </span>
+                <div className="mb-3 border-b-2 border-lilac-500 pb-1.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <h2 className="font-bold">
+                      {album}
+                      {!source && <span className="ml-2 text-xs font-semibold text-lilac-500">{sourceOf(list[0])}</span>}
+                    </h2>
+                    <span className="shrink-0 text-xs text-ink-soft tabular-nums">
+                      {got} / {list.length}
+                    </span>
+                  </div>
+                  {meta && (
+                    <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+                      {meta.how}
+                      {meta.note && <span className="block text-[11px] text-ink-soft/80">※ {meta.note}</span>}
+                      {meta.link && (
+                        <a href={meta.link} target="_blank" rel="noopener noreferrer" className="ml-1.5 underline hover:text-ink">
+                          출처 ↗
+                        </a>
+                      )}
+                    </p>
+                  )}
                 </div>
                 <ul className="grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-6">
                   {list.map((card) => (

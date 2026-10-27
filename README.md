@@ -28,6 +28,7 @@ npm run dev     # 개발 서버 → http://localhost:3000
 | `src/data/members.ts` | 멤버 프로필(생일·국적 등)과 프로필 사진 경로 |
 | `src/data/site.ts` | 홈 상단 큰 박스 사진·문구 |
 | `src/data/titles.ts` | 포카 도감 칭호 이름과 기준 장수 |
+| `src/data/pokedex-sets.ts` | 포카 도감 세트(앨범·콜라보)별 받는 방법·출처 설명. 카드 목록 자체는 DB에 있고 `/admin`에서 추가 |
 
 - 2026-10-26 기준 언론 보도·공식 SNS로 채운 실제 정보입니다. 샘플을 추가할 때 `isSample: true`를 넣으면 "예시" 뱃지가 붙습니다.
 - 날짜는 `"2026-12-01T18:00:00+09:00"` 형식(한국 시간 +09:00)으로 적어주세요.
@@ -56,7 +57,7 @@ supabase/migrations/    DB 테이블·보안 규칙 SQL
 환경 변수가 없으면 이 메뉴들은 "준비 중"으로 보입니다. 연결 방법:
 
 1. https://supabase.com 에서 새 프로젝트를 만든다 (Region: Seoul).
-2. **SQL Editor**에 `supabase/migrations/` 폴더의 SQL 파일을 번호 순서대로(0001 → 0002 → 0003) 하나씩 붙여넣고 Run. 여러 번 실행해도 안전합니다.
+2. **SQL Editor**에 `supabase/migrations/` 폴더의 SQL 파일을 번호 순서대로(0001 → 0002 → 0003 → 0004) 하나씩 붙여넣고 Run. 여러 번 실행해도 안전합니다.
 3. **Authentication → URL Configuration**의 Site URL에 사이트 주소를, Redirect URLs에 `https://사이트주소/auth/callback`을 넣는다.
 4. **Project Settings → API**의 URL과 anon key를 Vercel **Settings → Environment Variables**에 넣는다:
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` → Redeploy.
