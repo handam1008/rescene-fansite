@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { sharePath } from "@/lib/image";
-import { CATALOG_BUCKET, PROOF_BUCKET } from "@/lib/supabase/env";
+import { CATALOG_BUCKET, POST_IMAGE_BUCKET, PROOF_BUCKET } from "@/lib/supabase/env";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 
 // 관리자 기능. 화면에서도 확인하지만, 실제로 막는 건 DB 보안 규칙(public.is_admin())입니다.
@@ -93,4 +94,56 @@ export async function updateSetSourceUrl(formData: FormData) {
     .eq("album", String(formData.get("album") ?? ""));
   revalidatePath("/admin");
   revalidatePath("/photocards");
+}
+
+/* ───────── 게시판 관리: 신고·숨김 글 ───────── */
+
+function revalidateBoard(postId: number) {
+  revalidatePath("/admin");
+  revalidatePath("/board");
+  revalidatePath(`/board/${postId}`);
+  revalidatePath("/");
+}
+
+/** 운영자가 직접 숨김 */
+export async function hidePost(formData: FormData) {
+  await requireAdmin();
+  const id = Number(formData.get("id"));
+  const supabase = await createClient();
+  await supabase.from("posts").update({ hidden_at: new Date().toISOString(), hidden_reason: "admin" }).eq("id", id);
+  revalidateBoard(id);
+}
+
+/** 복구: 다시 보이게 하고, 이후로는 자동 숨김에서 제외 */
+export async function restorePost(formData: FormData) {
+  await requireAdmin();
+  const id = Number(formData.get("id"));
+  const supabase = await createClient();
+  await supabase
+    .from("posts")
+    .update({ hidden_at: null, hidden_reason: null, restored_at: new Date().toISOString() })
+    .eq("id", id);
+  revalidateBoard(id);
+}
+
+/** 신고 기록만 지우기 (문제없는 글) */
+export async function clearReports(formData: FormData) {
+  await requireAdmin();
+  const id = Number(formData.get("id"));
+  const supabase = await createClient();
+  await supabase.from("post_reports").delete().eq("post_id", id);
+  revalidateBoard(id);
+}
+
+/** 완전히 삭제 (사진 파일도 함께). back 이 있으면 그 목록으로 이동 */
+export async function adminDeletePost(formData: FormData) {
+  await requireAdmin();
+  const id = Number(formData.get("id"));
+  const supabase = await createClient();
+  const { data } = await supabase.from("posts").delete().eq("id", id).select("image_paths").maybeSingle();
+  const imagePaths: string[] = data?.image_paths ?? [];
+  if (imagePaths.length > 0) await supabase.storage.from(POST_IMAGE_BUCKET).remove(imagePaths);
+  revalidateBoard(id);
+  const back = String(formData.get("back") ?? "");
+  if (back.startsWith("/")) redirect(back);
 }

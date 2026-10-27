@@ -4,13 +4,16 @@ import { notFound } from "next/navigation";
 import BoardList from "@/components/BoardList";
 import { CommentForm } from "@/components/BoardForms";
 import Nickname from "@/components/Nickname";
+import PostReactions from "@/components/PostReactions";
 import ViewCounter from "@/components/ViewCounter";
 import { SupabaseNotice } from "@/components/ui";
 import { getMember } from "@/data/members";
+import { hiddenReasons } from "@/data/moderation";
 import { getPost, getPosts, postImageUrl } from "@/lib/community";
 import { formatFullDateTime } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/supabase/server";
+import { adminDeletePost, hidePost, restorePost } from "../../admin/actions";
 import { deleteComment, deletePost } from "../actions";
 
 export const metadata: Metadata = { title: "게시판" };
@@ -23,7 +26,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id < 1) notFound();
 
-  const [{ post, comments }, user] = await Promise.all([getPost(id), getCurrentUser()]);
+  const [{ post, comments, myVote, reported }, user] = await Promise.all([getPost(id), getCurrentUser()]);
   if (!post) notFound();
 
   // 멤버 게시판 글이면 그 멤버 게시판으로 묶어서 보여줌
@@ -45,6 +48,13 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         {boardName}
       </Link>
 
+      {post.hidden_at && (
+        <p className="border border-blush-400 bg-blush-100 px-4 py-3 text-sm">
+          🚫 {hiddenReasons[post.hidden_reason ?? "admin"]} 숨겨진 글이에요. 지금은 {isOwner ? "글쓴이(나)" : "운영자"}만 볼 수 있어요.
+          {isOwner && " 운영자가 확인 후 복구하거나 삭제해요."}
+        </p>
+      )}
+
       <article className="border-t-2 border-lilac-500 bg-white">
         {/* 제목 · 글쓴이 정보 */}
         <header className="border-b border-lilac-200 px-4 py-3 sm:px-5">
@@ -57,6 +67,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             </span>
             <span>
               조회 {post.view_count ?? 0}
+              <span className="mx-1.5 text-lilac-200">|</span>
+              추천 {post.like_count ?? 0}
               <span className="mx-1.5 text-lilac-200">|</span>
               댓글 {comments.length}
             </span>
@@ -82,11 +94,38 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           <div className="text-[15px] leading-relaxed break-words whitespace-pre-wrap">{post.content}</div>
         </div>
 
+        <PostReactions
+          postId={post.id}
+          likes={post.like_count ?? 0}
+          dislikes={post.dislike_count ?? 0}
+          myVote={myVote}
+          reported={reported}
+          loggedIn={!!user}
+          canReact={!isOwner && !post.hidden_at}
+        />
+
         <div className="flex justify-between gap-2 border-t border-lilac-200 px-4 py-3 sm:px-5">
           <Link href={boardPath} className={smallButton}>
             목록
           </Link>
           <div className="flex gap-2">
+            {user?.isAdmin && !isOwner && (
+              <>
+                <form action={post.hidden_at ? restorePost : hidePost}>
+                  <input type="hidden" name="id" value={post.id} />
+                  <button type="submit" className={smallButton}>
+                    {post.hidden_at ? "복구" : "숨기기"}
+                  </button>
+                </form>
+                <form action={adminDeletePost}>
+                  <input type="hidden" name="id" value={post.id} />
+                  <input type="hidden" name="back" value={boardPath} />
+                  <button type="submit" className={smallButton}>
+                    운영자 삭제
+                  </button>
+                </form>
+              </>
+            )}
             {isOwner && (
               <form action={deletePost}>
                 <input type="hidden" name="id" value={post.id} />
@@ -113,7 +152,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                 <p className="min-w-0 flex-1 break-words whitespace-pre-wrap">{c.content}</p>
                 <span className="flex shrink-0 items-start gap-2 text-xs text-ink-soft">
                   {formatFullDateTime(c.created_at).slice(5)}
-                  {user?.id === c.user_id && (
+                  {(user?.id === c.user_id || user?.isAdmin) && (
                     <form action={deleteComment}>
                       <input type="hidden" name="id" value={c.id} />
                       <input type="hidden" name="postId" value={post.id} />

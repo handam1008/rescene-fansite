@@ -84,18 +84,49 @@ export async function getPopularPosts(limit = 5): Promise<PostSummary[]> {
 
 export async function getPost(id: number) {
   const supabase = await createClient();
-  const [{ data: post }, { data: comments }] = await Promise.all([
+  const [{ data: post }, { data: comments }, mine] = await Promise.all([
     supabase.from("posts").select("*, profiles(*)").eq("id", id).maybeSingle(),
     supabase
       .from("comments")
       .select("id, user_id, content, created_at, profiles(*)")
       .eq("post_id", id)
       .order("created_at", { ascending: true }),
+    getMyReaction(id),
   ]);
   return {
     post: post as unknown as Post | null,
     comments: (comments ?? []) as unknown as PostComment[],
+    ...mine,
   };
+}
+
+/** 내가 이 글에 누른 추천(1)/비추천(-1)과 신고 여부. 로그인 전이거나 0007 SQL 전이면 없음 */
+async function getMyReaction(postId: number) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { myVote: 0, reported: false };
+  const [{ data: vote }, { data: report }] = await Promise.all([
+    supabase.from("post_votes").select("value").eq("post_id", postId).eq("user_id", user.id).maybeSingle(),
+    supabase.from("post_reports").select("id").eq("post_id", postId).eq("user_id", user.id).maybeSingle(),
+  ]);
+  return { myVote: (vote?.value as number | undefined) ?? 0, reported: !!report };
+}
+
+export type ModerationPost = Post & { post_reports: { reason: string; detail: string | null }[] };
+
+/** 운영자: 숨겨진 글과 신고가 들어온 글 (최근 순) */
+export async function getModerationQueue(): Promise<ModerationPost[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*, profiles(*), post_reports(reason, detail)")
+    .or("hidden_at.not.is.null,report_count.gt.0")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) return [];
+  return (data ?? []) as unknown as ModerationPost[];
 }
 
 /* ───────────────────────── 포카 도감 ───────────────────────── */

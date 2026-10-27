@@ -110,6 +110,9 @@ export type PostSummary = {
   image_paths?: string[];
   /** 멤버 게시판 글이면 멤버 slug (0003) */
   member?: string | null;
+  /** 추천 수와 숨김 상태 (0007). 숨긴 글은 글쓴이·운영자 목록에만 보임 */
+  like_count?: number;
+  hidden_at?: string | null;
   profiles: Author;
   comments: { count: number }[];
 };
@@ -123,8 +126,19 @@ export type Post = {
   view_count?: number;
   image_paths?: string[];
   member?: string | null;
+  /** 추천·비추천·신고 수와 숨김 상태 (0007) */
+  like_count?: number;
+  dislike_count?: number;
+  report_count?: number;
+  hidden_at?: string | null;
+  hidden_reason?: HiddenReason | null;
+  restored_at?: string | null;
   profiles: Author;
 };
+
+export type HiddenReason = "reports" | "dislikes" | "admin";
+
+export type ReportReason = "spam" | "abuse" | "adult" | "privacy" | "copyright" | "other";
 
 export type PostComment = {
   id: number;
