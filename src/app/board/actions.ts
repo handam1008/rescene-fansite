@@ -45,7 +45,7 @@ export async function deleteComment(formData: FormData) {
   revalidatePath(`/board/${postId}`);
 }
 
-/** 추천(1)·비추천(-1). 같은 걸 다시 누르면 취소, 반대를 누르면 바꿈. 본인 글·숨긴 글은 DB 규칙이 막음 */
+/** 추천(1)·비추천(-1). 한 사람당 한 번, 누른 뒤에는 바꾸거나 취소할 수 없음. 본인 글·숨긴 글·이용 제한은 DB 규칙이 막음 */
 export async function votePost(formData: FormData) {
   const postId = Number(formData.get("postId"));
   const value = Number(formData.get("value")) === -1 ? -1 : 1;
@@ -55,15 +55,8 @@ export async function votePost(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect(`/login?next=/board/${postId}`);
 
-  const { data: existing } = await supabase
-    .from("post_votes")
-    .select("value")
-    .eq("post_id", postId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (!existing) await supabase.from("post_votes").insert({ post_id: postId, value });
-  else if (existing.value === value) await supabase.from("post_votes").delete().eq("post_id", postId).eq("user_id", user.id);
-  else await supabase.from("post_votes").update({ value }).eq("post_id", postId).eq("user_id", user.id);
+  // 이미 누른 글이면 DB 의 unique 규칙에 걸려 그냥 무시됨
+  await supabase.from("post_votes").insert({ post_id: postId, value });
 
   revalidatePath(`/board/${postId}`);
   revalidatePath("/board");

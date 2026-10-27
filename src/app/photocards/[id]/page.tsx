@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BanNotice from "@/components/BanNotice";
 import CardImage from "@/components/CardImage";
 import ProofForm from "@/components/ProofForm";
 import { SupabaseNotice } from "@/components/ui";
@@ -97,6 +98,8 @@ export default async function PhotocardPage({ params }: { params: Promise<{ id: 
                 </Link>
                 하면 이 카드를 인증할 수 있어요.
               </p>
+            ) : user.bannedUntil && entry?.status !== "approved" ? (
+              <BanNotice until={user.bannedUntil} reason={user.banReason} />
             ) : entry?.status === "approved" ? (
               <div>
                 <p className="text-lg font-extrabold text-lilac-700">✓ 수집 완료</p>

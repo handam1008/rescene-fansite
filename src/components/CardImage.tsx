@@ -1,5 +1,5 @@
 import { getMember, pokedexMemberName } from "@/data/members";
-import { catalogImageUrl } from "@/lib/community";
+import { catalogImageUrl } from "@/lib/storage-url";
 import type { CatalogCard } from "@/types";
 
 /**

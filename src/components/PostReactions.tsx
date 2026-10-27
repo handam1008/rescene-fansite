@@ -9,6 +9,7 @@ import { FormMessage, inputClass } from "./ui";
 /**
  * 글 아래 추천·비추천 버튼과 신고.
  * 본인 글이거나 숨겨진 글이면 숫자만 보여주고 누를 수 없음 (DB 규칙도 같은 걸 막음)
+ * 추천·비추천은 한 번 누르면 바꾸거나 취소할 수 없음 (0010).
  * 누르면 서버 응답을 기다리지 않고 숫자를 바로 바꿔 보여줌 (응답이 오면 실제 값으로 맞춰짐)
  */
 export default function PostReactions({
@@ -33,28 +34,24 @@ export default function PostReactions({
   const [showReport, setShowReport] = useState(false);
   const [state, action, pending] = useActionState(reportPost, undefined);
   const loginHref = `/login?next=/board/${postId}`;
-  // 같은 걸 다시 누르면 취소, 반대를 누르면 바뀜 (서버 votePost 와 같은 규칙)
-  const [view, applyVote] = useOptimistic({ myVote, likes, dislikes }, (cur, value: 1 | -1) => {
-    const next = cur.myVote === value ? 0 : value;
-    return {
-      myVote: next,
-      likes: cur.likes - (cur.myVote === 1 ? 1 : 0) + (next === 1 ? 1 : 0),
-      dislikes: cur.dislikes - (cur.myVote === -1 ? 1 : 0) + (next === -1 ? 1 : 0),
-    };
-  });
+  const [view, applyVote] = useOptimistic({ myVote, likes, dislikes }, (cur, value: 1 | -1) =>
+    cur.myVote !== 0
+      ? cur
+      : { myVote: value, likes: cur.likes + (value === 1 ? 1 : 0), dislikes: cur.dislikes + (value === -1 ? 1 : 0) },
+  );
+  const voted = view.myVote !== 0;
 
   const voteButton = (value: 1 | -1) => {
     const active = view.myVote === value;
     const label = value === 1 ? "추천" : "비추";
     const count = value === 1 ? view.likes : view.dislikes;
-    const className = `flex w-24 flex-col items-center border-2 py-2 font-bold transition ${
-      value === 1
-        ? active
+    // 누르기 전에는 두 버튼 모양이 같고, 내가 누른 쪽만 색이 채워짐
+    const className = `btn flex w-24 flex-col items-center border-2 py-2 font-bold ${
+      active
+        ? value === 1
           ? "border-lilac-500 bg-lilac-500 text-white"
-          : "border-lilac-500 bg-white text-lilac-700 hover:bg-lilac-50"
-        : active
-          ? "border-ink-soft bg-ink-soft text-white"
-          : "border-lilac-200 bg-white text-ink-soft hover:bg-lilac-50"
+          : "border-ink-soft bg-ink-soft text-white"
+        : `border-lilac-200 bg-white hover:bg-lilac-50 ${value === 1 ? "text-lilac-700" : "text-ink-soft"}`
     }`;
     const inner = (
       <>
@@ -64,7 +61,10 @@ export default function PostReactions({
         </span>
       </>
     );
-    if (!canReact) return <div className={`${className} pointer-events-none opacity-70`}>{inner}</div>;
+    // 본인 글·숨긴 글이거나 이미 누른 뒤에는 숫자만 (누른 쪽은 색으로 표시)
+    if (!canReact || voted) {
+      return <div className={`${className} pointer-events-none ${active ? "" : "opacity-60"}`}>{inner}</div>;
+    }
     if (!loggedIn) {
       return (
         <Link href={loginHref} className={className}>
@@ -94,7 +94,15 @@ export default function PostReactions({
         {voteButton(1)}
         {voteButton(-1)}
       </div>
-      {isOwner && <p className="mt-2 text-center text-xs text-ink-soft">내 글에는 추천·비추천과 신고를 할 수 없어요.</p>}
+      <p className="mt-2 text-center text-xs text-ink-soft">
+        {isOwner
+          ? "내 글에는 추천·비추천과 신고를 할 수 없어요."
+          : voted
+            ? `${view.myVote === 1 ? "추천" : "비추천"}했어요. 한 번 누르면 바꿀 수 없어요.`
+            : canReact && loggedIn
+              ? "한 번 누르면 바꾸거나 취소할 수 없어요."
+              : null}
+      </p>
 
       {canReact && (
         <div className="mt-3 text-right text-xs">

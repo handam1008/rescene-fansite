@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import BoardList from "@/components/BoardList";
 import { PageHeader, SupabaseNotice } from "@/components/ui";
-import { getPosts, type BoardTab } from "@/lib/community";
+import { cleanSearch, getPosts, type BoardTab } from "@/lib/community";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function BoardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; tab?: string }>;
+  searchParams: Promise<{ page?: string; tab?: string; q?: string }>;
 }) {
   if (!isSupabaseConfigured) {
     return (
@@ -27,7 +27,8 @@ export default async function BoardPage({
   const params = await searchParams;
   const page = Math.max(1, Number(params.page) || 1);
   const tab: BoardTab = params.tab === "best" ? "best" : "all";
-  const [{ posts, total }, user] = await Promise.all([getPosts(page, tab), getCurrentUser()]);
+  const q = cleanSearch(params.q);
+  const [{ posts, total }, user] = await Promise.all([getPosts(page, tab, undefined, q), getCurrentUser()]);
 
   return (
     <>
@@ -38,6 +39,7 @@ export default async function BoardPage({
         page={page}
         tab={tab}
         writeHref={user ? "/board/new" : "/login?next=/board/new"}
+        q={q}
       />
     </>
   );

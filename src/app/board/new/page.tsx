@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { PostForm } from "@/components/BoardForms";
+import BanNotice from "@/components/BanNotice";
 import { BoardRulesSummary } from "@/components/BoardRules";
 import { PageHeader, SupabaseNotice } from "@/components/ui";
 import { getMember } from "@/data/members";
@@ -26,8 +27,14 @@ export default async function NewPostPage({
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader eyebrow="Board" title={member ? `${member.name} 게시판` : "게시판"} />
-      <BoardRulesSummary />
-      <PostForm userId={user.id} defaultMember={member?.slug} />
+      {user.bannedUntil ? (
+        <BanNotice until={user.bannedUntil} reason={user.banReason} />
+      ) : (
+        <>
+          <BoardRulesSummary />
+          <PostForm userId={user.id} defaultMember={member?.slug} />
+        </>
+      )}
     </div>
   );
 }

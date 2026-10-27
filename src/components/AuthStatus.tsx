@@ -16,6 +16,7 @@ export default function AuthStatus() {
   const pathname = usePathname();
   const [nickname, setNickname] = useState<string | null | undefined>(undefined);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -24,12 +25,18 @@ export default function AuthStatus() {
     async function load(userId: string | undefined) {
       if (!userId) {
         setIsAdmin(false);
+        setUnread(0);
         return setNickname(null);
       }
       // "*" : 관리자 컬럼(0003 SQL)이 없어도 동작하도록
-      const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+      const [{ data }, { count }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+        // 안 읽은 댓글 알림 수 (0010 SQL 전이면 0)
+        supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
+      ]);
       setNickname(data?.nickname ?? "리마인");
       setIsAdmin(data?.is_admin === true);
+      setUnread(count ?? 0);
     }
 
     supabase.auth.getUser().then(({ data }) => load(data.user?.id));
@@ -45,10 +52,10 @@ export default function AuthStatus() {
   if (nickname === null) {
     return (
       <div className="flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap sm:text-sm">
-        <Link href="/login" className="border border-lilac-300 px-2.5 py-1 text-lilac-700 hover:bg-lilac-100">
+        <Link href="/login" className="btn border border-lilac-300 px-2.5 py-1 text-lilac-700 hover:bg-lilac-100">
           로그인
         </Link>
-        <Link href="/signup" className="border border-lilac-300 bg-lilac-200 px-2.5 py-1 text-ink hover:bg-lilac-300">
+        <Link href="/signup" className="btn border border-lilac-300 bg-lilac-200 px-2.5 py-1 text-ink hover:bg-lilac-300">
           회원가입
         </Link>
       </div>
@@ -58,10 +65,18 @@ export default function AuthStatus() {
   return (
     <div className="flex items-center gap-2 text-sm">
       {isAdmin && (
-        <Link href="/admin" className="bg-ink px-1.5 py-0.5 text-xs font-bold text-white hover:bg-lilac-700">
-          운영자
+        <Link href="/admin" className="btn bg-ink px-2 py-0.5 text-xs font-bold text-white hover:bg-lilac-700">
+          🛠 운영자
         </Link>
       )}
+      <Link href="/notifications" className="btn relative px-1 text-base" aria-label={`알림${unread ? ` ${unread}개` : ""}`}>
+        🔔
+        {unread > 0 && (
+          <span className="absolute -top-1 -right-1.5 min-w-4 bg-blush-400 px-1 text-center text-[10px] leading-4 font-bold text-white">
+            {unread > 99 ? "99+" : unread}
+          </span>
+        )}
+      </Link>
       <Link href="/account" className="font-semibold hover:underline" title="내 정보">
         {nickname}
       </Link>

@@ -133,6 +133,8 @@ export type Post = {
   hidden_at?: string | null;
   hidden_reason?: HiddenReason | null;
   restored_at?: string | null;
+  /** 글쓴이가 마지막으로 고친 때 (0010) */
+  edited_at?: string | null;
   profiles: Author;
 };
 
