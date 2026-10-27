@@ -91,18 +91,12 @@ export type VoteStatus = "upcoming" | "ongoing" | "ended";
 
 /* ───────── 2단계: Supabase 테이블 (supabase/migrations/0001_init.sql) ───────── */
 
-export type Author = { nickname: string } | null;
-
-export type Photocard = {
-  id: number;
-  user_id: string;
-  member: string;
-  album: string | null;
-  description: string | null;
-  image_path: string;
-  created_at: string;
-  profiles: Author;
-};
+export type Author = {
+  nickname: string;
+  /** supabase/migrations/0003 실행 전에는 없을 수 있음 */
+  collected_count?: number;
+  is_admin?: boolean;
+} | null;
 
 export type PostSummary = {
   id: number;
@@ -111,6 +105,8 @@ export type PostSummary = {
   /** supabase/migrations/0002 실행 전에는 없을 수 있음 */
   view_count?: number;
   image_paths?: string[];
+  /** 멤버 게시판 글이면 멤버 slug (0003) */
+  member?: string | null;
   profiles: Author;
   comments: { count: number }[];
 };
@@ -123,6 +119,7 @@ export type Post = {
   created_at: string;
   view_count?: number;
   image_paths?: string[];
+  member?: string | null;
   profiles: Author;
 };
 
@@ -132,4 +129,28 @@ export type PostComment = {
   content: string;
   created_at: string;
   profiles: Author;
+};
+
+/** 포카 도감 카드 (photocard_catalog) */
+export type CatalogCard = {
+  id: number;
+  album: string;
+  member: string;
+  label: string;
+  image_path: string;
+  sort: number;
+};
+
+export type CollectionStatus = "pending" | "approved" | "rejected";
+
+/** 회원의 실물 카드 인증 (photocard_collections) */
+export type CollectionEntry = {
+  id: number;
+  user_id: string;
+  card_id: number;
+  photo_path: string;
+  status: CollectionStatus;
+  reject_reason: string | null;
+  created_at: string;
+  reviewed_at: string | null;
 };

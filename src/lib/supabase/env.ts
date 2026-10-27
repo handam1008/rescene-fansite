@@ -17,8 +17,9 @@ export const supabaseAnonKey =
 /** 연결 정보가 없으면 회원·포카·게시판 기능 대신 "준비 중" 안내를 보여줍니다. */
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-/** 포카 이미지를 저장하는 Storage 버킷 이름 (supabase/migrations 참고) */
-export const PHOTOCARD_BUCKET = "photocards";
-
 /** 게시판 글 사진을 저장하는 Storage 버킷 이름 (supabase/migrations/0002 참고) */
 export const POST_IMAGE_BUCKET = "post-images";
+
+/** 포카 도감 카드 이미지 (공개, 관리자만 올림) · 회원 인증 사진 (비공개) — supabase/migrations/0003 참고 */
+export const CATALOG_BUCKET = "pc-catalog";
+export const PROOF_BUCKET = "pc-proofs";

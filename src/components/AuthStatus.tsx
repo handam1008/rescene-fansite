@@ -15,15 +15,21 @@ export default function AuthStatus() {
   // 서버에서 로그인한 뒤 페이지가 바뀌면 다시 확인
   const pathname = usePathname();
   const [nickname, setNickname] = useState<string | null | undefined>(undefined);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
     const supabase = createClient();
 
     async function load(userId: string | undefined) {
-      if (!userId) return setNickname(null);
-      const { data } = await supabase.from("profiles").select("nickname").eq("id", userId).maybeSingle();
+      if (!userId) {
+        setIsAdmin(false);
+        return setNickname(null);
+      }
+      // "*" : 관리자 컬럼(0003 SQL)이 없어도 동작하도록
+      const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
       setNickname(data?.nickname ?? "리마인");
+      setIsAdmin(data?.is_admin === true);
     }
 
     supabase.auth.getUser().then(({ data }) => load(data.user?.id));
@@ -51,6 +57,11 @@ export default function AuthStatus() {
 
   return (
     <div className="flex items-center gap-2 text-sm">
+      {isAdmin && (
+        <Link href="/admin" className="bg-ink px-1.5 py-0.5 text-xs font-bold text-white hover:bg-lilac-700">
+          운영자
+        </Link>
+      )}
       <span className="font-semibold">{nickname}</span>
       <button
         type="button"

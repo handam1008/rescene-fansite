@@ -1,16 +1,18 @@
 import Link from "next/link";
+import { getMember } from "@/data/members";
 import { POSTS_PER_PAGE, type BoardTab } from "@/lib/community";
 import { formatBoardDate } from "@/lib/format";
 import type { PostSummary } from "@/types";
+import Nickname from "./Nickname";
 
 const DAY = 24 * 60 * 60 * 1000;
 
-function boardHref(tab: BoardTab, page = 1) {
+function boardHref(basePath: string, tab: BoardTab, page = 1) {
   const params = new URLSearchParams();
   if (tab !== "all") params.set("tab", tab);
   if (page > 1) params.set("page", String(page));
   const qs = params.toString();
-  return qs ? `/board?${qs}` : "/board";
+  return qs ? `${basePath}?${qs}` : basePath;
 }
 
 function ImageIcon() {
@@ -24,12 +26,14 @@ function ImageIcon() {
   );
 }
 
-/** 제목 + 사진 아이콘 + 새 글 표시 + [댓글 수] */
-function PostTitle({ post, now }: { post: PostSummary; now: number }) {
+/** [멤버] 말머리 + 제목 + 사진 아이콘 + 새 글 표시 + [댓글 수] */
+function PostTitle({ post, now, showMember }: { post: PostSummary; now: number; showMember: boolean }) {
   const comments = post.comments[0]?.count ?? 0;
   const isNew = now - new Date(post.created_at).getTime() < DAY;
+  const member = showMember ? getMember(post.member) : undefined;
   return (
     <span className="flex min-w-0 items-center gap-1">
+      {member && <span className="shrink-0 text-xs font-bold text-lilac-700">[{member.name}]</span>}
       <span className="truncate">{post.title}</span>
       {(post.image_paths?.length ?? 0) > 0 && <ImageIcon />}
       {isNew && (
@@ -42,7 +46,7 @@ function PostTitle({ post, now }: { post: PostSummary; now: number }) {
   );
 }
 
-function Pagination({ page, lastPage, tab }: { page: number; lastPage: number; tab: BoardTab }) {
+function Pagination({ page, lastPage, href }: { page: number; lastPage: number; href: (page: number) => string }) {
   if (lastPage <= 1) return null;
   const start = Math.floor((page - 1) / 10) * 10 + 1;
   const end = Math.min(start + 9, lastPage);
@@ -53,8 +57,8 @@ function Pagination({ page, lastPage, tab }: { page: number; lastPage: number; t
     <nav aria-label="페이지" className="mt-4 flex flex-wrap items-center justify-center gap-0.5 text-sm">
       {start > 1 && (
         <>
-          <Link href={boardHref(tab, 1)} className={linkClass} aria-label="처음">«</Link>
-          <Link href={boardHref(tab, start - 1)} className={linkClass} aria-label="이전 10페이지">‹</Link>
+          <Link href={href(1)} className={linkClass} aria-label="처음">«</Link>
+          <Link href={href(start - 1)} className={linkClass} aria-label="이전 10페이지">‹</Link>
         </>
       )}
       {pages.map((p) =>
@@ -63,15 +67,15 @@ function Pagination({ page, lastPage, tab }: { page: number; lastPage: number; t
             {p}
           </span>
         ) : (
-          <Link key={p} href={boardHref(tab, p)} className={`${linkClass} text-ink-soft`}>
+          <Link key={p} href={href(p)} className={`${linkClass} text-ink-soft`}>
             {p}
           </Link>
         ),
       )}
       {end < lastPage && (
         <>
-          <Link href={boardHref(tab, end + 1)} className={linkClass} aria-label="다음 10페이지">›</Link>
-          <Link href={boardHref(tab, lastPage)} className={linkClass} aria-label="끝">»</Link>
+          <Link href={href(end + 1)} className={linkClass} aria-label="다음 10페이지">›</Link>
+          <Link href={href(lastPage)} className={linkClass} aria-label="끝">»</Link>
         </>
       )}
     </nav>
@@ -88,6 +92,8 @@ export default function BoardList({
   page,
   tab,
   writeHref,
+  basePath = "/board",
+  showMember = true,
   currentPostId,
 }: {
   posts: PostSummary[];
@@ -95,6 +101,10 @@ export default function BoardList({
   page: number;
   tab: BoardTab;
   writeHref: string;
+  /** 탭·페이지 링크의 기준 주소 (멤버 게시판이면 /members/woni/board) */
+  basePath?: string;
+  /** 제목 앞에 [멤버] 말머리 표시 (멤버 게시판에서는 끔) */
+  showMember?: boolean;
   /** 글 보기 화면 아래 목록에서 지금 보는 글 강조 */
   currentPostId?: number;
 }) {
@@ -113,7 +123,7 @@ export default function BoardList({
           {tabs.map((t) => (
             <Link
               key={t.key}
-              href={boardHref(t.key)}
+              href={boardHref(basePath, t.key)}
               aria-current={t.key === tab ? "page" : undefined}
               className={`px-4 py-2 text-sm font-bold ${
                 t.key === tab ? "bg-lilac-500 text-white" : "text-ink-soft hover:text-ink"
@@ -143,7 +153,7 @@ export default function BoardList({
               <tr>
                 <th scope="col" className="w-16 py-2 font-medium">번호</th>
                 <th scope="col" className="py-2 font-medium">제목</th>
-                <th scope="col" className="w-32 py-2 font-medium">글쓴이</th>
+                <th scope="col" className="w-40 py-2 font-medium">글쓴이</th>
                 <th scope="col" className="w-20 py-2 font-medium">작성일</th>
                 <th scope="col" className="w-16 py-2 font-medium">조회</th>
               </tr>
@@ -154,10 +164,12 @@ export default function BoardList({
                   <td className="py-2 text-center text-xs text-ink-soft tabular-nums">{post.id}</td>
                   <td className="py-2 pr-3">
                     <Link href={`/board/${post.id}`} className="block hover:underline">
-                      <PostTitle post={post} now={now} />
+                      <PostTitle post={post} now={now} showMember={showMember} />
                     </Link>
                   </td>
-                  <td className="truncate py-2 text-center">{post.profiles?.nickname ?? "알 수 없음"}</td>
+                  <td className="py-2 text-center">
+                    <Nickname author={post.profiles} className="max-w-full justify-center" />
+                  </td>
                   <td className="py-2 text-center text-xs text-ink-soft tabular-nums">{formatBoardDate(post.created_at)}</td>
                   <td className="py-2 text-center text-xs text-ink-soft tabular-nums">{post.view_count ?? 0}</td>
                 </tr>
@@ -171,12 +183,12 @@ export default function BoardList({
               <li key={post.id} className={`border-b border-lilac-100 last:border-0 ${rowClass(post.id)}`}>
                 <Link href={`/board/${post.id}`} className="block px-3 py-2.5">
                   <span className="text-[15px]">
-                    <PostTitle post={post} now={now} />
+                    <PostTitle post={post} now={now} showMember={showMember} />
                   </span>
-                  <span className="mt-0.5 flex gap-2 text-xs text-ink-soft">
-                    <span className="truncate">{post.profiles?.nickname ?? "알 수 없음"}</span>
-                    <span>{formatBoardDate(post.created_at)}</span>
-                    <span>조회 {post.view_count ?? 0}</span>
+                  <span className="mt-0.5 flex items-center gap-2 text-xs text-ink-soft">
+                    <Nickname author={post.profiles} />
+                    <span className="shrink-0">{formatBoardDate(post.created_at)}</span>
+                    <span className="shrink-0">조회 {post.view_count ?? 0}</span>
                   </span>
                 </Link>
               </li>
@@ -185,7 +197,7 @@ export default function BoardList({
         </>
       )}
 
-      <Pagination page={page} lastPage={lastPage} tab={tab} />
+      <Pagination page={page} lastPage={lastPage} href={(p) => boardHref(basePath, tab, p)} />
     </div>
   );
 }
