@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { pokedexMembers } from "@/data/members";
+import { pokedexSources } from "@/data/pokedex-sets";
 import { shrinkImage, storagePath } from "@/lib/image";
 import { createClient } from "@/lib/supabase/client";
 import { CATALOG_BUCKET } from "@/lib/supabase/env";
@@ -21,22 +22,27 @@ export default function CatalogForm({ albums }: { albums: string[] }) {
     const form = new FormData(formEl);
     const file = form.get("image");
     const album = String(form.get("album") ?? "").trim();
+    const source = String(form.get("source") ?? "").trim() || "앨범";
     const member = String(form.get("member") ?? "");
     setError(undefined);
     setMessage(undefined);
     if (!album || !member) return setError("앨범과 멤버를 골라주세요.");
-    if (!(file instanceof File) || file.size === 0) return setError("카드 이미지를 골라주세요.");
 
     setPending(true);
     const supabase = createClient();
-    const image = await shrinkImage(file, 1000, 0.9);
-    const path = storagePath("cards", image);
-    const { error: uploadError } = await supabase.storage.from(CATALOG_BUCKET).upload(path, image, { contentType: image.type });
-    if (uploadError) {
-      setPending(false);
-      return setError(`이미지를 올리지 못했어요: ${uploadError.message}`);
+    // 이미지는 없어도 됨 (나중에 올리거나, 회원 인증 사진으로 채움)
+    let path: string | null = null;
+    if (file instanceof File && file.size > 0) {
+      const image = await shrinkImage(file, 1000, 0.9);
+      path = storagePath("cards", image);
+      const { error: uploadError } = await supabase.storage.from(CATALOG_BUCKET).upload(path, image, { contentType: image.type });
+      if (uploadError) {
+        setPending(false);
+        return setError(`이미지를 올리지 못했어요: ${uploadError.message}`);
+      }
     }
     const { error: insertError } = await supabase.from("photocard_catalog").insert({
+      source,
       album,
       member,
       label: String(form.get("label") ?? "").trim(),
@@ -45,8 +51,10 @@ export default function CatalogForm({ albums }: { albums: string[] }) {
     });
     setPending(false);
     if (insertError) {
-      await supabase.storage.from(CATALOG_BUCKET).remove([path]);
-      return setError(`등록하지 못했어요: ${insertError.message}`);
+      if (path) await supabase.storage.from(CATALOG_BUCKET).remove([path]);
+      return setError(
+        insertError.code === "23505" ? "이미 같은 카드(출처·세트·멤버·구분)가 있어요." : `등록하지 못했어요: ${insertError.message}`,
+      );
     }
     setMessage(`등록했어요: ${album} · ${pokedexMembers.find((m) => m.slug === member)?.name}`);
     // 앨범은 그대로 두고 다음 카드를 바로 등록할 수 있게
@@ -58,8 +66,17 @@ export default function CatalogForm({ albums }: { albums: string[] }) {
   return (
     <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
       <label className="space-y-1">
-        <span className="text-sm font-semibold">앨범</span>
-        <input name="album" list="album-options" required maxLength={60} className={inputClass} placeholder="예: PULSE" />
+        <span className="text-sm font-semibold">출처 (도감 탭)</span>
+        <input name="source" list="source-options" required maxLength={30} defaultValue="앨범" className={inputClass} />
+        <datalist id="source-options">
+          {pokedexSources.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
+      </label>
+      <label className="space-y-1">
+        <span className="text-sm font-semibold">세트 이름 (앨범·이벤트)</span>
+        <input name="album" list="album-options" required maxLength={60} className={inputClass} placeholder="예: PULSE, CU 리센느빵 2탄" />
         <datalist id="album-options">
           {albums.map((a) => (
             <option key={a} value={a} />
@@ -88,8 +105,8 @@ export default function CatalogForm({ albums }: { albums: string[] }) {
         <input name="sort" type="number" defaultValue={0} className={inputClass} />
       </label>
       <label className="space-y-1 sm:col-span-2">
-        <span className="text-sm font-semibold">카드 이미지 (앞면 스캔·사진)</span>
-        <input name="image" type="file" accept="image/jpeg,image/png,image/webp" required className="block w-full text-sm" />
+        <span className="text-sm font-semibold">카드 이미지 (선택 · 없으면 나중에 회원 인증 사진으로 채울 수 있어요)</span>
+        <input name="image" type="file" accept="image/jpeg,image/png,image/webp" className="block w-full text-sm" />
       </label>
       <div className="space-y-2 sm:col-span-2">
         <FormMessage error={error} message={message} />

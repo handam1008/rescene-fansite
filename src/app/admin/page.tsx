@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import CardImage from "@/components/CardImage";
 import CatalogForm from "@/components/CatalogForm";
+import CatalogImageButton from "@/components/CatalogImageButton";
 import { EmptyState, PageHeader, SupabaseNotice } from "@/components/ui";
 import { pokedexMemberName } from "@/data/members";
-import { catalogImageUrl, getCatalog, getPendingProofs, proofImageUrls } from "@/lib/community";
+import { getCatalog, getPendingProofs, proofImageUrls } from "@/lib/community";
+import type { CatalogCard } from "@/types";
 import { formatFullDateTime } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -13,8 +16,17 @@ export const metadata: Metadata = { title: "운영자", robots: { index: false }
 
 export const dynamic = "force-dynamic";
 
+function groupBySet(cards: CatalogCard[]) {
+  const sets = new Map<string, CatalogCard[]>();
+  for (const c of cards) {
+    const key = `${c.source ?? "앨범"} · ${c.album}`;
+    sets.set(key, [...(sets.get(key) ?? []), c]);
+  }
+  return sets;
+}
+
 /** 지금까지 나온 앨범 (도감 등록할 때 고르기 쉽게) */
-const KNOWN_ALBUMS = ["Re:Scene", "Dearest", "SCENEDROME", "Glow Up", "lip bomb", "PULSE"];
+const KNOWN_ALBUMS = ["Re:Scene", "Dearest", "SCENEDROME", "Glow Up", "lip bomb", "PULSE", "CU 리센느빵 2탄"];
 
 export default async function AdminPage() {
   if (!isSupabaseConfigured) return <SupabaseNotice />;
@@ -46,14 +58,7 @@ export default async function AdminPage() {
               <li key={p.id} className="card flex flex-col gap-4 p-4 sm:flex-row">
                 <div className="flex gap-3">
                   <figure className="w-28 shrink-0">
-                    {p.photocard_catalog && (
-                      // eslint-disable-next-line @next/next/no-img-element -- 도감 카드 이미지
-                      <img
-                        src={catalogImageUrl(p.photocard_catalog.image_path)}
-                        alt="도감 카드"
-                        className="aspect-[55/85] w-full border border-lilac-200 object-cover"
-                      />
-                    )}
+                    {p.photocard_catalog && <CardImage card={p.photocard_catalog} />}
                     <figcaption className="mt-1 text-center text-[11px] text-ink-soft">도감 카드</figcaption>
                   </figure>
                   <figure className="w-40 shrink-0">
@@ -86,6 +91,20 @@ export default async function AdminPage() {
                         승인
                       </button>
                     </form>
+                    <form action={approveProof}>
+                      <input type="hidden" name="id" value={p.id} />
+                      <input type="hidden" name="useAsImage" value="1" />
+                      <button
+                        type="submit"
+                        className={`border px-3 py-1.5 font-bold ${
+                          p.photocard_catalog?.image_path
+                            ? "border-lilac-200 bg-white text-ink-soft hover:bg-lilac-50"
+                            : "border-lilac-500 bg-white text-lilac-700 hover:bg-lilac-50"
+                        }`}
+                      >
+                        {p.photocard_catalog?.image_path ? "승인 + 도감 이미지 교체" : "승인 + 도감 이미지로 쓰기"}
+                      </button>
+                    </form>
                     <form action={rejectProof} className="flex flex-1 gap-2">
                       <input type="hidden" name="id" value={p.id} />
                       <input
@@ -114,32 +133,44 @@ export default async function AdminPage() {
         </div>
       </section>
 
-      {/* 등록된 카드 */}
+      {/* 등록된 카드 (세트별) */}
       <section>
         <h2 className="mb-3 border-b-2 border-lilac-500 pb-1.5 font-bold">
           등록된 카드 <span className="text-lilac-500">{catalog.length}</span>장
+          <span className="ml-2 text-xs font-normal text-ink-soft">
+            이미지 없는 카드 {catalog.filter((c) => !c.image_path).length}장
+          </span>
         </h2>
         {catalog.length === 0 ? (
           <EmptyState>아직 등록된 카드가 없어요.</EmptyState>
         ) : (
-          <ul className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-            {catalog.map((c) => (
-              <li key={c.id} className="text-xs">
-                {/* eslint-disable-next-line @next/next/no-img-element -- 도감 카드 이미지 */}
-                <img src={catalogImageUrl(c.image_path)} alt="" className="aspect-[55/85] w-full border border-lilac-200 object-cover" />
-                <p className="mt-1 truncate font-semibold">
-                  {c.album} · {pokedexMemberName(c.member)}
-                </p>
-                {c.label && <p className="truncate text-ink-soft">{c.label}</p>}
-                <form action={deleteCatalogCard}>
-                  <input type="hidden" name="id" value={c.id} />
-                  <button type="submit" className="text-ink-soft underline hover:text-ink">
-                    삭제
-                  </button>
-                </form>
-              </li>
+          <div className="space-y-2">
+            {[...groupBySet(catalog).entries()].map(([set, cards]) => (
+              <details key={set} className="card">
+                <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">
+                  {set} <span className="font-normal text-ink-soft">· {cards.length}장 (이미지 없음 {cards.filter((c) => !c.image_path).length})</span>
+                </summary>
+                <ul className="grid grid-cols-3 gap-3 border-t border-lilac-100 p-4 sm:grid-cols-6">
+                  {cards.map((c) => (
+                    <li key={c.id} className="text-xs">
+                      <CardImage card={c} />
+                      <p className="mt-1 truncate font-semibold">{pokedexMemberName(c.member)}</p>
+                      {c.label && <p className="truncate text-ink-soft">{c.label}</p>}
+                      <div className="mt-0.5 flex gap-2">
+                        <CatalogImageButton cardId={c.id} current={c.image_path} />
+                        <form action={deleteCatalogCard}>
+                          <input type="hidden" name="id" value={c.id} />
+                          <button type="submit" className="text-ink-soft underline hover:text-ink">
+                            삭제
+                          </button>
+                        </form>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </details>
             ))}
-          </ul>
+          </div>
         )}
       </section>
     </div>

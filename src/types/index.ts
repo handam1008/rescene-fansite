@@ -134,10 +134,14 @@ export type PostComment = {
 /** 포카 도감 카드 (photocard_catalog) */
 export type CatalogCard = {
   id: number;
+  /** 출처 탭: "앨범", "CU 리센느빵", "할리스" … (0004 SQL 전에는 없음) */
+  source?: string;
+  /** 세트 이름: 앨범명 또는 "CU 리센느빵 1탄" 같은 이벤트명 */
   album: string;
   member: string;
   label: string;
-  image_path: string;
+  /** 비어 있으면 아직 도감 이미지가 없는 카드 */
+  image_path: string | null;
   sort: number;
 };
 

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import CardImage from "@/components/CardImage";
 import ProofForm from "@/components/ProofForm";
 import { SupabaseNotice } from "@/components/ui";
 import { pokedexMemberName } from "@/data/members";
-import { catalogImageUrl, getCatalogCard, getMyCollections, proofImageUrls } from "@/lib/community";
+import { pokedexSets } from "@/data/pokedex-sets";
+import { getCatalogCard, getMyCollections, proofImageUrls } from "@/lib/community";
 import { formatFullDateTime } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -35,21 +37,21 @@ export default async function PhotocardPage({ params }: { params: Promise<{ id: 
       </Link>
 
       <div className="grid gap-6 sm:grid-cols-[minmax(0,280px)_1fr]">
-        {/* eslint-disable-next-line @next/next/no-img-element -- Supabase Storage 이미지 */}
-        <img
-          src={catalogImageUrl(card.image_path)}
-          alt={`${card.album} ${memberName} ${card.label}`}
-          className={`mx-auto aspect-[55/85] w-full max-w-[280px] border border-lilac-200 object-cover ${
-            entry?.status === "approved" ? "" : "grayscale-[60%]"
-          }`}
-        />
+        <div className="mx-auto w-full max-w-[280px]">
+          <CardImage card={card} className={entry?.status === "approved" ? "" : "grayscale-[60%]"} />
+        </div>
 
         <div>
-          <p className="text-sm font-semibold text-lilac-700">{card.album}</p>
+          <p className="text-sm font-semibold text-lilac-700">
+            {card.source && card.source !== "앨범" && <span className="mr-1.5 text-ink-soft">{card.source} ·</span>}
+            {card.album}
+          </p>
           <h1 className="mt-1 text-2xl font-extrabold">
             {memberName}
             {card.label && <span className="ml-2 text-lg font-semibold text-ink-soft">{card.label}</span>}
           </h1>
+
+          {pokedexSets[card.album] && <p className="mt-2 text-xs leading-relaxed text-ink-soft">{pokedexSets[card.album].how}</p>}
 
           <div className="card mt-5 p-5">
             {!user ? (
@@ -94,7 +96,10 @@ export default async function PhotocardPage({ params }: { params: Promise<{ id: 
                   cardId={card.id}
                   previous={entry ? { id: entry.id, photo_path: entry.photo_path } : undefined}
                 />
-                <p className="text-xs text-ink-soft">인증 사진은 나와 운영자만 볼 수 있어요.</p>
+                <p className="text-xs text-ink-soft">
+                  인증 사진은 나와 운영자만 볼 수 있어요. 아직 도감 이미지가 없는 카드라면, 승인된 사진이 카드 부분만
+                  도감 이미지로 쓰일 수 있어요.
+                </p>
               </div>
             )}
           </div>
