@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import ScrollTopButton from "@/components/ScrollTopButton";
 import { LeftRail, RightRail } from "@/components/SideRails";
 // Pretendard 폰트 (필요한 글자 조각만 내려받는 방식, OFL 라이선스)
 import "./fonts/pretendard/pretendardvariable-dynamic-subset.css";
@@ -37,6 +38,7 @@ export default function RootLayout({
           <RightRail />
         </div>
         <Footer />
+        <ScrollTopButton />
       </body>
     </html>
   );

@@ -4,7 +4,7 @@ import { EmptyState } from "./ui";
 
 const TIME_ZONE = "Asia/Seoul";
 
-const typeStyle: Record<ScheduleType, string> = {
+export const typeStyle: Record<ScheduleType, string> = {
   release: "bg-lilac-500 text-white",
   broadcast: "bg-sky-dream-200 text-sky-700",
   event: "bg-blush-200 text-ink",
@@ -28,7 +28,7 @@ function parts(iso: string) {
     .reduce<Record<string, string>>((acc, p) => ({ ...acc, [p.type]: p.value }), {});
 }
 
-function EventRow({ event }: { event: ScheduleEvent }) {
+export function EventRow({ event }: { event: ScheduleEvent }) {
   const start = parts(event.date);
   const end = event.endDate ? parts(event.endDate) : null;
   const multiDay = end && `${end.month}${end.day}` !== `${start.month}${start.day}`;
