@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useOptimistic, useState } from "react";
 import { reportPost, votePost } from "@/app/board/actions";
 import { reportReasons } from "@/data/moderation";
 import { FormMessage, inputClass } from "./ui";
@@ -9,6 +9,7 @@ import { FormMessage, inputClass } from "./ui";
 /**
  * 글 아래 추천·비추천 버튼과 신고.
  * 본인 글이거나 숨겨진 글이면 숫자만 보여주고 누를 수 없음 (DB 규칙도 같은 걸 막음)
+ * 누르면 서버 응답을 기다리지 않고 숫자를 바로 바꿔 보여줌 (응답이 오면 실제 값으로 맞춰짐)
  */
 export default function PostReactions({
   postId,
@@ -18,6 +19,7 @@ export default function PostReactions({
   reported,
   loggedIn,
   canReact,
+  isOwner,
 }: {
   postId: number;
   likes: number;
@@ -26,15 +28,25 @@ export default function PostReactions({
   reported: boolean;
   loggedIn: boolean;
   canReact: boolean;
+  isOwner: boolean;
 }) {
   const [showReport, setShowReport] = useState(false);
   const [state, action, pending] = useActionState(reportPost, undefined);
   const loginHref = `/login?next=/board/${postId}`;
+  // 같은 걸 다시 누르면 취소, 반대를 누르면 바뀜 (서버 votePost 와 같은 규칙)
+  const [view, applyVote] = useOptimistic({ myVote, likes, dislikes }, (cur, value: 1 | -1) => {
+    const next = cur.myVote === value ? 0 : value;
+    return {
+      myVote: next,
+      likes: cur.likes - (cur.myVote === 1 ? 1 : 0) + (next === 1 ? 1 : 0),
+      dislikes: cur.dislikes - (cur.myVote === -1 ? 1 : 0) + (next === -1 ? 1 : 0),
+    };
+  });
 
   const voteButton = (value: 1 | -1) => {
-    const active = myVote === value;
+    const active = view.myVote === value;
     const label = value === 1 ? "추천" : "비추";
-    const count = value === 1 ? likes : dislikes;
+    const count = value === 1 ? view.likes : view.dislikes;
     const className = `flex w-24 flex-col items-center border-2 py-2 font-bold transition ${
       value === 1
         ? active
@@ -61,7 +73,12 @@ export default function PostReactions({
       );
     }
     return (
-      <form action={votePost}>
+      <form
+        action={async (formData) => {
+          applyVote(value);
+          await votePost(formData);
+        }}
+      >
         <input type="hidden" name="postId" value={postId} />
         <input type="hidden" name="value" value={value} />
         <button type="submit" aria-pressed={active} className={className}>
@@ -77,6 +94,7 @@ export default function PostReactions({
         {voteButton(1)}
         {voteButton(-1)}
       </div>
+      {isOwner && <p className="mt-2 text-center text-xs text-ink-soft">내 글에는 추천·비추천과 신고를 할 수 없어요.</p>}
 
       {canReact && (
         <div className="mt-3 text-right text-xs">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { PostForm } from "@/components/BoardForms";
+import { BoardRulesSummary } from "@/components/BoardRules";
 import { PageHeader, SupabaseNotice } from "@/components/ui";
 import { getMember } from "@/data/members";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -25,6 +26,7 @@ export default async function NewPostPage({
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader eyebrow="Board" title={member ? `${member.name} 게시판` : "게시판"} />
+      <BoardRulesSummary />
       <PostForm userId={user.id} defaultMember={member?.slug} />
     </div>
   );

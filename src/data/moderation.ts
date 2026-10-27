@@ -1,9 +1,11 @@
 import type { HiddenReason, ReportReason } from "@/types";
 
-/** 신고 사유 (DB 의 post_reports.reason 값과 같아야 함) */
+/** 신고 사유 (DB 의 post_reports.reason 값과 같아야 함, 0008). 게시판 규칙(data/board-rules.ts)과 맞춤 */
 export const reportReasons: Record<ReportReason, string> = {
-  spam: "도배·광고",
+  idol: "다른 아이돌 언급·비교",
   abuse: "욕설·비방",
+  rumor: "루머·사생활 침해",
+  spam: "도배·광고",
   adult: "음란·선정적",
   privacy: "개인정보 노출",
   copyright: "저작권 침해",

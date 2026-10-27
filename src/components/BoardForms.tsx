@@ -95,7 +95,8 @@ export function PostForm({ userId, defaultMember = "" }: { userId: string; defau
             name="member"
             defaultValue={defaultMember}
             aria-label="게시판 선택"
-            className={`${inputClass} w-32 shrink-0`}
+            // inputClass 의 w-full 과 겹치지 않게 너비를 따로 지정 (겹치면 제목 칸이 밀려 사라짐)
+            className="w-28 shrink-0 border border-lilac-200 bg-white px-2 py-2 text-sm outline-none focus:border-lilac-500"
           >
             <option value="">전체</option>
             {members.map((m) => (
@@ -104,7 +105,13 @@ export function PostForm({ userId, defaultMember = "" }: { userId: string; defau
               </option>
             ))}
           </select>
-          <input name="title" required maxLength={100} className={inputClass} placeholder="제목을 입력해 주세요" />
+          <input
+            name="title"
+            required
+            maxLength={100}
+            className={`${inputClass} min-w-0 flex-1`}
+            placeholder="제목을 입력해 주세요"
+          />
         </div>
         <textarea
           name="content"
