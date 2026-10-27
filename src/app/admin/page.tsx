@@ -5,12 +5,13 @@ import CatalogForm from "@/components/CatalogForm";
 import CatalogImageButton from "@/components/CatalogImageButton";
 import { EmptyState, PageHeader, SupabaseNotice } from "@/components/ui";
 import { pokedexMemberName } from "@/data/members";
+import { cardSourceUrl } from "@/data/pokedex-sets";
 import { getCatalog, getPendingProofs, proofImageUrls } from "@/lib/community";
 import type { CatalogCard } from "@/types";
 import { formatFullDateTime } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { approveProof, deleteCatalogCard, rejectProof } from "./actions";
+import { approveProof, deleteCatalogCard, rejectProof, updateSetSourceUrl } from "./actions";
 
 export const metadata: Metadata = { title: "운영자", robots: { index: false } };
 
@@ -150,7 +151,23 @@ export default async function AdminPage() {
                 <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">
                   {set} <span className="font-normal text-ink-soft">· {cards.length}장 (이미지 없음 {cards.filter((c) => !c.image_path).length})</span>
                 </summary>
-                <ul className="grid grid-cols-3 gap-3 border-t border-lilac-100 p-4 sm:grid-cols-6">
+                <form action={updateSetSourceUrl} className="flex gap-2 border-t border-lilac-100 px-4 pt-3 text-xs">
+                  <input type="hidden" name="source" value={cards[0].source ?? "앨범"} />
+                  <input type="hidden" name="album" value={cards[0].album} />
+                  <input
+                    name="url"
+                    type="url"
+                    maxLength={500}
+                    defaultValue={cardSourceUrl(cards[0]) ?? ""}
+                    placeholder="공식 공지·기사 링크 (https://…)"
+                    aria-label="세트 출처 링크"
+                    className="min-w-0 flex-1 border border-lilac-200 px-2 py-1.5"
+                  />
+                  <button type="submit" className="shrink-0 border border-lilac-200 bg-white px-3 py-1.5 hover:bg-lilac-50">
+                    출처 링크 저장
+                  </button>
+                </form>
+                <ul className="grid grid-cols-3 gap-3 p-4 sm:grid-cols-6">
                   {cards.map((c) => (
                     <li key={c.id} className="text-xs">
                       <CardImage card={c} />

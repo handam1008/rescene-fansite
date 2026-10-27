@@ -24,6 +24,7 @@ export default function CatalogForm({ albums }: { albums: string[] }) {
     const album = String(form.get("album") ?? "").trim();
     const source = String(form.get("source") ?? "").trim() || "앨범";
     const member = String(form.get("member") ?? "");
+    const sourceUrl = String(form.get("source_url") ?? "").trim();
     setError(undefined);
     setMessage(undefined);
     if (!album || !member) return setError("앨범과 멤버를 골라주세요.");
@@ -48,6 +49,7 @@ export default function CatalogForm({ albums }: { albums: string[] }) {
       label: String(form.get("label") ?? "").trim(),
       sort: Number(form.get("sort")) || 0,
       image_path: path,
+      source_url: sourceUrl || null,
     });
     setPending(false);
     if (insertError) {
@@ -103,6 +105,10 @@ export default function CatalogForm({ albums }: { albums: string[] }) {
       <label className="space-y-1">
         <span className="text-sm font-semibold">정렬 순서 (작을수록 앞)</span>
         <input name="sort" type="number" defaultValue={0} className={inputClass} />
+      </label>
+      <label className="space-y-1">
+        <span className="text-sm font-semibold">출처 링크 (선택 · 공식 공지·기사)</span>
+        <input name="source_url" type="url" maxLength={500} className={inputClass} placeholder="https://…" />
       </label>
       <label className="space-y-1 sm:col-span-2">
         <span className="text-sm font-semibold">카드 이미지 (선택 · 없으면 나중에 회원 인증 사진으로 채울 수 있어요)</span>

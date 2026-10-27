@@ -3,7 +3,7 @@ import Link from "next/link";
 import CardImage from "@/components/CardImage";
 import { EmptyState, PageHeader, SupabaseNotice } from "@/components/ui";
 import { pokedexMemberName, pokedexMembers } from "@/data/members";
-import { pokedexSets, pokedexSources } from "@/data/pokedex-sets";
+import { cardSourceUrl, pokedexSets, pokedexSources } from "@/data/pokedex-sets";
 import { nextTitle, titleFor } from "@/data/titles";
 import { getCatalog, getMyCollections } from "@/lib/community";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -75,7 +75,7 @@ function FilterChips({
 export default async function PhotocardsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ member?: string; source?: string }>;
+  searchParams: Promise<{ member?: string; source?: string; need?: string }>;
 }) {
   if (!isSupabaseConfigured) {
     return (
@@ -96,18 +96,24 @@ export default async function PhotocardsPage({
   const sources = [...pokedexSources.filter((s) => present.includes(s)), ...present.filter((s) => !pokedexSources.includes(s))];
   const source = sources.find((s) => s === params.source) ?? "";
   const member = pokedexMembers.find((m) => m.slug === params.member)?.slug ?? "";
+  // 도감 이미지가 아직 없는 카드만 보기
+  const needImage = params.need === "image";
 
-  const hrefWith = (next: { source?: string; member?: string }) => {
+  const hrefWith = (next: { source?: string; member?: string; needImage?: boolean }) => {
     const q = new URLSearchParams();
     const s = next.source ?? source;
     const m = next.member ?? member;
     if (s) q.set("source", s);
     if (m) q.set("member", m);
+    if (next.needImage ?? needImage) q.set("need", "image");
     const qs = q.toString();
     return qs ? `/photocards?${qs}` : "/photocards";
   };
 
-  const cards = catalog.filter((c) => (!source || sourceOf(c) === source) && (!member || c.member === member));
+  const cards = catalog.filter(
+    (c) => (!source || sourceOf(c) === source) && (!member || c.member === member) && (!needImage || !c.image_path),
+  );
+  const missingImages = catalog.filter((c) => !c.image_path).length;
   const sets = new Map<string, CatalogCard[]>();
   for (const c of cards) sets.set(c.album, [...(sets.get(c.album) ?? []), c]);
   const orderedSets = [...sets.entries()].sort(
@@ -204,13 +210,27 @@ export default async function PhotocardsPage({
           ))}
         </div>
       </div>
-      <div className="mb-6">
+      <div className="mb-6 space-y-2">
         <FilterChips
           label="멤버 필터"
           items={[{ key: "", name: "모든 멤버" }, ...pokedexMembers.map((m) => ({ key: m.slug, name: m.name }))]}
           activeKey={member}
           hrefFor={(key) => hrefWith({ member: key })}
         />
+        {missingImages > 0 && (
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-soft">
+            <Link
+              href={hrefWith({ needImage: !needImage })}
+              aria-pressed={needImage}
+              className={`border px-2.5 py-1 font-semibold ${
+                needImage ? "border-lilac-500 bg-lilac-500 text-white" : "border-lilac-500 bg-white text-lilac-700 hover:bg-lilac-100"
+              }`}
+            >
+              📷 이미지 필요한 카드 {missingImages}장{needImage && " ✕"}
+            </Link>
+            <span>가진 카드를 인증하면 도감 이미지가 되고, 제공자로 닉네임이 표시돼요.</span>
+          </p>
+        )}
       </div>
 
       {catalog.length === 0 ? (
@@ -225,6 +245,7 @@ export default async function PhotocardsPage({
           {orderedSets.map(([album, list]) => {
             const got = list.filter((c) => mine.get(c.id)?.status === "approved").length;
             const meta = pokedexSets[album];
+            const link = cardSourceUrl(list[0]);
             return (
               <section key={album}>
                 <div className="mb-3 border-b-2 border-lilac-500 pb-1.5">
@@ -237,12 +258,12 @@ export default async function PhotocardsPage({
                       {got} / {list.length}
                     </span>
                   </div>
-                  {meta && (
+                  {(meta || link) && (
                     <p className="mt-1 text-xs leading-relaxed text-ink-soft">
-                      {meta.how}
-                      {meta.note && <span className="block text-[11px] text-ink-soft/80">※ {meta.note}</span>}
-                      {meta.link && (
-                        <a href={meta.link} target="_blank" rel="noopener noreferrer" className="ml-1.5 underline hover:text-ink">
+                      {meta?.how}
+                      {meta?.note && <span className="block text-[11px] text-ink-soft/80">※ {meta.note}</span>}
+                      {link && (
+                        <a href={link} target="_blank" rel="noopener noreferrer" className="ml-1.5 underline hover:text-ink">
                           출처 ↗
                         </a>
                       )}

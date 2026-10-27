@@ -115,6 +115,14 @@ export async function getCatalogCard(id: number): Promise<CatalogCard | null> {
   return (data as CatalogCard | null) ?? null;
 }
 
+/** 도감 이미지를 제공한 회원 닉네임 (인증 사진이 도감 이미지로 쓰인 경우) */
+export async function getImageContributor(card: CatalogCard): Promise<string | null> {
+  if (!card.image_path || !card.image_contributor) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.from("profiles").select("nickname").eq("id", card.image_contributor).maybeSingle();
+  return data?.nickname ?? null;
+}
+
 /** 로그인한 사람의 인증 기록 (보안 규칙상 본인 것만 읽힘). card_id → 기록 */
 export async function getMyCollections(userId: string | undefined) {
   const map = new Map<number, CollectionEntry>();

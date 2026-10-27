@@ -23,13 +23,13 @@ export default function CardImage({
     return (
       <div
         role="img"
-        aria-label={`${card.album} ${name} ${card.label} (이미지 준비 중)`}
+        aria-label={`${card.album} ${name} ${card.label} (도감 이미지 모집 중)`}
         className={`${box} flex flex-col items-center justify-center gap-1 p-2 text-center ${dim ? "opacity-60" : ""}`}
         style={{ background: `linear-gradient(160deg, ${color}66, #ffffff 70%)` }}
       >
         <span className="text-lg font-black text-ink">{name}</span>
         {card.label && <span className="text-[10px] leading-tight break-keep text-ink-soft">{card.label}</span>}
-        <span className="mt-1 text-[9px] text-ink-soft/70">이미지 준비 중</span>
+        <span className="mt-1 text-[9px] text-ink-soft/70">📷 이미지 모집 중</span>
       </div>
     );
   }

@@ -143,6 +143,10 @@ export type CatalogCard = {
   /** 비어 있으면 아직 도감 이미지가 없는 카드 */
   image_path: string | null;
   sort: number;
+  /** 이 카드의 공식 공지·기사 링크 (0005 SQL 전에는 없음) */
+  source_url?: string | null;
+  /** 도감 이미지로 쓰인 인증 사진을 올린 회원 (운영자가 올린 이미지면 비어 있음) */
+  image_contributor?: string | null;
 };
 
 export type CollectionStatus = "pending" | "approved" | "rejected";

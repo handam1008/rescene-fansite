@@ -19,7 +19,7 @@ export default function CatalogImageButton({ cardId, current }: { cardId: number
     const path = storagePath("cards", image);
     const { error } = await supabase.storage.from(CATALOG_BUCKET).upload(path, image, { contentType: image.type });
     if (error) return setState("error");
-    const { error: updateError } = await supabase.from("photocard_catalog").update({ image_path: path }).eq("id", cardId);
+    const { error: updateError } = await supabase.from("photocard_catalog").update({ image_path: path, image_contributor: null }).eq("id", cardId);
     if (updateError) {
       await supabase.storage.from(CATALOG_BUCKET).remove([path]);
       return setState("error");
