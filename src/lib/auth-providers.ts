@@ -1,19 +1,10 @@
 import { supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
 
-export type SocialProvider = "kakao" | "naver" | "google";
-
-/** 네이버 로그인은 사이트 서버가 직접 처리 (Supabase 미지원). 필요한 환경 변수가 다 있어야 켜짐 */
-export function isNaverConfigured() {
-  return Boolean(
-    process.env.NAVER_CLIENT_ID &&
-      process.env.NAVER_CLIENT_SECRET &&
-      (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY),
-  );
-}
+export type SocialProvider = "kakao" | "google";
 
 /**
- * 지금 켜져 있는 소셜 로그인. 구글·카카오는 Supabase 대시보드(Authentication → Providers)에서 켠 것만,
- * 네이버는 Vercel 환경 변수가 있을 때만 버튼이 보입니다. 설정 전에 버튼이 눌려 오류 나는 일이 없도록.
+ * 지금 켜져 있는 소셜 로그인. Supabase 대시보드(Authentication → Providers)에서 켠 것만 버튼이 보입니다.
+ * 설정 전에 버튼이 눌려 오류 나는 일이 없도록.
  */
 export async function getEnabledProviders(): Promise<SocialProvider[]> {
   const enabled: SocialProvider[] = [];
@@ -24,10 +15,9 @@ export async function getEnabledProviders(): Promise<SocialProvider[]> {
     });
     const external = res.ok ? ((await res.json()).external as Record<string, boolean>) : {};
     if (external.kakao) enabled.push("kakao");
-    if (isNaverConfigured()) enabled.push("naver");
     if (external.google) enabled.push("google");
   } catch {
-    if (isNaverConfigured()) enabled.push("naver");
+    // 확인하지 못하면 소셜 버튼 없이 이메일 로그인만
   }
   return enabled;
 }

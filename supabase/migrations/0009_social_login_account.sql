@@ -1,4 +1,4 @@
--- 소셜 로그인(구글·카카오·네이버) · 닉네임 정하기 · 회원 탈퇴
+-- 소셜 로그인(구글·카카오) · 닉네임 정하기 · 회원 탈퇴
 -- Supabase 대시보드 → SQL Editor 에 이 파일 내용을 통째로 붙여넣고 Run 하면 됩니다.
 -- 0001 ~ 0008 을 먼저 실행한 상태여야 하고, 여러 번 실행해도 안전합니다.
 
@@ -45,17 +45,6 @@ create trigger profiles_nickname_set
   before update of nickname on public.profiles
   for each row when (old.nickname is distinct from new.nickname)
   execute function public.mark_nickname_set();
-
--- ───────────────────────── 네이버 로그인 ─────────────────────────
--- Supabase 가 네이버를 기본 지원하지 않아서 사이트 서버가 직접 연결함 (src/app/auth/naver)
--- 네이버 고유 id → 회원. 서버(secret 키)만 읽고 씀: RLS 를 켜고 정책을 두지 않음
-create table if not exists public.naver_identities (
-  naver_id text primary key,
-  user_id uuid not null unique references auth.users (id) on delete cascade,
-  created_at timestamptz not null default now()
-);
-
-alter table public.naver_identities enable row level security;
 
 -- ───────────────────────── 회원 탈퇴 ─────────────────────────
 -- 본인 계정 삭제. 프로필·글·댓글·추천·신고·포카 인증이 함께 지워짐(on delete cascade).

@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "내 정보", robots: { index: false 
 
 export const dynamic = "force-dynamic";
 
-const providerNames: Record<string, string> = { email: "이메일", google: "구글", kakao: "카카오", naver: "네이버" };
+const providerNames: Record<string, string> = { email: "이메일", google: "구글", kakao: "카카오" };
 
 export default async function AccountPage({ searchParams }: { searchParams: Promise<{ setup?: string; next?: string }> }) {
   if (!isSupabaseConfigured) return <SupabaseNotice />;
@@ -48,7 +48,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <dl className="grid grid-cols-[6rem_1fr] gap-y-1">
           <dt className="text-ink-soft">로그인 방식</dt>
           <dd>{providerNames[provider] ?? provider}</dd>
-          {provider !== "naver" && user.email && (
+          {user.email && (
             <>
               <dt className="text-ink-soft">이메일</dt>
               <dd className="break-all">{user.email}</dd>

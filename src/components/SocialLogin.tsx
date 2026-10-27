@@ -20,15 +20,6 @@ const buttons: Record<SocialProvider, { label: string; className: string; icon: 
       </svg>
     ),
   },
-  naver: {
-    label: "네이버로 시작하기",
-    className: "bg-[#03C75A] text-white hover:brightness-95",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
-        <path fill="currentColor" d="M16.27 12.84 7.46 0H0v24h7.73V11.16L16.54 24H24V0h-7.73z" />
-      </svg>
-    ),
-  },
   google: {
     label: "Google로 시작하기",
     className: "border border-[#dadce0] bg-white text-[#1f1f1f] hover:bg-[#f8f9fa]",
@@ -52,11 +43,6 @@ export default function SocialLogin({ providers, next = "/" }: { providers: Soci
   async function start(provider: SocialProvider) {
     setBusy(provider);
     setError(undefined);
-    if (provider === "naver") {
-      // 네이버는 사이트 서버가 직접 처리
-      window.location.href = `/auth/naver?next=${encodeURIComponent(next)}`;
-      return;
-    }
     const { error } = await createClient().auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
