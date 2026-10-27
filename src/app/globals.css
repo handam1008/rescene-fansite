@@ -2,6 +2,9 @@
 
 /* 파스텔 팔레트. bg-lilac-200, text-ink-soft 처럼 Tailwind 클래스로 사용 */
 @theme {
+  /* 양옆 사이드바(인기글·다가오는 일정)가 들어갈 만큼 넓은 PC 화면 */
+  --breakpoint-wide: 1400px;
+
   --color-lilac-50: #f8f5ff;
   --color-lilac-100: #efe8ff;
   --color-lilac-200: #e0d4ff;

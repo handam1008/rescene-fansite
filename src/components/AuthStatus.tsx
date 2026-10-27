@@ -62,7 +62,9 @@ export default function AuthStatus() {
           운영자
         </Link>
       )}
-      <span className="font-semibold">{nickname}</span>
+      <Link href="/account" className="font-semibold hover:underline" title="내 정보">
+        {nickname}
+      </Link>
       <button
         type="button"
         onClick={async () => {

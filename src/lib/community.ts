@@ -2,6 +2,7 @@
  * 2단계 커뮤니티(게시판·포카 도감) 데이터 조회. Supabase DB에서 읽어옵니다.
  * 쓰기·삭제는 각 페이지 폴더의 actions.ts 와 폼 컴포넌트에 있습니다.
  */
+import { cache } from "react";
 import { CATALOG_BUCKET, POST_IMAGE_BUCKET, PROOF_BUCKET, supabaseUrl } from "@/lib/supabase/env";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
@@ -49,8 +50,9 @@ export async function getPosts(page: number, tab: BoardTab = "all", member?: str
 /**
  * 홈 화면 인기글: 최근 7일 글 중 조회수 높은 순. 최근 글이 부족하면 전체 기간에서 채웁니다.
  * 쿠키 없는 클라이언트를 써서 홈 페이지를 정적으로 유지하고, 실패해도 홈이 깨지지 않게 빈 배열을 돌려줍니다.
+ * cache: 홈 본문과 사이드바가 한 화면에서 같이 불러도 DB 조회는 한 번만
  */
-export async function getPopularPosts(limit = 5): Promise<PostSummary[]> {
+export const getPopularPosts = cache(async (limit = 5): Promise<PostSummary[]> => {
   try {
     const supabase = createPublicClient();
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -80,7 +82,7 @@ export async function getPopularPosts(limit = 5): Promise<PostSummary[]> {
   } catch {
     return [];
   }
-}
+});
 
 export async function getPost(id: number) {
   const supabase = await createClient();

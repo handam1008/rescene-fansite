@@ -2,15 +2,10 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { safeNext } from "@/lib/auth-providers";
 import { createClient } from "@/lib/supabase/server";
 
 export type FormState = { error?: string; message?: string } | undefined;
-
-/** 다른 사이트로 튕겨나가지 않도록 내부 경로만 허용 */
-function safeNext(value: FormDataEntryValue | null) {
-  const next = typeof value === "string" ? value : "";
-  return next.startsWith("/") && !next.startsWith("//") ? next : "/";
-}
 
 function translateAuthError(message: string) {
   if (message.includes("Invalid login credentials")) return "이메일 또는 비밀번호가 맞지 않아요.";

@@ -50,16 +50,30 @@ export default function Countdown({
 
   const dLabel = parts ? (parts.days === 0 ? "D-DAY" : `D-${parts.days}`) : "D-…";
 
-  if (compact) {
-    return <p className="text-dreamy text-3xl font-extrabold">{dLabel}</p>;
-  }
-
   const units: [string, number | undefined][] = [
     ["일", parts?.days],
     ["시간", parts?.hours],
     ["분", parts?.minutes],
     ["초", parts?.seconds],
   ];
+  const pad = (value: number | undefined) => (value === undefined ? "--" : String(value).padStart(2, "0"));
+
+  // 홈 카드용: D-day 와 작은 남은 시간 칸
+  if (compact) {
+    return (
+      <div>
+        <p className="text-dreamy text-3xl font-extrabold">{dLabel}</p>
+        <div className="mt-2 grid grid-cols-4 gap-1.5" aria-live="off">
+          {units.map(([label, value]) => (
+            <div key={label} className="bg-lilac-50 py-1.5 text-center">
+              <p className="text-base font-bold tabular-nums">{pad(value)}</p>
+              <p className="text-[10px] text-ink-soft">{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -67,9 +81,7 @@ export default function Countdown({
       <div className="mt-4 grid grid-cols-4 gap-2 sm:gap-3" aria-live="off">
         {units.map(([label, value]) => (
           <div key={label} className="bg-white px-2 py-3 text-center">
-            <p className="text-2xl font-bold tabular-nums sm:text-3xl">
-              {value === undefined ? "--" : String(value).padStart(2, "0")}
-            </p>
+            <p className="text-2xl font-bold tabular-nums sm:text-3xl">{pad(value)}</p>
             <p className="text-xs text-ink-soft">{label}</p>
           </div>
         ))}
