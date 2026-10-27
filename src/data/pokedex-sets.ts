@@ -6,6 +6,8 @@
  * 2026-10-27 기준으로 조사했습니다. "추정"이라고 적힌 곳은 공식 발표에 멤버별 구성이 없어
  * 일반적인 구성(멤버별 같은 장수)으로 나눠둔 것이니, 실제와 다르면 /admin 에서 고쳐주세요.
  */
+import type { CatalogCard } from "@/types";
+
 export type PokedexSet = {
   /** 언제·어떻게 받는지 */
   how: string;
@@ -50,3 +52,8 @@ export const pokedexSets: Record<string, PokedexSet> = {
     link: "https://www.wikitree.co.kr/articles/1165467",
   },
 };
+
+/** 카드의 출처 링크: 카드에 따로 적힌 링크가 먼저, 없으면 세트 링크 */
+export function cardSourceUrl(card: Pick<CatalogCard, "album" | "source_url">) {
+  return card.source_url || pokedexSets[card.album]?.link;
+}

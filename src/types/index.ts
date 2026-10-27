@@ -96,6 +96,9 @@ export type Author = {
   /** supabase/migrations/0003 실행 전에는 없을 수 있음 */
   collected_count?: number;
   is_admin?: boolean;
+  /** 도감 첫 제공 장수와 기여 순위 (0006) */
+  contributed_count?: number;
+  contributor_rank?: number | null;
 } | null;
 
 export type PostSummary = {
@@ -143,6 +146,13 @@ export type CatalogCard = {
   /** 비어 있으면 아직 도감 이미지가 없는 카드 */
   image_path: string | null;
   sort: number;
+  /** 이 카드의 공식 공지·기사 링크 (0005 SQL 전에는 없음) */
+  source_url?: string | null;
+  /** 도감 이미지로 쓰인 인증 사진을 올린 회원 (운영자가 올린 이미지면 비어 있음) */
+  image_contributor?: string | null;
+  /** 빈 카드를 처음 채운 회원 (랭킹 기준, 사진이 교체돼도 그대로) · 채워진 때 (0006) */
+  first_contributor?: string | null;
+  filled_at?: string | null;
 };
 
 export type CollectionStatus = "pending" | "approved" | "rejected";
@@ -157,4 +167,6 @@ export type CollectionEntry = {
   reject_reason: string | null;
   created_at: string;
   reviewed_at: string | null;
+  /** 승인되면 도감 이미지로 공개해도 된다는 동의 (0006) */
+  share_image?: boolean;
 };

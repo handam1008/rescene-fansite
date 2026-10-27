@@ -41,5 +41,7 @@ export async function getCurrentUser() {
     nickname: (profile?.nickname as string | undefined) ?? "리마인",
     isAdmin: profile?.is_admin === true,
     collectedCount: (profile?.collected_count as number | undefined) ?? 0,
+    contributedCount: (profile?.contributed_count as number | undefined) ?? 0,
+    contributorRank: (profile?.contributor_rank as number | null | undefined) ?? null,
   };
 }

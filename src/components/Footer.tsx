@@ -8,6 +8,10 @@ export default function Footer() {
         <p className="mt-1">
           음원·영상은 공식 채널의 임베드와 외부 링크로만 제공합니다.
         </p>
+        <p className="mt-1">
+          포카 도감 이미지는 회원이 직접 찍어 공개에 동의한 사진이며, 상업적으로 쓰지 않습니다. 권리자가 요청하면 바로
+          내립니다.
+        </p>
       </div>
     </footer>
   );

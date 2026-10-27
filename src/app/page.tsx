@@ -1,10 +1,11 @@
 import Countdown from "@/components/Countdown";
 import HomeHero from "@/components/HomeHero";
+import PokedexNews from "@/components/PokedexNews";
 import PopularPosts from "@/components/PopularPosts";
 import UpcomingSchedule from "@/components/UpcomingSchedule";
 import { VoteStatusBadge } from "@/components/VoteCard";
 import { EmptyState, MoreLink, SampleBadge } from "@/components/ui";
-import { getPopularPosts } from "@/lib/community";
+import { getContributorRanking, getPokedexNews, getPopularPosts } from "@/lib/community";
 import { getLatestComeback, getSongs, getVotes } from "@/lib/data";
 import { getSchedule } from "@/lib/schedule";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -13,12 +14,14 @@ import { formatDate, formatDateTime } from "@/lib/format";
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const [comeback, songs, votes, popularPosts, schedule] = await Promise.all([
+  const [comeback, songs, votes, popularPosts, schedule, pokedex, ranking] = await Promise.all([
     getLatestComeback(),
     getSongs(),
     getVotes(),
     getPopularPosts(5),
     getSchedule(),
+    getPokedexNews(5),
+    getContributorRanking(3),
   ]);
   const latestSong = songs[0];
   const activeVotes = votes.filter((v) => v.status !== "ended").slice(0, 3);
@@ -104,6 +107,8 @@ export default async function HomePage() {
         <PopularPosts posts={popularPosts} />
         <UpcomingSchedule events={schedule.upcoming.slice(0, 5)} />
       </div>
+
+      {pokedex && pokedex.total > 0 && <PokedexNews {...pokedex} ranking={ranking} />}
     </div>
   );
 }
