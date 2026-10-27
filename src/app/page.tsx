@@ -24,7 +24,7 @@ export default async function HomePage() {
     getContributorRanking(3),
   ]);
   const latestSong = songs[0];
-  const activeVotes = votes.filter((v) => v.status !== "ended").slice(0, 3);
+  const activeVotes = votes.filter((v) => v.status !== "ended").slice(0, 2);
 
   return (
     <div className="space-y-8">
@@ -103,7 +103,8 @@ export default async function HomePage() {
         </section>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      {/* 넓은 PC 화면에서는 양옆 사이드바에 같은 내용이 있어서 숨김 */}
+      <div className="grid gap-5 md:grid-cols-2 wide:hidden">
         <PopularPosts posts={popularPosts} />
         <UpcomingSchedule events={schedule.upcoming.slice(0, 5)} />
       </div>

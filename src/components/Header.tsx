@@ -23,7 +23,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-20 border-b border-lilac-200 bg-white">
-      <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between wide:max-w-[1520px]">
         <div className="flex items-center justify-between gap-3">
           <Link href="/" className="text-dreamy text-lg font-extrabold tracking-wide whitespace-nowrap sm:text-xl">
             RESCENE ✦ 팬사이트

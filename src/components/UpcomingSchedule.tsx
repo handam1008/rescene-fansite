@@ -10,10 +10,13 @@ function shortDate(iso: string) {
   return `${p.month}.${p.day} (${p.weekday})`;
 }
 
-/** 홈 화면: 다가오는 일정 몇 개 */
-export default function UpcomingSchedule({ events }: { events: ScheduleEvent[] }) {
+/**
+ * 다가오는 일정 몇 개.
+ * compact: 넓은 PC 화면 오른쪽 사이드바용 (날짜·멤버 한 줄 + 제목 한 줄)
+ */
+export default function UpcomingSchedule({ events, compact = false }: { events: ScheduleEvent[]; compact?: boolean }) {
   return (
-    <section className="card p-5">
+    <section className={`card ${compact ? "p-4" : "p-5"}`}>
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-bold">📅 다가오는 일정</h2>
         <MoreLink href="/schedule">전체 일정</MoreLink>
@@ -26,11 +29,23 @@ export default function UpcomingSchedule({ events }: { events: ScheduleEvent[] }
             const who = (e.members ?? []).map((s) => getMember(s)?.name).filter(Boolean);
             return (
               <li key={e.id}>
-                <Link href="/schedule" className="flex items-center gap-3 py-2.5 hover:bg-lilac-50">
-                  <span className="w-20 shrink-0 text-xs font-semibold text-lilac-700 tabular-nums">{shortDate(e.date)}</span>
-                  <span className="min-w-0 flex-1 truncate text-sm">{e.title}</span>
-                  <span className="shrink-0 text-xs text-ink-soft">{who.length ? who.join(", ") : "단체"}</span>
-                </Link>
+                {compact ? (
+                  <Link href="/schedule" className="block py-2 hover:bg-lilac-50">
+                    <span className="flex justify-between gap-2 text-xs">
+                      <span className="font-semibold text-lilac-700 tabular-nums">{shortDate(e.date)}</span>
+                      <span className="truncate text-ink-soft">{who.length ? who.join(", ") : "단체"}</span>
+                    </span>
+                    <span className="mt-0.5 line-clamp-2 block text-sm">{e.title}</span>
+                  </Link>
+                ) : (
+                  <Link href="/schedule" className="flex items-center gap-3 py-2.5 hover:bg-lilac-50">
+                    <span className="w-20 shrink-0 text-xs font-semibold text-lilac-700 tabular-nums">
+                      {shortDate(e.date)}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-sm">{e.title}</span>
+                    <span className="shrink-0 text-xs text-ink-soft">{who.length ? who.join(", ") : "단체"}</span>
+                  </Link>
+                )}
               </li>
             );
           })}
