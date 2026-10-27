@@ -3,7 +3,7 @@
  * 쓰기·삭제는 각 페이지 폴더의 actions.ts 와 폼 컴포넌트에 있습니다.
  */
 import { cache } from "react";
-import { CATALOG_BUCKET, POST_IMAGE_BUCKET, PROOF_BUCKET, supabaseUrl } from "@/lib/supabase/env";
+import { PROOF_BUCKET } from "@/lib/supabase/env";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 import type { CatalogCard, CollectionEntry, Post, PostComment, PostSummary } from "@/types";
@@ -15,25 +15,22 @@ export type BoardTab = "all" | "best";
 // "*" 로 읽는 이유: 새 컬럼(조회수·사진·멤버·칭호)용 SQL이 아직 실행 전이어도 게시판이 깨지지 않게
 const POST_SUMMARY_COLUMNS = "*, profiles(*), comments(count)";
 
-function publicUrl(bucket: string, path: string) {
-  return `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
+export { catalogImageUrl, postImageUrl } from "@/lib/storage-url";
+
+/** 검색어 정리: 검색 문법에 쓰이는 특수문자는 빼고 50자까지 */
+export function cleanSearch(q: string | undefined) {
+  return (q ?? "").replace(/[,()*%\\"'.:]/g, " ").replace(/\s+/g, " ").trim().slice(0, 50);
 }
 
-export function postImageUrl(path: string) {
-  return publicUrl(POST_IMAGE_BUCKET, path);
-}
-
-export function catalogImageUrl(path: string) {
-  return publicUrl(CATALOG_BUCKET, path);
-}
-
-/** 게시판 목록. tab "best" 는 조회수 높은 순, member 를 주면 그 멤버 게시판 글만 */
-export async function getPosts(page: number, tab: BoardTab = "all", member?: string) {
+/** 게시판 목록. tab "best" 는 조회수 높은 순, member 를 주면 그 멤버 게시판 글만, q 를 주면 제목·내용 검색 */
+export async function getPosts(page: number, tab: BoardTab = "all", member?: string, q?: string) {
+  const search = cleanSearch(q);
   const supabase = await createClient();
   const from = (page - 1) * POSTS_PER_PAGE;
   const run = (byViews: boolean) => {
     let query = supabase.from("posts").select(POST_SUMMARY_COLUMNS, { count: "exact" });
     if (member) query = query.eq("member", member);
+    if (search) query = query.or(`title.ilike.*${search}*,content.ilike.*${search}*`);
     if (byViews) query = query.order("view_count", { ascending: false });
     return query.order("created_at", { ascending: false }).range(from, from + POSTS_PER_PAGE - 1);
   };
@@ -239,4 +236,66 @@ export async function getPendingProofs(): Promise<PendingProof[]> {
     .limit(50);
   if (error) return [];
   return (data ?? []) as unknown as PendingProof[];
+}
+
+/* ───────────────────────── 운영자 화면 ───────────────────────── */
+
+/** 운영자 요약: 회원·글·신고·인증 대기 등 개수 (운영자 계정이라 숨긴 글도 셈) */
+export async function getAdminSummary() {
+  const supabase = await createClient();
+  const today = new Date(new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }) + "T00:00:00+09:00").toISOString();
+  const count = async (q: PromiseLike<{ count: number | null }>) => (await q).count ?? 0;
+  const head = { count: "exact" as const, head: true };
+  const [members, newMembersToday, posts, postsToday, reportedPosts, hiddenPosts, pendingProofs, bannedMembers, filledCards] =
+    await Promise.all([
+      count(supabase.from("profiles").select("id", head)),
+      count(supabase.from("profiles").select("id", head).gte("created_at", today)),
+      count(supabase.from("posts").select("id", head)),
+      count(supabase.from("posts").select("id", head).gte("created_at", today)),
+      count(supabase.from("posts").select("id", head).gt("report_count", 0).is("hidden_at", null)),
+      count(supabase.from("posts").select("id", head).not("hidden_at", "is", null)),
+      count(supabase.from("photocard_collections").select("id", head).eq("status", "pending")),
+      count(supabase.from("profiles").select("id", head).gt("banned_until", new Date().toISOString())),
+      count(supabase.from("photocard_catalog").select("id", head).not("image_path", "is", null)),
+    ]);
+  return { members, newMembersToday, posts, postsToday, reportedPosts, hiddenPosts, pendingProofs, bannedMembers, filledCards };
+}
+
+/** 운영자: 비추천을 많이 받은 글 (숨긴 글 포함) */
+export async function getMostDislikedPosts(limit = 20): Promise<Post[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*, profiles(*)")
+    .gt("dislike_count", 0)
+    .order("dislike_count", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) return [];
+  return (data ?? []) as unknown as Post[];
+}
+
+export type AdminMember = {
+  id: string;
+  nickname: string;
+  is_admin: boolean;
+  collected_count?: number;
+  contributed_count?: number;
+  contributor_rank?: number | null;
+  created_at: string;
+  banned_until: string | null;
+  ban_reason: string | null;
+  posts: { count: number }[];
+  comments: { count: number }[];
+};
+
+/** 운영자: 회원 목록 (최근 가입 순 50명, 닉네임 검색) */
+export async function getMembersForAdmin(q: string): Promise<AdminMember[]> {
+  const supabase = await createClient();
+  let query = supabase.from("profiles").select("*, posts(count), comments(count)");
+  const search = cleanSearch(q);
+  if (search) query = query.ilike("nickname", `%${search}%`);
+  const { data, error } = await query.order("created_at", { ascending: false }).limit(50);
+  if (error) return [];
+  return (data ?? []) as unknown as AdminMember[];
 }

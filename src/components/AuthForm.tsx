@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { login, signup, type FormState } from "@/app/auth/actions";
+import NicknameInput from "./NicknameInput";
 import { buttonClass, FormMessage, inputClass } from "./ui";
 
 export default function AuthForm({
@@ -31,7 +32,7 @@ export default function AuthForm({
       {isSignup && (
         <label className="block space-y-1">
           <span className="text-sm font-semibold">닉네임</span>
-          <input name="nickname" required minLength={2} maxLength={20} className={inputClass} placeholder="2~20자" />
+          <NicknameInput />
         </label>
       )}
       <label className="block space-y-1">
@@ -66,6 +67,14 @@ export default function AuthForm({
       <button type="submit" disabled={pending} className={`${buttonClass} w-full`}>
         {pending ? "잠시만요…" : isSignup ? "가입하기" : "로그인"}
       </button>
+
+      {!isSignup && (
+        <p className="text-center text-sm">
+          <Link href="/forgot-password" className="text-ink-soft underline hover:text-ink">
+            비밀번호를 잊었어요
+          </Link>
+        </p>
+      )}
 
       <p className="text-center text-sm text-ink-soft">
         {isSignup ? (

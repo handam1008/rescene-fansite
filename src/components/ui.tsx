@@ -50,7 +50,7 @@ export function ExternalButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-flex items-center gap-1 px-4 py-2 text-sm font-semibold transition ${
+      className={`btn inline-flex items-center gap-1 px-4 py-2 text-sm font-semibold ${
         variant === "solid"
           ? "border border-lilac-300 bg-lilac-200 text-ink hover:bg-lilac-300"
           : "border border-lilac-200 bg-white text-ink hover:bg-lilac-100"
@@ -75,7 +75,7 @@ export const inputClass =
   "w-full border border-lilac-200 bg-white px-3 py-2 text-sm outline-none focus:border-lilac-500";
 
 export const buttonClass =
-  "inline-flex items-center justify-center border border-lilac-300 bg-lilac-200 px-4 py-2 text-sm font-semibold text-ink transition hover:bg-lilac-300 disabled:cursor-not-allowed disabled:opacity-50";
+  "btn inline-flex items-center justify-center border border-lilac-300 bg-lilac-200 px-4 py-2 text-sm font-semibold text-ink hover:bg-lilac-300 disabled:cursor-not-allowed disabled:opacity-50";
 
 export function FormMessage({ error, message }: { error?: string; message?: string }) {
   if (error) {

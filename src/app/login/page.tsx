@@ -27,7 +27,9 @@ export default async function LoginPage({
               ? "인증 링크가 만료됐어요. 다시 가입하거나 로그인해 주세요."
               : error === "social"
                 ? "소셜 로그인을 마치지 못했어요. 다시 시도해 주세요."
-                : undefined
+                : error === "reset"
+                  ? "비밀번호 재설정 링크가 만료됐거나 잘못됐어요. 비밀번호 찾기를 다시 해주세요."
+                  : undefined
           }
           social={<SocialLogin providers={providers} next={safeNext(next)} />}
         />

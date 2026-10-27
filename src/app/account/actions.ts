@@ -10,13 +10,16 @@ import { createClient } from "@/lib/supabase/server";
 export async function updateNickname(_prev: FormState, formData: FormData): Promise<FormState> {
   const nickname = String(formData.get("nickname") ?? "").trim();
   if (nickname.length < 2 || nickname.length > 20) return { error: "닉네임은 2~20자로 정해주세요." };
-  if (/^user_/i.test(nickname)) return { error: "user_ 로 시작하는 닉네임은 쓸 수 없어요." };
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/account");
+
+  // 대소문자·공백만 다른 닉네임, user_ 로 시작, 운영자 사칭 단어도 막음 (0010 nickname_available)
+  const { data: available } = await supabase.rpc("nickname_available", { n: nickname });
+  if (available === false) return { error: "이미 사용 중이거나 쓸 수 없는 닉네임이에요." };
 
   const { error } = await supabase.from("profiles").update({ nickname }).eq("id", user.id);
   if (error) return { error: error.code === "23505" ? "이미 사용 중인 닉네임이에요." : "닉네임을 바꾸지 못했어요." };
@@ -50,4 +53,19 @@ export async function deleteAccount(_prev: FormState, formData: FormData): Promi
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/?bye=1");
+}
+
+export async function updatePassword(_prev: FormState, formData: FormData): Promise<FormState> {
+  const password = String(formData.get("password") ?? "");
+  if (password.length < 6) return { error: "비밀번호는 6자 이상이어야 해요." };
+  if (password !== String(formData.get("confirm") ?? "")) return { error: "두 비밀번호가 달라요." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    if (error.message.toLowerCase().includes("different from the old")) return { error: "지금 비밀번호와 다른 걸로 정해주세요." };
+    if (error.message.toLowerCase().includes("session")) return { error: "링크가 만료됐어요. 비밀번호 찾기를 다시 해주세요." };
+    return { error: "비밀번호를 바꾸지 못했어요. 잠시 후 다시 시도해 주세요." };
+  }
+  return { message: "비밀번호를 바꿨어요. 다음부터 새 비밀번호로 로그인하세요." };
 }

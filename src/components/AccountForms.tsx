@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { deleteAccount, updateNickname } from "@/app/account/actions";
+import NicknameInput from "./NicknameInput";
 import { buttonClass, FormMessage, inputClass } from "./ui";
 
 export function NicknameForm({ current, next }: { current: string; next?: string }) {
@@ -9,17 +10,8 @@ export function NicknameForm({ current, next }: { current: string; next?: string
   return (
     <form action={action} className="space-y-2">
       {next && <input type="hidden" name="next" value={next} />}
-      <div className="flex gap-2">
-        <input
-          name="nickname"
-          required
-          minLength={2}
-          maxLength={20}
-          defaultValue={current.startsWith("user_") ? "" : current}
-          placeholder="2~20자"
-          aria-label="닉네임"
-          className={`${inputClass} min-w-0 flex-1`}
-        />
+      <div className="flex items-start gap-2">
+        <NicknameInput defaultValue={current.startsWith("user_") ? "" : current} className="min-w-0 flex-1" />
         <button type="submit" disabled={pending} className={`${buttonClass} shrink-0`}>
           {pending ? "저장 중…" : "저장"}
         </button>

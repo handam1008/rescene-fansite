@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import BoardList from "@/components/BoardList";
+import BanNotice from "@/components/BanNotice";
 import { CommentForm } from "@/components/BoardForms";
 import Nickname from "@/components/Nickname";
 import PostReactions from "@/components/PostReactions";
@@ -18,7 +19,7 @@ import { deleteComment, deletePost } from "../actions";
 
 export const metadata: Metadata = { title: "게시판" };
 
-const smallButton = "border border-lilac-200 bg-white px-3 py-1.5 text-sm hover:bg-lilac-50";
+const smallButton = "btn border border-lilac-200 bg-white px-3 py-1.5 text-sm hover:bg-lilac-50";
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   if (!isSupabaseConfigured) return <SupabaseNotice />;
@@ -64,6 +65,11 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
               <Nickname author={post.profiles} className="font-semibold text-ink" />
               <span className="mx-1.5 text-lilac-200">|</span>
               <span className="shrink-0">{formatFullDateTime(post.created_at)}</span>
+              {post.edited_at && (
+                <span className="ml-1.5 shrink-0" title={`${formatFullDateTime(post.edited_at)} 수정`}>
+                  (수정됨)
+                </span>
+              )}
             </span>
             <span>
               조회 {post.view_count ?? 0}
@@ -101,7 +107,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           myVote={myVote}
           reported={reported}
           loggedIn={!!user}
-          canReact={!isOwner && !post.hidden_at}
+          canReact={!isOwner && !post.hidden_at && !user?.bannedUntil}
           isOwner={isOwner}
         />
 
@@ -126,6 +132,11 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                   </button>
                 </form>
               </>
+            )}
+            {isOwner && (
+              <Link href={`/board/${post.id}/edit`} className={smallButton}>
+                수정
+              </Link>
             )}
             {isOwner && (
               <form action={deletePost}>
@@ -166,7 +177,9 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           </ul>
         )}
         <div className="bg-lilac-50 px-4 py-3 sm:px-5">
-          {user ? (
+          {user?.bannedUntil ? (
+            <BanNotice until={user.bannedUntil} reason={user.banReason} />
+          ) : user ? (
             <CommentForm postId={post.id} />
           ) : (
             <p className="text-sm text-ink-soft">

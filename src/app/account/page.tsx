@@ -57,6 +57,13 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           <dt className="text-ink-soft">가입일</dt>
           <dd>{formatFullDateTime(user.created_at)}</dd>
         </dl>
+        {provider === "email" && (
+          <p className="mt-3">
+            <Link href="/account/password" className="text-lilac-700 underline">
+              비밀번호 바꾸기
+            </Link>
+          </p>
+        )}
       </section>
 
       <section className="card space-y-3 p-5">

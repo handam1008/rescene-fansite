@@ -7,10 +7,11 @@ import Nickname from "./Nickname";
 
 const DAY = 24 * 60 * 60 * 1000;
 
-function boardHref(basePath: string, tab: BoardTab, page = 1) {
+function boardHref(basePath: string, tab: BoardTab, page = 1, q = "") {
   const params = new URLSearchParams();
   if (tab !== "all") params.set("tab", tab);
   if (page > 1) params.set("page", String(page));
+  if (q) params.set("q", q);
   const qs = params.toString();
   return qs ? `${basePath}?${qs}` : basePath;
 }
@@ -96,6 +97,7 @@ export default function BoardList({
   basePath = "/board",
   showMember = true,
   currentPostId,
+  q = "",
 }: {
   posts: PostSummary[];
   total: number;
@@ -108,6 +110,8 @@ export default function BoardList({
   showMember?: boolean;
   /** 글 보기 화면 아래 목록에서 지금 보는 글 강조 */
   currentPostId?: number;
+  /** 검색어 (제목·내용) */
+  q?: string;
 }) {
   const now = Date.now();
   const lastPage = Math.max(1, Math.ceil(total / POSTS_PER_PAGE));
@@ -124,7 +128,7 @@ export default function BoardList({
           {tabs.map((t) => (
             <Link
               key={t.key}
-              href={boardHref(basePath, t.key)}
+              href={boardHref(basePath, t.key, 1, q)}
               aria-current={t.key === tab ? "page" : undefined}
               className={`px-4 py-2 text-sm font-bold ${
                 t.key === tab ? "bg-lilac-500 text-white" : "text-ink-soft hover:text-ink"
@@ -140,16 +144,27 @@ export default function BoardList({
           </Link>
           <Link
             href={writeHref}
-            className="border border-lilac-500 bg-lilac-500 px-3 py-1.5 text-sm font-bold text-white hover:bg-lilac-700"
+            className="btn border border-lilac-500 bg-lilac-500 px-3 py-1.5 text-sm font-bold text-white hover:bg-lilac-700"
           >
             글쓰기
           </Link>
         </div>
       </div>
 
+      {q && (
+        <p className="flex items-center justify-between border-b border-lilac-200 bg-lilac-50 px-3 py-2 text-sm">
+          <span>
+            <b>‘{q}’</b> 검색 결과 <b className="text-lilac-700">{total}</b>개
+          </span>
+          <Link href={boardHref(basePath, tab)} className="text-xs text-ink-soft underline hover:text-ink">
+            검색 취소
+          </Link>
+        </p>
+      )}
+
       {posts.length === 0 ? (
         <p className="border-b border-lilac-200 bg-white py-16 text-center text-sm text-ink-soft">
-          아직 글이 없어요. 첫 글을 남겨주세요!
+          {q ? "검색 결과가 없어요." : "아직 글이 없어요. 첫 글을 남겨주세요!"}
         </p>
       ) : (
         <>
@@ -206,7 +221,25 @@ export default function BoardList({
         </>
       )}
 
-      <Pagination page={page} lastPage={lastPage} href={(p) => boardHref(basePath, tab, p)} />
+      <Pagination page={page} lastPage={lastPage} href={(p) => boardHref(basePath, tab, p, q)} />
+
+      {/* 검색 (제목·내용). 글 보기 화면 아래 목록에서는 숨김 */}
+      {currentPostId === undefined && (
+        <form action={basePath} className="mx-auto mt-4 flex max-w-md gap-1.5" role="search">
+          {tab !== "all" && <input type="hidden" name="tab" value={tab} />}
+          <input
+            name="q"
+            defaultValue={q}
+            maxLength={50}
+            placeholder="제목·내용 검색"
+            aria-label="게시판 검색"
+            className="min-w-0 flex-1 border border-lilac-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-lilac-500"
+          />
+          <button type="submit" className="shrink-0 border border-lilac-500 bg-lilac-500 px-4 py-1.5 text-sm font-bold text-white">
+            검색
+          </button>
+        </form>
+      )}
     </div>
   );
 }

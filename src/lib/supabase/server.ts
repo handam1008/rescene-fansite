@@ -43,5 +43,9 @@ export async function getCurrentUser() {
     collectedCount: (profile?.collected_count as number | undefined) ?? 0,
     contributedCount: (profile?.contributed_count as number | undefined) ?? 0,
     contributorRank: (profile?.contributor_rank as number | null | undefined) ?? null,
+    // 이용 제한 중이면 끝나는 때와 이유 (0010)
+    bannedUntil:
+      profile?.banned_until && new Date(profile.banned_until as string) > new Date() ? (profile.banned_until as string) : null,
+    banReason: (profile?.ban_reason as string | null | undefined) ?? null,
   };
 }

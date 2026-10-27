@@ -4,7 +4,7 @@ import BoardList from "@/components/BoardList";
 import MemberHeader from "@/components/MemberHeader";
 import { SupabaseNotice } from "@/components/ui";
 import { getMember } from "@/data/members";
-import { getPosts, type BoardTab } from "@/lib/community";
+import { cleanSearch, getPosts, type BoardTab } from "@/lib/community";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -21,7 +21,7 @@ export default async function MemberBoardPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ page?: string; tab?: string }>;
+  searchParams: Promise<{ page?: string; tab?: string; q?: string }>;
 }) {
   const member = getMember((await params).slug);
   if (!member) notFound();
@@ -39,7 +39,8 @@ export default async function MemberBoardPage({
     );
   }
 
-  const [{ posts, total }, user] = await Promise.all([getPosts(page, tab, member.slug), getCurrentUser()]);
+  const q = cleanSearch(query.q);
+  const [{ posts, total }, user] = await Promise.all([getPosts(page, tab, member.slug, q), getCurrentUser()]);
   const newPath = `/board/new?member=${member.slug}`;
 
   return (
@@ -53,6 +54,7 @@ export default async function MemberBoardPage({
         writeHref={user ? newPath : `/login?next=${encodeURIComponent(newPath)}`}
         basePath={`/members/${member.slug}/board`}
         showMember={false}
+        q={q}
       />
     </>
   );

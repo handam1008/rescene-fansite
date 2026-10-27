@@ -76,3 +76,35 @@ h3 {
     display: none;
   }
 }
+
+/*
+ * 버튼에 마우스를 올리면 살짝 커지고, 누르면 살짝 작아짐.
+ * 모든 <button> 과, 버튼처럼 생긴 링크(btn 클래스)에 적용. 움직임을 줄이는 설정을 켠 사람에게는 끔.
+ */
+@utility btn {
+  transition-property: transform, background-color, border-color, color;
+  transition-duration: 150ms;
+}
+
+@layer base {
+  button:not(:disabled) {
+    transition-property: transform, background-color, border-color, color, opacity;
+    transition-duration: 150ms;
+  }
+  button:not(:disabled):hover,
+  .btn:hover {
+    transform: scale(1.04);
+  }
+  button:not(:disabled):active,
+  .btn:active {
+    transform: scale(0.97);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button:not(:disabled):hover,
+    button:not(:disabled):active,
+    .btn:hover,
+    .btn:active {
+      transform: none;
+    }
+  }
+}

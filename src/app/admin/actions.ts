@@ -147,3 +147,30 @@ export async function adminDeletePost(formData: FormData) {
   const back = String(formData.get("back") ?? "");
   if (back.startsWith("/")) redirect(back);
 }
+
+/* ───────── 회원 관리: 운영자 지정·해제, 이용 제한 (DB 함수가 운영자인지 한 번 더 확인, 0010) ───────── */
+
+export async function setAdmin(formData: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  await supabase.rpc("admin_set_admin", { target: String(formData.get("id")), make_admin: formData.get("make") === "1" });
+  revalidatePath("/admin");
+}
+
+export async function banMember(formData: FormData) {
+  await requireAdmin();
+  const days = String(formData.get("days") ?? "7");
+  // 영구 제한은 아주 먼 날짜로
+  const until = days === "forever" ? "2999-12-31T00:00:00Z" : new Date(Date.now() + Number(days) * 86_400_000).toISOString();
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 200) || "게시판 규칙 위반";
+  const supabase = await createClient();
+  await supabase.rpc("admin_set_ban", { target: String(formData.get("id")), until, reason });
+  revalidatePath("/admin");
+}
+
+export async function unbanMember(formData: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  await supabase.rpc("admin_set_ban", { target: String(formData.get("id")), until: null, reason: null });
+  revalidatePath("/admin");
+}

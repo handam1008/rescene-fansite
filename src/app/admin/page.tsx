@@ -9,7 +9,15 @@ import { cardSourceUrl } from "@/data/pokedex-sets";
 import Link from "next/link";
 import Nickname from "@/components/Nickname";
 import { hiddenReasons, reportReasons } from "@/data/moderation";
-import { getCatalog, getModerationQueue, getPendingProofs, proofImageUrls } from "@/lib/community";
+import {
+  getAdminSummary,
+  getCatalog,
+  getMembersForAdmin,
+  getModerationQueue,
+  getMostDislikedPosts,
+  getPendingProofs,
+  proofImageUrls,
+} from "@/lib/community";
 import type { CatalogCard, ReportReason } from "@/types";
 import { formatFullDateTime } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -17,11 +25,14 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import {
   adminDeletePost,
   approveProof,
+  banMember,
   clearReports,
   deleteCatalogCard,
   hidePost,
   rejectProof,
   restorePost,
+  setAdmin,
+  unbanMember,
   updateSetSourceUrl,
 } from "./actions";
 
@@ -41,7 +52,17 @@ function groupBySet(cards: CatalogCard[]) {
 /** 지금까지 나온 앨범 (도감 등록할 때 고르기 쉽게) */
 const KNOWN_ALBUMS = ["Re:Scene", "Dearest", "SCENEDROME", "Glow Up", "lip bomb", "PULSE", "CU 리센느빵 2탄"];
 
-export default async function AdminPage() {
+const TABS = [
+  { key: "summary", label: "요약" },
+  { key: "board", label: "게시판" },
+  { key: "members", label: "회원" },
+  { key: "pokedex", label: "포카 도감" },
+] as const;
+type AdminTab = (typeof TABS)[number]["key"];
+
+const sectionTitle = "mb-3 border-b-2 border-lilac-500 pb-1.5 font-bold";
+
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; q?: string }> }) {
   if (!isSupabaseConfigured) return <SupabaseNotice />;
 
   const user = await getCurrentUser();
@@ -50,14 +71,72 @@ export default async function AdminPage() {
     return <EmptyState>운영자만 들어올 수 있는 페이지예요.</EmptyState>;
   }
 
-  const [pending, catalog, moderation] = await Promise.all([getPendingProofs(), getCatalog(), getModerationQueue()]);
-  const proofUrls = await proofImageUrls(pending.map((p) => p.photo_path));
-  const albums = [...new Set([...KNOWN_ALBUMS, ...catalog.map((c) => c.album)])];
+  const { tab: rawTab, q } = await searchParams;
+  const tab: AdminTab = TABS.find((t) => t.key === rawTab)?.key ?? "summary";
 
   return (
-    <div className="space-y-10">
-      <PageHeader eyebrow="Admin" title="운영자" description="게시판 신고를 처리하고, 포카 인증을 확인하고, 도감에 공식 포토카드를 등록해요." />
+    <div className="space-y-8">
+      <PageHeader eyebrow="Admin" title="운영자" description="운영자만 볼 수 있는 화면이에요. 게시판·회원·포카 도감을 관리해요." />
 
+      <nav aria-label="운영자 메뉴" className="flex border-b-2 border-lilac-500">
+        {TABS.map((t) => (
+          <Link
+            key={t.key}
+            href={t.key === "summary" ? "/admin" : `/admin?tab=${t.key}`}
+            aria-current={tab === t.key ? "page" : undefined}
+            className={`px-4 py-2 text-sm font-bold ${tab === t.key ? "bg-lilac-500 text-white" : "text-ink-soft hover:text-ink"}`}
+          >
+            {t.label}
+          </Link>
+        ))}
+      </nav>
+
+      {tab === "summary" && <SummarySection />}
+      {tab === "board" && <BoardSection />}
+      {tab === "members" && <MembersSection q={q ?? ""} myId={user.id} />}
+      {tab === "pokedex" && <PokedexSection />}
+    </div>
+  );
+}
+
+/* ───────── 요약 ───────── */
+
+async function SummarySection() {
+  const s = await getAdminSummary();
+  const tiles: { label: string; value: number; href?: string; alert?: boolean }[] = [
+    { label: "회원", value: s.members, href: "/admin?tab=members" },
+    { label: "오늘 새 회원", value: s.newMembersToday, href: "/admin?tab=members" },
+    { label: "전체 글", value: s.posts, href: "/board" },
+    { label: "오늘 새 글", value: s.postsToday, href: "/board" },
+    { label: "신고 들어온 글", value: s.reportedPosts, href: "/admin?tab=board", alert: s.reportedPosts > 0 },
+    { label: "숨김 글", value: s.hiddenPosts, href: "/admin?tab=board", alert: s.hiddenPosts > 0 },
+    { label: "포카 인증 대기", value: s.pendingProofs, href: "/admin?tab=pokedex", alert: s.pendingProofs > 0 },
+    { label: "이용 제한 중", value: s.bannedMembers, href: "/admin?tab=members" },
+    { label: "도감 채운 카드", value: s.filledCards, href: "/photocards" },
+  ];
+  return (
+    <section>
+      <h2 className={sectionTitle}>한눈에 보기</h2>
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {tiles.map((t) => (
+          <li key={t.label}>
+            <Link href={t.href ?? "/admin"} className={`card btn block p-4 ${t.alert ? "border-blush-400 bg-blush-100" : ""}`}>
+              <p className="text-xs text-ink-soft">{t.label}</p>
+              <p className="mt-1 text-2xl font-extrabold tabular-nums">{t.value}</p>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/* ───────── 게시판: 신고·숨김 글, 비추천 많은 글 ───────── */
+
+async function BoardSection() {
+  const [moderation, disliked] = await Promise.all([getModerationQueue(), getMostDislikedPosts(20)]);
+  return (
+    <div className="space-y-10">
       {/* 게시판: 신고·숨김 글 */}
       <section>
         <h2 className="mb-3 border-b-2 border-lilac-500 pb-1.5 font-bold">
@@ -131,6 +210,160 @@ export default async function AdminPage() {
         )}
       </section>
 
+      <section>
+        <h2 className={sectionTitle}>
+          비추천 많은 글 <span className="text-xs font-normal text-ink-soft">비추천 순 · 최대 20개</span>
+        </h2>
+        {disliked.length === 0 ? (
+          <EmptyState>비추천을 받은 글이 없어요.</EmptyState>
+        ) : (
+          <table className="w-full border-collapse bg-white text-sm">
+            <thead className="bg-lilac-50 text-xs text-ink-soft">
+              <tr>
+                <th className="py-2 text-left font-medium">제목</th>
+                <th className="w-32 py-2 font-medium">글쓴이</th>
+                <th className="w-14 py-2 font-medium">비추</th>
+                <th className="w-14 py-2 font-medium">추천</th>
+                <th className="w-28 py-2 font-medium">처리</th>
+              </tr>
+            </thead>
+            <tbody>
+              {disliked.map((post) => (
+                <tr key={post.id} className="border-t border-lilac-100">
+                  <td className="max-w-0 truncate py-2 pr-2">
+                    {post.hidden_at && <span className="mr-1 bg-ink-soft px-1 text-[10px] font-bold text-white">숨김</span>}
+                    <Link href={`/board/${post.id}`} className="hover:underline">
+                      {post.title}
+                    </Link>
+                  </td>
+                  <td className="py-2 text-center">
+                    <Nickname author={post.profiles} className="max-w-full justify-center text-xs" />
+                  </td>
+                  <td className="py-2 text-center font-bold text-red-600 tabular-nums">{post.dislike_count ?? 0}</td>
+                  <td className="py-2 text-center tabular-nums">{post.like_count ?? 0}</td>
+                  <td className="py-2 text-center">
+                    <form action={post.hidden_at ? restorePost : hidePost}>
+                      <input type="hidden" name="id" value={post.id} />
+                      <button type="submit" className="border border-lilac-200 bg-white px-2 py-0.5 text-xs hover:bg-lilac-50">
+                        {post.hidden_at ? "복구" : "숨기기"}
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </div>
+  );
+}
+
+/* ───────── 회원: 검색, 이용 제한, 운영자 지정 ───────── */
+
+async function MembersSection({ q, myId }: { q: string; myId: string }) {
+  const members = await getMembersForAdmin(q);
+  return (
+    <section className="space-y-4">
+      <h2 className={sectionTitle}>회원 관리</h2>
+      <form action="/admin" className="flex max-w-md gap-1.5" role="search">
+        <input type="hidden" name="tab" value="members" />
+        <input
+          name="q"
+          defaultValue={q}
+          placeholder="닉네임 검색"
+          aria-label="닉네임 검색"
+          className="min-w-0 flex-1 border border-lilac-200 bg-white px-3 py-1.5 text-sm"
+        />
+        <button type="submit" className="border border-lilac-500 bg-lilac-500 px-4 py-1.5 text-sm font-bold text-white">
+          검색
+        </button>
+      </form>
+      <p className="text-xs text-ink-soft">
+        최근 가입 순 50명{q && ` · ‘${q}’ 검색 결과`}. 운영자로 지정하면 이 화면과 숨기기·삭제·이용 제한을 모두 쓸 수 있어요.
+      </p>
+      {members.length === 0 ? (
+        <EmptyState>회원이 없어요.</EmptyState>
+      ) : (
+        <ul className="space-y-2">
+          {members.map((m) => {
+            const banned = m.banned_until && new Date(m.banned_until) > new Date();
+            return (
+              <li key={m.id} className={`card p-4 text-sm ${banned ? "border-blush-400" : ""}`}>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Nickname author={m} className="font-semibold" />
+                  {m.id === myId && <span className="text-xs text-ink-soft">(나)</span>}
+                  <span className="text-xs text-ink-soft">
+                    가입 {formatFullDateTime(m.created_at).slice(0, 13)} · 글 {m.posts[0]?.count ?? 0} · 댓글 {m.comments[0]?.count ?? 0}
+                  </span>
+                  {banned && (
+                    <span className="bg-blush-400 px-1.5 text-xs font-bold text-white">
+                      이용 제한 ~{new Date(m.banned_until!).getFullYear() >= 2999 ? "영구" : formatFullDateTime(m.banned_until!).slice(0, 13)}
+                    </span>
+                  )}
+                </div>
+                {banned && m.ban_reason && <p className="mt-1 text-xs text-ink-soft">사유: {m.ban_reason}</p>}
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  {m.id !== myId && (
+                    <form action={setAdmin}>
+                      <input type="hidden" name="id" value={m.id} />
+                      <input type="hidden" name="make" value={m.is_admin ? "0" : "1"} />
+                      <button
+                        type="submit"
+                        className={`border px-2.5 py-1 font-semibold ${m.is_admin ? "border-lilac-200 bg-white" : "border-ink bg-ink text-white"}`}
+                      >
+                        {m.is_admin ? "운영자 해제" : "🛠 운영자로 지정"}
+                      </button>
+                    </form>
+                  )}
+                  {!m.is_admin &&
+                    (banned ? (
+                      <form action={unbanMember}>
+                        <input type="hidden" name="id" value={m.id} />
+                        <button type="submit" className="border border-lilac-200 bg-white px-2.5 py-1">
+                          이용 제한 풀기
+                        </button>
+                      </form>
+                    ) : (
+                      <form action={banMember} className="flex flex-wrap items-center gap-1.5">
+                        <input type="hidden" name="id" value={m.id} />
+                        <select name="days" defaultValue="7" aria-label="제한 기간" className="border border-lilac-200 bg-white px-1.5 py-1">
+                          <option value="1">1일</option>
+                          <option value="7">7일</option>
+                          <option value="30">30일</option>
+                          <option value="forever">영구</option>
+                        </select>
+                        <input
+                          name="reason"
+                          maxLength={200}
+                          placeholder="사유 (회원에게 보여요)"
+                          aria-label="제한 사유"
+                          className="w-48 border border-lilac-200 bg-white px-2 py-1"
+                        />
+                        <button type="submit" className="border border-blush-400 bg-blush-100 px-2.5 py-1 font-semibold">
+                          이용 제한
+                        </button>
+                      </form>
+                    ))}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/* ───────── 포카 도감: 인증 확인, 카드 등록, 등록된 카드 ───────── */
+
+async function PokedexSection() {
+  const [pending, catalog] = await Promise.all([getPendingProofs(), getCatalog()]);
+  const proofUrls = await proofImageUrls(pending.map((p) => p.photo_path));
+  const albums = [...new Set([...KNOWN_ALBUMS, ...catalog.map((c) => c.album)])];
+
+  return (
+    <div className="space-y-10">
       {/* 인증 확인 */}
       <section>
         <h2 className="mb-3 border-b-2 border-lilac-500 pb-1.5 font-bold">
