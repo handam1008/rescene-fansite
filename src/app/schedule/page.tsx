@@ -89,7 +89,7 @@ export default async function SchedulePage({
 }
 
 async function ListView({ member }: { member?: MemberSlug | "group" }) {
-  const { upcoming, past } = await getSchedule(member);
+  const { upcoming, past } = await getSchedule(member, new Date(), true);
   return (
     <>
       <ScheduleList events={upcoming} />

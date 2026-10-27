@@ -105,15 +105,27 @@ export default function ScheduleCalendar({
                 {/* 휴대폰: 색 점 */}
                 {list.length > 0 && (
                   <span className="mt-1 flex flex-wrap gap-0.5 sm:hidden">
-                    {list.slice(0, 4).map((e) => (
-                      <span key={e.id} className={`h-1.5 w-1.5 ${dotStyle[e.type]}`} />
-                    ))}
+                    {list.slice(0, 4).map((e) =>
+                      e.important ? (
+                        <span key={e.id} className="text-[9px] leading-none text-amber-500">★</span>
+                      ) : (
+                        <span key={e.id} className={`h-1.5 w-1.5 ${e.tentative ? "border border-dashed border-ink-soft bg-transparent" : dotStyle[e.type]}`} />
+                      ),
+                    )}
                   </span>
                 )}
                 {/* 넓은 화면: 제목 */}
                 <span className="mt-1 hidden space-y-0.5 sm:block">
                   {list.slice(0, 3).map((e) => (
-                    <span key={e.id} className={`block truncate px-1 text-[11px] leading-4 ${typeStyle[e.type]}`} title={e.title}>
+                    <span
+                      key={e.id}
+                      className={`block truncate px-1 text-[11px] leading-4 ${
+                        e.tentative ? "border border-dashed border-lilac-300 bg-white text-ink-soft" : typeStyle[e.type]
+                      } ${e.important ? "font-bold ring-1 ring-amber-400" : ""}`}
+                      title={`${e.title}${e.tentative ? " (미확정)" : ""}`}
+                    >
+                      {e.important && "★ "}
+                      {e.tentative && "? "}
                       {e.title}
                     </span>
                   ))}
@@ -144,6 +156,13 @@ export default function ScheduleCalendar({
             {scheduleTypeLabels[t]}
           </li>
         ))}
+        <li className="flex items-center gap-1">
+          <span className="text-amber-500">★</span>중요 (컴백 등)
+        </li>
+        <li className="flex items-center gap-1">
+          <span className="h-2 w-2 border border-dashed border-ink-soft" />
+          미확정 (예상)
+        </li>
       </ul>
 
       {agenda.size === 0 ? (

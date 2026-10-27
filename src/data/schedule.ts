@@ -7,6 +7,8 @@ import type { MemberSlug } from "./members";
  * members: 비워두면 "단체" 일정, ["woni"] 처럼 적으면 해당 멤버 개인 일정
  * date / endDate: 한국 시간(+09:00)으로. 하루 일정이면 endDate는 빼도 돼요.
  * allDay: 시간이 정해지지 않은 일정이면 true (날짜만 표시)
+ * important: 컴백처럼 중요한 일정이면 true (달력·목록에 ★). 곡 발매일은 자동으로 ★
+ * tentative: 공식 확정이 아닌 예상 일정이면 true (점선·"미확정" 표시)
  *
  * 2026-10-27 기준. 공식 SNS·유튜브 업로드 기록과 출연 확정 보도로 확인한 일정만 넣었습니다(link 가 출처).
  * 음악방송·쇼케이스·팬사인회·연말 가요제는 공식 발표가 나오면 추가해 주세요.
@@ -24,6 +26,8 @@ export type ScheduleEvent = {
   members?: MemberSlug[];
   place?: string;
   link?: string;
+  important?: boolean;
+  tentative?: boolean;
 };
 
 export const schedule: ScheduleEvent[] = [
@@ -96,6 +100,7 @@ export const schedule: ScheduleEvent[] = [
     date: "2026-11-03T18:00:00+09:00",
     title: "미니 4집 'PULSE' 발매",
     type: "release",
+    important: true,
     place: "각종 음원 사이트",
     link: "https://www.mediapen.com/news/view/1132218",
   },
@@ -266,6 +271,17 @@ export const schedule: ScheduleEvent[] = [
     link: "https://www.youtube.com/watch?v=1kHqK1oqHzc",
   },
 ];
+
+/**
+ * 안원잘부 예상 업로드: 솔파스튜디오 공지(2026-10 초) "연말까지 매주 금요일을 목표로 하되, 상황에 따라 주기와 요일이 바뀔 수 있음".
+ * 이 기간의 금요일마다 "미확정" 일정으로 달력에 자동 표시됩니다(lib/schedule.ts).
+ * 지난 날짜와, 그 주에 실제 업로드([안원잘부] 일정)가 이미 적혀 있는 주는 자동으로 빠집니다.
+ */
+export const anwonjalbuPlan = {
+  from: "2026-10-30",
+  until: "2026-12-31",
+  link: "https://www.youtube.com/post/UgkxYZhaOWAFY3P8Zb6YbEYPXX7_lEb6kR61",
+};
 
 export const scheduleTypeLabels: Record<ScheduleType, string> = {
   release: "발매",

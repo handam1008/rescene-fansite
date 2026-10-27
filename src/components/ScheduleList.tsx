@@ -37,13 +37,21 @@ export function EventRow({ event }: { event: ScheduleEvent }) {
   const meta = [when, event.place].filter(Boolean).join(" · ");
 
   return (
-    <li className="flex gap-4 border-b border-lilac-100 px-4 py-3 last:border-0">
+    <li
+      className={`flex gap-4 border-b border-lilac-100 px-4 py-3 last:border-0 ${
+        event.tentative ? "bg-lilac-50/50 opacity-80" : event.important ? "bg-amber-50/60" : ""
+      }`}
+    >
       <div className="w-14 shrink-0 text-center">
         <p className="text-xl leading-tight font-extrabold tabular-nums">{start.day}</p>
         <p className="text-xs text-ink-soft">{start.weekday}</p>
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
+          {event.important && <span className="bg-amber-400 px-1.5 py-0.5 text-[11px] font-bold text-white">★ 중요</span>}
+          {event.tentative && (
+            <span className="border border-dashed border-ink-soft px-1.5 py-0.5 text-[11px] font-bold text-ink-soft">미확정</span>
+          )}
           <span className={`px-1.5 py-0.5 text-[11px] font-bold ${typeStyle[event.type]}`}>
             {scheduleTypeLabels[event.type]}
           </span>
@@ -57,7 +65,10 @@ export function EventRow({ event }: { event: ScheduleEvent }) {
             ))
           )}
         </div>
-        <p className="mt-1 font-semibold break-keep">{event.title}</p>
+        <p className="mt-1 font-semibold break-keep">
+          {event.important && <span className="mr-1 text-amber-500">★</span>}
+          {event.title}
+        </p>
         {(meta || event.link) && (
           <p className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-ink-soft">
             {meta && <span>{meta}</span>}
