@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer className="mt-16 border-t border-lilac-200 bg-white">
@@ -11,6 +13,14 @@ export default function Footer() {
         <p className="mt-1">
           포카 도감 이미지는 회원이 직접 찍어 공개에 동의한 사진이며, 상업적으로 쓰지 않습니다. 권리자가 요청하면 바로
           내립니다.
+        </p>
+        <p className="mt-2 space-x-3">
+          <Link href="/privacy" className="font-semibold text-ink underline">
+            개인정보처리방침
+          </Link>
+          <Link href="/board/rules" className="underline">
+            게시판 규칙
+          </Link>
         </p>
       </div>
     </footer>

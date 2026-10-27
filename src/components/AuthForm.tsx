@@ -9,10 +9,13 @@ export default function AuthForm({
   mode,
   next,
   initialError,
+  social,
 }: {
   mode: "login" | "signup";
   next?: string;
   initialError?: string;
+  /** 위에 보여줄 소셜 로그인 버튼 */
+  social?: React.ReactNode;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     mode === "login" ? login : signup,
@@ -22,6 +25,7 @@ export default function AuthForm({
 
   return (
     <form action={formAction} className="card space-y-4 p-6">
+      {social}
       {next && <input type="hidden" name="next" value={next} />}
 
       {isSignup && (
@@ -48,6 +52,16 @@ export default function AuthForm({
       </label>
 
       <FormMessage error={state?.error} message={state?.message} />
+
+      {isSignup && (
+        <p className="text-xs leading-relaxed text-ink-soft">
+          만 14세 이상만 가입할 수 있어요. 이메일·닉네임은 회원 관리에만 쓰고, 탈퇴하면 바로 지워요. 자세한 내용은{" "}
+          <Link href="/privacy" className="underline hover:text-ink">
+            개인정보처리방침
+          </Link>
+          에 있어요.
+        </p>
+      )}
 
       <button type="submit" disabled={pending} className={`${buttonClass} w-full`}>
         {pending ? "잠시만요…" : isSignup ? "가입하기" : "로그인"}
