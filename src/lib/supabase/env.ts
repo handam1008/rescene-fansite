@@ -5,7 +5,7 @@
  * Vercel 환경 변수를 넣으면 그 값이 우선합니다.
  * ⚠️ secret / service_role 키는 절대 여기에 넣지 마세요.
  */
-const DEFAULT_URL = "https://acrdlbsltnuyrtlwyycs.supabase.co";
+const DEFAULT_URL = "https://srpmyhrbimcysypfkoeh.supabase.co";
 const DEFAULT_PUBLISHABLE_KEY = "sb_publishable_0zdqUFMp0KgMl9fPm7M88Q_tWPwgM_I";
 
 export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_URL;
