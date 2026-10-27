@@ -6,12 +6,24 @@ import CatalogImageButton from "@/components/CatalogImageButton";
 import { EmptyState, PageHeader, SupabaseNotice } from "@/components/ui";
 import { pokedexMemberName } from "@/data/members";
 import { cardSourceUrl } from "@/data/pokedex-sets";
-import { getCatalog, getPendingProofs, proofImageUrls } from "@/lib/community";
-import type { CatalogCard } from "@/types";
+import Link from "next/link";
+import Nickname from "@/components/Nickname";
+import { hiddenReasons, reportReasons } from "@/data/moderation";
+import { getCatalog, getModerationQueue, getPendingProofs, proofImageUrls } from "@/lib/community";
+import type { CatalogCard, ReportReason } from "@/types";
 import { formatFullDateTime } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { approveProof, deleteCatalogCard, rejectProof, updateSetSourceUrl } from "./actions";
+import {
+  adminDeletePost,
+  approveProof,
+  clearReports,
+  deleteCatalogCard,
+  hidePost,
+  rejectProof,
+  restorePost,
+  updateSetSourceUrl,
+} from "./actions";
 
 export const metadata: Metadata = { title: "운영자", robots: { index: false } };
 
@@ -38,13 +50,86 @@ export default async function AdminPage() {
     return <EmptyState>운영자만 들어올 수 있는 페이지예요.</EmptyState>;
   }
 
-  const [pending, catalog] = await Promise.all([getPendingProofs(), getCatalog()]);
+  const [pending, catalog, moderation] = await Promise.all([getPendingProofs(), getCatalog(), getModerationQueue()]);
   const proofUrls = await proofImageUrls(pending.map((p) => p.photo_path));
   const albums = [...new Set([...KNOWN_ALBUMS, ...catalog.map((c) => c.album)])];
 
   return (
     <div className="space-y-10">
-      <PageHeader eyebrow="Admin" title="운영자" description="포카 인증을 확인하고, 도감에 공식 포토카드를 등록해요. 공개 동의한 인증을 승인하면 빈 카드가 그 사진으로 채워져요." />
+      <PageHeader eyebrow="Admin" title="운영자" description="게시판 신고를 처리하고, 포카 인증을 확인하고, 도감에 공식 포토카드를 등록해요." />
+
+      {/* 게시판: 신고·숨김 글 */}
+      <section>
+        <h2 className="mb-3 border-b-2 border-lilac-500 pb-1.5 font-bold">
+          신고·숨김 글 <span className="text-lilac-500">{moderation.length}</span>건
+        </h2>
+        {moderation.length === 0 ? (
+          <EmptyState>신고되거나 숨겨진 글이 없어요.</EmptyState>
+        ) : (
+          <ul className="space-y-2">
+            {moderation.map((post) => {
+              const reasons = new Map<string, number>();
+              for (const r of post.post_reports) reasons.set(r.reason, (reasons.get(r.reason) ?? 0) + 1);
+              const details = post.post_reports.map((r) => r.detail).filter(Boolean);
+              return (
+                <li key={post.id} className="card p-4 text-sm">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {post.hidden_at ? (
+                      <span className="bg-ink-soft px-1.5 text-xs font-bold text-white">
+                        숨김 · {hiddenReasons[post.hidden_reason ?? "admin"]}
+                      </span>
+                    ) : post.restored_at ? (
+                      <span className="border border-lilac-500 px-1.5 text-xs font-bold text-lilac-700">복구됨</span>
+                    ) : (
+                      <span className="border border-blush-400 px-1.5 text-xs font-bold">공개 중</span>
+                    )}
+                    <Link href={`/board/${post.id}`} className="min-w-0 flex-1 truncate font-semibold hover:underline">
+                      {post.title}
+                    </Link>
+                    <Nickname author={post.profiles} className="text-xs text-ink-soft" />
+                  </div>
+                  <p className="mt-1 text-xs text-ink-soft">
+                    신고 {post.report_count ?? 0} · 추천 {post.like_count ?? 0} · 비추천 {post.dislike_count ?? 0}
+                    {reasons.size > 0 &&
+                      ` · ${[...reasons].map(([r, n]) => `${reportReasons[r as ReportReason] ?? r} ${n}`).join(", ")}`}
+                  </p>
+                  {details.length > 0 && (
+                    <ul className="mt-1 list-inside list-disc text-xs text-ink-soft">
+                      {details.slice(0, 5).map((d, i) => (
+                        <li key={i} className="truncate">
+                          {d}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                    <form action={post.hidden_at ? restorePost : hidePost}>
+                      <input type="hidden" name="id" value={post.id} />
+                      <button type="submit" className="border border-lilac-200 bg-white px-3 py-1 hover:bg-lilac-50">
+                        {post.hidden_at ? "복구 (다시 보이게)" : "숨기기"}
+                      </button>
+                    </form>
+                    {(post.report_count ?? 0) > 0 && (
+                      <form action={clearReports}>
+                        <input type="hidden" name="id" value={post.id} />
+                        <button type="submit" className="border border-lilac-200 bg-white px-3 py-1 hover:bg-lilac-50">
+                          신고 기록 지우기
+                        </button>
+                      </form>
+                    )}
+                    <form action={adminDeletePost}>
+                      <input type="hidden" name="id" value={post.id} />
+                      <button type="submit" className="border border-ink bg-ink px-3 py-1 font-bold text-white">
+                        완전히 삭제
+                      </button>
+                    </form>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
 
       {/* 인증 확인 */}
       <section>

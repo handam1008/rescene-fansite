@@ -33,6 +33,7 @@ function PostTitle({ post, now, showMember }: { post: PostSummary; now: number; 
   const member = showMember ? getMember(post.member) : undefined;
   return (
     <span className="flex min-w-0 items-center gap-1">
+      {post.hidden_at && <span className="shrink-0 bg-ink-soft px-1 text-[10px] leading-4 font-bold text-white">숨김</span>}
       {member && <span className="shrink-0 text-xs font-bold text-lilac-700">[{member.name}]</span>}
       <span className="truncate">{post.title}</span>
       {(post.image_paths?.length ?? 0) > 0 && <ImageIcon />}
@@ -156,6 +157,7 @@ export default function BoardList({
                 <th scope="col" className="w-40 py-2 font-medium">글쓴이</th>
                 <th scope="col" className="w-20 py-2 font-medium">작성일</th>
                 <th scope="col" className="w-16 py-2 font-medium">조회</th>
+                <th scope="col" className="w-14 py-2 font-medium">추천</th>
               </tr>
             </thead>
             <tbody>
@@ -172,6 +174,7 @@ export default function BoardList({
                   </td>
                   <td className="py-2 text-center text-xs text-ink-soft tabular-nums">{formatBoardDate(post.created_at)}</td>
                   <td className="py-2 text-center text-xs text-ink-soft tabular-nums">{post.view_count ?? 0}</td>
+                  <td className="py-2 text-center text-xs text-ink-soft tabular-nums">{post.like_count ?? 0}</td>
                 </tr>
               ))}
             </tbody>
@@ -189,6 +192,7 @@ export default function BoardList({
                     <Nickname author={post.profiles} />
                     <span className="shrink-0">{formatBoardDate(post.created_at)}</span>
                     <span className="shrink-0">조회 {post.view_count ?? 0}</span>
+                    {(post.like_count ?? 0) > 0 && <span className="shrink-0">추천 {post.like_count}</span>}
                   </span>
                 </Link>
               </li>
