@@ -138,7 +138,7 @@ export type Post = {
 
 export type HiddenReason = "reports" | "dislikes" | "admin";
 
-export type ReportReason = "spam" | "abuse" | "adult" | "privacy" | "copyright" | "other";
+export type ReportReason = "idol" | "abuse" | "rumor" | "spam" | "adult" | "privacy" | "copyright" | "other";
 
 export type PostComment = {
   id: number;

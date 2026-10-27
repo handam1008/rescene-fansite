@@ -102,6 +102,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           reported={reported}
           loggedIn={!!user}
           canReact={!isOwner && !post.hidden_at}
+          isOwner={isOwner}
         />
 
         <div className="flex justify-between gap-2 border-t border-lilac-200 px-4 py-3 sm:px-5">

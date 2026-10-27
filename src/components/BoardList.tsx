@@ -134,12 +134,17 @@ export default function BoardList({
             </Link>
           ))}
         </div>
-        <Link
-          href={writeHref}
-          className="mb-1.5 border border-lilac-500 bg-lilac-500 px-3 py-1.5 text-sm font-bold text-white hover:bg-lilac-700"
-        >
-          글쓰기
-        </Link>
+        <div className="mb-1.5 flex items-center gap-3">
+          <Link href="/board/rules" className="text-xs text-ink-soft underline hover:text-ink">
+            게시판 규칙
+          </Link>
+          <Link
+            href={writeHref}
+            className="border border-lilac-500 bg-lilac-500 px-3 py-1.5 text-sm font-bold text-white hover:bg-lilac-700"
+          >
+            글쓰기
+          </Link>
+        </div>
       </div>
 
       {posts.length === 0 ? (
