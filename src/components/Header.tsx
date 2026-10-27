@@ -22,7 +22,8 @@ export default function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-20 border-b border-lilac-200 bg-white">
+    <header className="sticky top-0 z-20 border-b border-lilac-200/70 bg-white/75 backdrop-blur-md">
+      {/* 스크롤을 따라 내려오는 반투명 헤더 (뒤 내용이 살짝 비쳐 보임) */}
       <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between wide:max-w-[1520px]">
         <div className="flex items-center justify-between gap-3">
           <Link href="/" className="text-dreamy text-lg font-extrabold tracking-wide whitespace-nowrap sm:text-xl">
