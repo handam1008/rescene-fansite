@@ -7,5 +7,13 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   // 로그인 상태가 필요한 페이지에서만 실행 (정적 파일·이미지 제외)
-  matcher: ["/login", "/signup", "/auth/:path*", "/photocards/:path*", "/board/:path*"],
+  matcher: [
+    "/login",
+    "/signup",
+    "/auth/:path*",
+    "/photocards/:path*",
+    "/board/:path*",
+    "/members/:path*",
+    "/admin/:path*",
+  ],
 };

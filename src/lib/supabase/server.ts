@@ -24,7 +24,7 @@ export async function createClient() {
   });
 }
 
-/** 로그인한 사용자와 닉네임. 로그인하지 않았으면 null */
+/** 로그인한 사용자와 닉네임·관리자 여부·수집 개수. 로그인하지 않았으면 null */
 export async function getCurrentUser() {
   const supabase = await createClient();
   const {
@@ -32,11 +32,14 @@ export async function getCurrentUser() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("nickname")
-    .eq("id", user.id)
-    .maybeSingle();
+  // "*" : 관리자·수집 개수 컬럼(0003 SQL)이 없어도 동작하도록
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
 
-  return { id: user.id, email: user.email, nickname: profile?.nickname ?? "리마인" };
+  return {
+    id: user.id,
+    email: user.email,
+    nickname: (profile?.nickname as string | undefined) ?? "리마인",
+    isAdmin: profile?.is_admin === true,
+    collectedCount: (profile?.collected_count as number | undefined) ?? 0,
+  };
 }

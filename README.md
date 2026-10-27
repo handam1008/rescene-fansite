@@ -24,6 +24,10 @@ npm run dev     # 개발 서버 → http://localhost:3000
 | `src/data/comeback.ts` | 컴백 정보 (앨범명, 타이틀곡, 발매일, 티저 일정). 배열의 **첫 번째** 항목이 표시됨 |
 | `src/data/songs.ts` | 노래 목록. `releaseDate`가 가장 최근인 곡이 "최신곡"으로 크게 표시됨 |
 | `src/data/votes.ts` | 투표 목록. 진행 중 → 예정 → 종료 순으로 자동 정렬, 마감 지나면 자동 "종료" |
+| `src/data/schedule.ts` | 일정. `members`를 비우면 단체, `["woni"]`처럼 적으면 멤버 개인 일정. 생일은 자동 추가 |
+| `src/data/members.ts` | 멤버 프로필(생일·국적 등)과 프로필 사진 경로 |
+| `src/data/site.ts` | 홈 상단 큰 박스 사진·문구 |
+| `src/data/titles.ts` | 포카 도감 칭호 이름과 기준 장수 |
 
 - 2026-10-26 기준 언론 보도·공식 SNS로 채운 실제 정보입니다. 샘플을 추가할 때 `isSample: true`를 넣으면 "예시" 뱃지가 붙습니다.
 - 날짜는 `"2026-12-01T18:00:00+09:00"` 형식(한국 시간 +09:00)으로 적어주세요.
@@ -52,13 +56,19 @@ supabase/migrations/    DB 테이블·보안 규칙 SQL
 환경 변수가 없으면 이 메뉴들은 "준비 중"으로 보입니다. 연결 방법:
 
 1. https://supabase.com 에서 새 프로젝트를 만든다 (Region: Seoul).
-2. **SQL Editor**에 `supabase/migrations/` 폴더의 SQL 파일을 번호 순서대로(0001 → 0002) 하나씩 붙여넣고 Run. 여러 번 실행해도 안전합니다.
+2. **SQL Editor**에 `supabase/migrations/` 폴더의 SQL 파일을 번호 순서대로(0001 → 0002 → 0003) 하나씩 붙여넣고 Run. 여러 번 실행해도 안전합니다.
 3. **Authentication → URL Configuration**의 Site URL에 사이트 주소를, Redirect URLs에 `https://사이트주소/auth/callback`을 넣는다.
 4. **Project Settings → API**의 URL과 anon key를 Vercel **Settings → Environment Variables**에 넣는다:
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` → Redeploy.
 
-보안: 모든 테이블에 RLS가 켜져 있어 누구나 읽을 수 있지만, 쓰기·삭제는 본인 글/포카만 가능합니다.
-포카 이미지는 Storage `photocards` 버킷의 `<user id>/` 폴더에만 올릴 수 있습니다.
+보안: 모든 테이블에 RLS가 켜져 있어 누구나 읽을 수 있지만, 쓰기·삭제는 본인 글만 가능합니다.
+사진은 Storage의 각자 `<user id>/` 폴더에만 올릴 수 있습니다.
+
+### 포카 도감 운영 (0003 SQL 실행 후)
+- 0003 SQL이 닉네임 `류한담` 계정을 운영자로 지정합니다. 로그인하면 오른쪽 위에 **운영자** 버튼이 생깁니다.
+- `/admin` 에서 공식 포토카드를 도감에 등록하고, 회원이 올린 실물 인증 사진을 승인·반려합니다.
+- 인증 사진은 비공개 저장소(`pc-proofs`)에 있어 본인과 운영자만 볼 수 있습니다.
+- 승인된 장수에 따라 칭호가 붙고(`src/data/titles.ts`), 게시판 닉네임 옆에 표시됩니다.
 
 ## 다음 단계 메모
 

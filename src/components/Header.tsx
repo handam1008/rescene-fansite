@@ -9,10 +9,12 @@ type NavItem = { label: string; href?: string };
 /** href가 없는 메뉴는 "준비 중"으로 표시됩니다. 페이지를 만들면 href만 추가하세요. */
 const navItems: NavItem[] = [
   { label: "홈", href: "/" },
+  { label: "일정", href: "/schedule" },
+  { label: "멤버", href: "/members" },
   { label: "컴백", href: "/comeback" },
   { label: "신곡", href: "/songs" },
   { label: "투표", href: "/votes" },
-  { label: "포카", href: "/photocards" },
+  { label: "포카도감", href: "/photocards" },
   { label: "게시판", href: "/board" },
 ];
 

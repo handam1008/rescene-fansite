@@ -1,23 +1,24 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { PHOTOCARD_BUCKET } from "@/lib/supabase/env";
+import { PROOF_BUCKET } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
-export async function deletePhotocard(formData: FormData) {
-  const id = Number(formData.get("id"));
-  const supabase = await createClient();
+// 인증 사진 올리기·신청은 사진 업로드 때문에 브라우저에서 합니다 (components/ProofForm.tsx)
 
-  // RLS 덕분에 본인 포카만 지워집니다. 지워진 행의 이미지 경로로 파일도 삭제
+/** 확인 중인 내 인증 취소 (보안 규칙상 본인 것만 지워짐) */
+export async function cancelProof(formData: FormData) {
+  const id = Number(formData.get("id"));
+  const cardId = Number(formData.get("cardId"));
+  const supabase = await createClient();
   const { data } = await supabase
-    .from("photocards")
+    .from("photocard_collections")
     .delete()
     .eq("id", id)
-    .select("image_path")
+    .eq("status", "pending")
+    .select("photo_path")
     .maybeSingle();
-  if (data?.image_path) {
-    await supabase.storage.from(PHOTOCARD_BUCKET).remove([data.image_path]);
-  }
-
+  if (data?.photo_path) await supabase.storage.from(PROOF_BUCKET).remove([data.photo_path]);
+  revalidatePath(`/photocards/${cardId}`);
   revalidatePath("/photocards");
 }

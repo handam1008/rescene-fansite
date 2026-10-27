@@ -28,7 +28,7 @@ export default function HomeHero() {
           className="absolute inset-0 hidden bg-gradient-to-tr from-white/75 via-white/20 via-40% to-transparent to-65% sm:block"
         />
         {hero.image && hero.imageCredit && (
-          <p className="absolute right-3 bottom-2 text-[10px] text-white/90 drop-shadow">{hero.imageCredit}</p>
+          <p className="absolute right-3 bottom-2 text-[10px] text-ink/80">{hero.imageCredit}</p>
         )}
       </div>
 

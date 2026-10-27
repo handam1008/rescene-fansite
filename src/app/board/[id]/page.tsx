@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import BoardList from "@/components/BoardList";
 import { CommentForm } from "@/components/BoardForms";
+import Nickname from "@/components/Nickname";
 import ViewCounter from "@/components/ViewCounter";
 import { SupabaseNotice } from "@/components/ui";
+import { getMember } from "@/data/members";
 import { getPost, getPosts, postImageUrl } from "@/lib/community";
 import { formatFullDateTime } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -21,19 +23,26 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id < 1) notFound();
 
-  const [{ post, comments }, user, list] = await Promise.all([getPost(id), getCurrentUser(), getPosts(1)]);
+  const [{ post, comments }, user] = await Promise.all([getPost(id), getCurrentUser()]);
   if (!post) notFound();
 
+  // 멤버 게시판 글이면 그 멤버 게시판으로 묶어서 보여줌
+  const member = getMember(post.member);
+  const boardPath = member ? `/members/${member.slug}/board` : "/board";
+  const boardName = member ? `${member.name} 게시판` : "게시판";
+  const list = await getPosts(1, "all", member?.slug);
+
   const isOwner = user?.id === post.user_id;
-  const writeHref = user ? "/board/new" : "/login?next=/board/new";
+  const newPath = member ? `/board/new?member=${member.slug}` : "/board/new";
+  const writeHref = user ? newPath : `/login?next=${encodeURIComponent(newPath)}`;
   const images = post.image_paths ?? [];
 
   return (
     <div className="space-y-6">
       <ViewCounter postId={post.id} />
 
-      <Link href="/board" className="inline-block text-lg font-extrabold text-lilac-700">
-        게시판
+      <Link href={boardPath} className="inline-block text-lg font-extrabold text-lilac-700">
+        {boardName}
       </Link>
 
       <article className="border-t-2 border-lilac-500 bg-white">
@@ -41,10 +50,10 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         <header className="border-b border-lilac-200 px-4 py-3 sm:px-5">
           <h1 className="text-lg font-bold break-words sm:text-xl">{post.title}</h1>
           <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-ink-soft">
-            <span>
-              <span className="font-semibold text-ink">{post.profiles?.nickname ?? "알 수 없음"}</span>
+            <span className="flex min-w-0 items-center">
+              <Nickname author={post.profiles} className="font-semibold text-ink" />
               <span className="mx-1.5 text-lilac-200">|</span>
-              {formatFullDateTime(post.created_at)}
+              <span className="shrink-0">{formatFullDateTime(post.created_at)}</span>
             </span>
             <span>
               조회 {post.view_count ?? 0}
@@ -74,7 +83,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         </div>
 
         <div className="flex justify-between gap-2 border-t border-lilac-200 px-4 py-3 sm:px-5">
-          <Link href="/board" className={smallButton}>
+          <Link href={boardPath} className={smallButton}>
             목록
           </Link>
           <div className="flex gap-2">
@@ -100,7 +109,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           <ul>
             {comments.map((c) => (
               <li key={c.id} className="flex flex-col gap-1 border-b border-lilac-100 px-4 py-2.5 text-sm sm:flex-row sm:gap-4 sm:px-5">
-                <span className="shrink-0 font-semibold sm:w-28 sm:truncate">{c.profiles?.nickname ?? "알 수 없음"}</span>
+                <Nickname author={c.profiles} className="shrink-0 font-semibold sm:w-36" />
                 <p className="min-w-0 flex-1 break-words whitespace-pre-wrap">{c.content}</p>
                 <span className="flex shrink-0 items-start gap-2 text-xs text-ink-soft">
                   {formatFullDateTime(c.created_at).slice(5)}
@@ -131,7 +140,16 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
       </section>
 
       {/* 디시처럼 글 아래에 목록 */}
-      <BoardList posts={list.posts} total={list.total} page={1} tab="all" writeHref={writeHref} currentPostId={post.id} />
+      <BoardList
+        posts={list.posts}
+        total={list.total}
+        page={1}
+        tab="all"
+        writeHref={writeHref}
+        basePath={boardPath}
+        showMember={!member}
+        currentPostId={post.id}
+      />
     </div>
   );
 }
