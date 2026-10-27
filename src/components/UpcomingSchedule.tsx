@@ -35,14 +35,20 @@ export default function UpcomingSchedule({ events, compact = false }: { events: 
                       <span className="font-semibold text-lilac-700 tabular-nums">{shortDate(e.date)}</span>
                       <span className="truncate text-ink-soft">{who.length ? who.join(", ") : "단체"}</span>
                     </span>
-                    <span className="mt-0.5 line-clamp-2 block text-sm">{e.title}</span>
+                    <span className={`mt-0.5 line-clamp-2 block text-sm ${e.important ? "font-bold" : ""}`}>
+                      {e.important && <span className="mr-0.5 text-amber-500">★</span>}
+                      {e.title}
+                    </span>
                   </Link>
                 ) : (
                   <Link href="/schedule" className="flex items-center gap-3 py-2.5 hover:bg-lilac-50">
                     <span className="w-20 shrink-0 text-xs font-semibold text-lilac-700 tabular-nums">
                       {shortDate(e.date)}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-sm">{e.title}</span>
+                    <span className={`min-w-0 flex-1 truncate text-sm ${e.important ? "font-bold" : ""}`}>
+                      {e.important && <span className="mr-0.5 text-amber-500">★</span>}
+                      {e.title}
+                    </span>
                     <span className="shrink-0 text-xs text-ink-soft">{who.length ? who.join(", ") : "단체"}</span>
                   </Link>
                 )}
