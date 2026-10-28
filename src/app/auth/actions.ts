@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { safeNext } from "@/lib/auth-providers";
+import { NICKNAME_RULE, nicknameFormatOk } from "@/lib/nickname";
 import { createClient } from "@/lib/supabase/server";
 
 export type FormState = { error?: string; message?: string } | undefined;
@@ -34,9 +35,7 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
-  if (nickname.length < 2 || nickname.length > 20) {
-    return { error: "닉네임은 2~20자로 정해주세요." };
-  }
+  if (!nicknameFormatOk(nickname)) return { error: `닉네임은 ${NICKNAME_RULE}` };
   if (password.length < 6) return { error: "비밀번호는 6자 이상이어야 해요." };
 
   const supabase = await createClient();

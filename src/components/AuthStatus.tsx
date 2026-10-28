@@ -17,6 +17,7 @@ export default function AuthStatus() {
   const [nickname, setNickname] = useState<string | null | undefined>(undefined);
   const [isAdmin, setIsAdmin] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [needsNickname, setNeedsNickname] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -35,6 +36,7 @@ export default function AuthStatus() {
         supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
       ]);
       setNickname(data?.nickname ?? "리마인");
+      setNeedsNickname(data?.nickname_set === false);
       setIsAdmin(data?.is_admin === true);
       setUnread(count ?? 0);
     }
@@ -77,9 +79,15 @@ export default function AuthStatus() {
           </span>
         )}
       </Link>
-      <Link href="/account" className="font-semibold hover:underline" title="내 정보">
-        {nickname}
-      </Link>
+      {needsNickname ? (
+        <Link href="/account?setup=1" className="btn bg-blush-400 px-2 py-0.5 text-xs font-bold text-white">
+          닉네임 정하기
+        </Link>
+      ) : (
+        <Link href="/account" className="font-semibold hover:underline" title="내 정보">
+          {nickname}
+        </Link>
+      )}
       <button
         type="button"
         onClick={async () => {
