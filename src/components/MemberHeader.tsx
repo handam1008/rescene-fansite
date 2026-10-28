@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { members, type Member } from "@/data/members";
+import { members, type Member, type MemberSlug } from "@/data/members";
+import { FavoriteToggle, FavoritesProvider } from "./FavoriteMembers";
 
 /** 멤버 사진 (사진이 없으면 멤버 색 네모에 이름 첫 글자) */
 export function MemberAvatar({ member, size = 64 }: { member: Member; size?: number }) {
@@ -60,6 +61,11 @@ export default function MemberHeader({ member, active }: { member: Member; activ
         <div>
           <p className="text-xs font-semibold tracking-[0.2em] text-lilac-500 uppercase">{member.english}</p>
           <h1 className="text-3xl font-extrabold">{member.name}</h1>
+        </div>
+        <div className="ml-auto">
+          <FavoritesProvider>
+            <FavoriteToggle slug={member.slug as MemberSlug} name={member.name} compact />
+          </FavoritesProvider>
         </div>
       </div>
 
