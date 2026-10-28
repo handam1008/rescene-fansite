@@ -116,11 +116,10 @@ export async function getSchedule(member?: MemberSlug | "group", now: Date = new
 }
 
 /** 달력용: year 년 month 월(1~12)에 하루라도 걸친 일정 */
-export async function getMonthSchedule(year: number, month: number, member?: MemberSlug | "group", now: Date = new Date()) {
+export async function getMonthSchedule(year: number, month: number, now: Date = new Date()) {
   const first = `${year}-${String(month).padStart(2, "0")}-01`;
   const last = `${year}-${String(month).padStart(2, "0")}-${new Date(year, month, 0).getDate()}`;
   return [...schedule, ...releaseEvents(), ...birthdayEvents([year]), ...anwonjalbuEstimates(now)]
-    .filter(forMember(member))
     .filter((e) => kstDateKey(e.date) <= last && kstDateKey(e.endDate ?? e.date) >= first)
     .sort(byDate);
 }
