@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import CardImage from "@/components/CardImage";
 import CatalogForm from "@/components/CatalogForm";
 import CatalogImageButton from "@/components/CatalogImageButton";
-import { EmptyState, PageHeader, SupabaseNotice } from "@/components/ui";
+import { EmptyState, PageHeader, SupabaseNotice, inputClass } from "@/components/ui";
 import { pokedexMemberName } from "@/data/members";
 import { cardSourceUrl } from "@/data/pokedex-sets";
 import Link from "next/link";
@@ -21,13 +21,16 @@ import {
 import type { CatalogCard, ReportReason } from "@/types";
 import { formatFullDateTime } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { getCurrentUser } from "@/lib/supabase/server";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import {
+  addLiveLink,
   adminDeletePost,
   approveProof,
   banMember,
   clearReports,
   deleteCatalogCard,
+  deleteLiveLink,
+  endLiveLink,
   hidePost,
   rejectProof,
   restorePost,
@@ -57,6 +60,7 @@ const TABS = [
   { key: "board", label: "게시판" },
   { key: "members", label: "회원" },
   { key: "pokedex", label: "포카 도감" },
+  { key: "live", label: "라이브" },
 ] as const;
 type AdminTab = (typeof TABS)[number]["key"];
 
@@ -95,6 +99,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {tab === "board" && <BoardSection />}
       {tab === "members" && <MembersSection q={q ?? ""} myId={user.id} />}
       {tab === "pokedex" && <PokedexSection />}
+      {tab === "live" && <LiveSection />}
     </div>
   );
 }
@@ -512,6 +517,123 @@ async function PokedexSection() {
               </details>
             ))}
           </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+/* ───────── 라이브 ───────── */
+
+type LiveLinkRow = { id: number; title: string; url: string; starts_at: string; ends_at: string };
+
+/** 입력칸 기본값: 지금 한국 시간 "2026-10-28T15:40" */
+function kstInputNow() {
+  return new Date().toLocaleString("sv-SE", { timeZone: "Asia/Seoul" }).slice(0, 16).replace(" ", "T");
+}
+
+async function LiveSection() {
+  const supabase = await createClient();
+  // 끝난 지 7일 안 된 것까지 보여줌
+  const { data } = await supabase
+    .from("live_links")
+    .select("id, title, url, starts_at, ends_at")
+    .gt("ends_at", new Date(Date.now() - 7 * 86_400_000).toISOString())
+    .order("starts_at", { ascending: false })
+    .limit(30);
+  const rows = (data ?? []) as LiveLinkRow[];
+  const now = Date.now();
+  const status = (r: LiveLinkRow) =>
+    Date.parse(r.ends_at) <= now ? "끝남" : Date.parse(r.starts_at) <= now ? "방송 중" : "예정";
+
+  return (
+    <div className="space-y-8">
+      <section>
+        <h2 className={sectionTitle}>라이브 링크 추가</h2>
+        <p className="mb-3 text-sm text-ink-soft">
+          넣은 시간 동안 사이트 위쪽에 빨간 LIVE 줄이 뜨고 /live 에서 바로 볼 수 있어요. 시작 30분 전부터는 &quot;곧 LIVE&quot;로
+          보여요. 유튜브 주소면 사이트 안에서 바로 재생돼요 (방송사가 퍼가기를 막은 영상은 유튜브로 안내).
+        </p>
+        <form action={addLiveLink} className="card grid gap-3 p-4 text-sm sm:grid-cols-2">
+          <label className="sm:col-span-2">
+            <span className="font-semibold">제목</span>
+            <input name="title" required maxLength={80} placeholder="예: 쇼! 음악중심 리센느 컴백 무대" className={`${inputClass} mt-1`} />
+          </label>
+          <label className="sm:col-span-2">
+            <span className="font-semibold">라이브 주소</span>
+            <input
+              name="url"
+              type="url"
+              required
+              pattern="https://.*"
+              placeholder="https://www.youtube.com/watch?v=..."
+              className={`${inputClass} mt-1`}
+            />
+          </label>
+          <label>
+            <span className="font-semibold">시작 (한국 시간)</span>
+            <input name="startsAt" type="datetime-local" required defaultValue={kstInputNow()} className={`${inputClass} mt-1`} />
+          </label>
+          <label>
+            <span className="font-semibold">길이</span>
+            <select name="hours" defaultValue="2" className={`${inputClass} mt-1`}>
+              {[1, 2, 3, 4, 6].map((h) => (
+                <option key={h} value={h}>
+                  {h}시간
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="submit" className="border border-red-500 bg-red-500 px-4 py-2 font-bold text-white sm:col-span-2">
+            LIVE 추가
+          </button>
+        </form>
+      </section>
+
+      <section>
+        <h2 className={sectionTitle}>라이브 목록</h2>
+        {rows.length === 0 ? (
+          <EmptyState>아직 넣은 라이브가 없어요.</EmptyState>
+        ) : (
+          <ul className="card divide-y divide-lilac-100 text-sm">
+            {rows.map((r) => {
+              const st = status(r);
+              return (
+                <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3">
+                  <span
+                    className={`px-1.5 py-0.5 text-xs font-bold ${
+                      st === "방송 중" ? "bg-red-500 text-white" : st === "예정" ? "bg-lilac-100 text-lilac-700" : "bg-ink/10 text-ink-soft"
+                    }`}
+                  >
+                    {st}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold">{r.title}</span>
+                    <span className="block text-xs text-ink-soft tabular-nums">
+                      {formatFullDateTime(r.starts_at)} ~ {formatFullDateTime(r.ends_at).slice(-5)} ·{" "}
+                      <a href={r.url} target="_blank" rel="noopener noreferrer" className="underline">
+                        주소 열기
+                      </a>
+                    </span>
+                  </span>
+                  {st !== "끝남" && (
+                    <form action={endLiveLink}>
+                      <input type="hidden" name="id" value={r.id} />
+                      <button type="submit" className="border border-lilac-300 bg-white px-2.5 py-1">
+                        {st === "예정" ? "취소" : "지금 끝내기"}
+                      </button>
+                    </form>
+                  )}
+                  <form action={deleteLiveLink}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <button type="submit" className="border border-lilac-200 bg-white px-2.5 py-1 text-ink-soft">
+                      삭제
+                    </button>
+                  </form>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </section>
     </div>

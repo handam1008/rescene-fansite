@@ -174,3 +174,50 @@ export async function unbanMember(formData: FormData) {
   await supabase.rpc("admin_set_ban", { target: String(formData.get("id")), until: null, reason: null });
   revalidatePath("/admin");
 }
+
+/* ───────── LIVE 링크 (0014) ───────── */
+
+/** 입력칸 값 "2026-11-03T18:00" (한국 시간) → ISO. 형식이 틀리면 null */
+function kstInputToIso(v: string) {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v)) return null;
+  return new Date(`${v}:00+09:00`).toISOString();
+}
+
+function revalidateLive() {
+  revalidatePath("/admin");
+  revalidatePath("/live");
+}
+
+export async function addLiveLink(formData: FormData) {
+  await requireAdmin();
+  const title = String(formData.get("title") ?? "").trim().slice(0, 80);
+  const url = String(formData.get("url") ?? "").trim();
+  const hours = Math.min(12, Math.max(0.5, Number(formData.get("hours")) || 2));
+  if (!title) throw new Error("제목을 적어주세요.");
+  if (!/^https:\/\/\S+$/.test(url)) throw new Error("주소는 https:// 로 시작해야 해요.");
+  const startsAt = kstInputToIso(String(formData.get("startsAt") ?? "")) ?? new Date().toISOString();
+  const endsAt = new Date(Date.parse(startsAt) + hours * 3_600_000).toISOString();
+  const supabase = await createClient();
+  const { error } = await supabase.from("live_links").insert({ title, url, starts_at: startsAt, ends_at: endsAt });
+  if (error) throw new Error("라이브 링크를 저장하지 못했어요.");
+  revalidateLive();
+}
+
+/** 지금 끝내기. 아직 시작 전이면 취소(삭제) */
+export async function endLiveLink(formData: FormData) {
+  await requireAdmin();
+  const id = Number(formData.get("id"));
+  const supabase = await createClient();
+  const { data } = await supabase.from("live_links").select("starts_at").eq("id", id).maybeSingle();
+  if (!data) return;
+  if (Date.now() <= Date.parse(data.starts_at)) await supabase.from("live_links").delete().eq("id", id);
+  else await supabase.from("live_links").update({ ends_at: new Date().toISOString() }).eq("id", id);
+  revalidateLive();
+}
+
+export async function deleteLiveLink(formData: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  await supabase.from("live_links").delete().eq("id", Number(formData.get("id")));
+  revalidateLive();
+}

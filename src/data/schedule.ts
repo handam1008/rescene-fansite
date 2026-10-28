@@ -9,6 +9,8 @@ import type { MemberSlug } from "./members";
  * allDay: 시간이 정해지지 않은 일정이면 true (날짜만 표시)
  * important: 컴백처럼 중요한 일정이면 true (달력·목록에 ★). 곡 발매일은 자동으로 ★
  * tentative: 공식 확정이 아닌 예상 일정이면 true (점선·"미확정" 표시)
+ * live: 실시간으로 볼 수 있는 주소(유튜브 라이브 등). 적으면 그 시간(date ~ endDate, 없으면 2시간) 동안
+ *       사이트 위쪽에 빨간 LIVE 줄이 뜸. 갑자기 하는 라이브는 /admin "라이브" 탭에서 넣는 게 편해요.
  *
  * 2026-10-27 기준. 공식 SNS·유튜브 업로드 기록과 출연 확정 보도로 확인한 일정만 넣었습니다(link 가 출처).
  * 음악방송·쇼케이스·팬사인회·연말 가요제는 공식 발표가 나오면 추가해 주세요.
@@ -28,6 +30,7 @@ export type ScheduleEvent = {
   link?: string;
   important?: boolean;
   tentative?: boolean;
+  live?: string;
 };
 
 export const schedule: ScheduleEvent[] = [
