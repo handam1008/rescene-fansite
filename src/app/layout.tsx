@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import ScrollTopButton from "@/components/ScrollTopButton";
 import { LeftRail, RightRail } from "@/components/SideRails";
+import { SITE_URL } from "@/lib/site-url";
 // Pretendard 폰트 (필요한 글자 조각만 내려받는 방식, OFL 라이선스)
 import "./fonts/pretendard/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
@@ -32,7 +33,7 @@ const DESCRIPTION = "리센느(RESCENE) 비공식 팬사이트 💜 컴백 일�
 
 export const metadata: Metadata = {
   // 공유 미리보기의 이미지 주소를 절대 주소로 만들 때 쓰는 기준 주소
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://rescene-fansite.vercel.app"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: SITE_NAME,
     template: `%s | ${SITE_NAME}`,
