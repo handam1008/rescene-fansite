@@ -3,21 +3,18 @@ import HomeHero from "@/components/HomeHero";
 import PokedexNews from "@/components/PokedexNews";
 import PopularPosts from "@/components/PopularPosts";
 import UpcomingSchedule from "@/components/UpcomingSchedule";
-import { VideoGrid } from "@/components/VideoFeed";
 import { VoteStatusBadge } from "@/components/VoteCard";
 import { EmptyState, MoreLink, SampleBadge } from "@/components/ui";
 import { getContributorRanking, getPokedexNews, getPopularPosts } from "@/lib/community";
 import { getLatestComeback, getSongs, getVotes } from "@/lib/data";
-import { getNews } from "@/lib/news";
 import { getSchedule } from "@/lib/schedule";
-import { getVideos } from "@/lib/videos";
 import { formatDate, formatDateTime } from "@/lib/format";
 
 // 인기글·투표 상태가 시간에 따라 바뀌므로 5분마다 다시 생성
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const [comeback, songs, votes, popularPosts, schedule, pokedex, ranking, videos, news] = await Promise.all([
+  const [comeback, songs, votes, popularPosts, schedule, pokedex, ranking] = await Promise.all([
     getLatestComeback(),
     getSongs(),
     getVotes(),
@@ -25,10 +22,7 @@ export default async function HomePage() {
     getSchedule(),
     getPokedexNews(5),
     getContributorRanking(3),
-    getVideos(60),
-    getNews(5),
   ]);
-  const latestVideos = videos.filter((v) => !v.short).slice(0, 4);
   const latestSong = songs[0];
   const activeVotes = votes.filter((v) => v.status !== "ended").slice(0, 2);
 
@@ -108,36 +102,6 @@ export default async function HomePage() {
           </div>
         </section>
       </div>
-
-      {/* 최신 영상 (공식 + 팬튜브, 15분마다 새로) */}
-      {latestVideos.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="text-lg font-bold">📺 최신 영상</h2>
-            <MoreLink href="/videos">영상 더 보기</MoreLink>
-          </div>
-          <VideoGrid videos={latestVideos} />
-        </section>
-      )}
-
-      {news.length > 0 && (
-        <section className="card p-5">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="font-bold">📰 리센느 뉴스</h2>
-            <MoreLink href="/news">뉴스 더 보기</MoreLink>
-          </div>
-          <ul className="mt-3 divide-y divide-lilac-100">
-            {news.map((n) => (
-              <li key={n.url}>
-                <a href={n.url} target="_blank" rel="noopener noreferrer" className="flex items-baseline gap-3 py-2.5 hover:bg-lilac-50">
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">{n.title}</span>
-                  <span className="shrink-0 text-xs text-ink-soft">{n.source}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {/* 넓은 PC 화면에서는 양옆 사이드바에 같은 내용이 있어서 숨김 */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 wide:hidden">

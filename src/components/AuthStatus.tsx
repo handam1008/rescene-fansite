@@ -121,7 +121,7 @@ function Action({
   /** 좁은 휴대폰에서는 숨김 (게시판 화면에 같은 버튼이 있음) */
   hideOnPhone?: boolean;
 }) {
-  const className = `btn ${hideOnPhone ? "hidden sm:flex" : "flex"} min-w-11 flex-col items-center gap-0.5 px-1.5 py-1 text-[11px] font-semibold whitespace-nowrap xl:min-w-0 xl:flex-row xl:gap-1.5 xl:px-2.5 xl:py-2 xl:text-[15px] 2xl:px-3 ${
+  const className = `btn ${hideOnPhone ? "hidden sm:flex" : "flex"} min-w-11 flex-col items-center gap-0.5 px-1.5 py-1 text-[11px] font-semibold whitespace-nowrap xl:min-w-0 xl:flex-row xl:gap-1.5 xl:px-3 xl:py-2 xl:text-[15px] ${
     accent ? "text-lilac-700 xl:bg-lilac-200 xl:text-ink xl:hover:bg-lilac-300" : "text-ink-soft hover:bg-lilac-50 hover:text-ink"
   }`;
   const badgeClass = "min-w-4 bg-blush-400 px-1 text-center text-[10px] leading-4 font-bold text-white";
@@ -134,7 +134,7 @@ function Action({
       {short ? (
         <>
           <span className="xl:hidden">{short}</span>
-          <span className="hidden max-w-24 truncate xl:inline 2xl:max-w-28">{label}</span>
+          <span className="hidden max-w-28 truncate xl:inline">{label}</span>
         </>
       ) : (
         <span>{label}</span>
