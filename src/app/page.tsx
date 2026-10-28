@@ -104,7 +104,7 @@ export default async function HomePage() {
       </div>
 
       {/* 넓은 PC 화면에서는 양옆 사이드바에 같은 내용이 있어서 숨김 */}
-      <div className="grid gap-5 md:grid-cols-2 wide:hidden">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 wide:hidden">
         <PopularPosts posts={popularPosts} />
         <UpcomingSchedule events={schedule.upcoming.slice(0, 5)} />
       </div>

@@ -175,7 +175,7 @@ export default function ScheduleCalendar({
               const d = new Date(`${k}T00:00:00+09:00`);
               const label = d.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", weekday: "short" });
               return (
-                <section key={k} id={`d-${k}`} className="scroll-mt-24">
+                <section key={k} id={`d-${k}`} className="scroll-mt-32 xl:scroll-mt-24">
                   <h3 className={`mb-1.5 text-sm font-bold ${k === today ? "text-lilac-700" : ""}`}>
                     {label}
                     {k === today && <span className="ml-1.5 bg-lilac-500 px-1 text-[10px] text-white">오늘</span>}
