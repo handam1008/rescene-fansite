@@ -24,12 +24,14 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import {
   addLiveLink,
+  addVideoChannel,
   adminDeletePost,
   approveProof,
   banMember,
   clearReports,
   deleteCatalogCard,
   deleteLiveLink,
+  deleteVideoChannel,
   endLiveLink,
   hidePost,
   rejectProof,
@@ -61,6 +63,7 @@ const TABS = [
   { key: "members", label: "회원" },
   { key: "pokedex", label: "포카 도감" },
   { key: "live", label: "라이브" },
+  { key: "videos", label: "영상 채널" },
 ] as const;
 type AdminTab = (typeof TABS)[number]["key"];
 
@@ -100,6 +103,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {tab === "members" && <MembersSection q={q ?? ""} myId={user.id} />}
       {tab === "pokedex" && <PokedexSection />}
       {tab === "live" && <LiveSection />}
+      {tab === "videos" && <VideoChannelSection />}
     </div>
   );
 }
@@ -633,6 +637,79 @@ async function LiveSection() {
                 </li>
               );
             })}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
+
+/* ───────── 영상 채널 ───────── */
+
+async function VideoChannelSection() {
+  const supabase = await createClient();
+  const { data } = await supabase.from("video_channels").select("channel_id, name, kind, created_at").order("kind", { ascending: false }).order("created_at");
+  const rows = (data ?? []) as { channel_id: string; name: string; kind: "official" | "fan" }[];
+
+  return (
+    <div className="space-y-8">
+      <section>
+        <h2 className={sectionTitle}>채널 추가</h2>
+        <p className="mb-3 text-sm text-ink-soft">
+          유튜브 채널 주소를 넣으면 그 채널의 새 영상이 /videos 와 홈 &quot;최신 영상&quot;에 자동으로 올라와요 (15분마다). 이름을 비우면 채널
+          이름을 그대로 써요.
+        </p>
+        <form action={addVideoChannel} className="card grid gap-3 p-4 text-sm sm:grid-cols-[1fr_10rem_10rem_auto] sm:items-end">
+          <label>
+            <span className="font-semibold">채널 주소</span>
+            <input name="url" required placeholder="https://www.youtube.com/@채널이름" className={`${inputClass} mt-1`} />
+          </label>
+          <label>
+            <span className="font-semibold">종류</span>
+            <select name="kind" defaultValue="fan" className={`${inputClass} mt-1`}>
+              <option value="fan">팬튜브</option>
+              <option value="official">오피셜</option>
+            </select>
+          </label>
+          <label>
+            <span className="font-semibold">이름 (선택)</span>
+            <input name="name" maxLength={40} className={`${inputClass} mt-1`} />
+          </label>
+          <button type="submit" className="border border-lilac-500 bg-lilac-500 px-4 py-2 font-bold text-white">
+            추가
+          </button>
+        </form>
+      </section>
+
+      <section>
+        <h2 className={sectionTitle}>채널 목록 ({rows.length})</h2>
+        {rows.length === 0 ? (
+          <EmptyState>채널이 없어요. (0015 SQL 을 먼저 실행해 주세요)</EmptyState>
+        ) : (
+          <ul className="card divide-y divide-lilac-100 text-sm">
+            {rows.map((r) => (
+              <li key={r.channel_id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5">
+                <span
+                  className={`px-1.5 py-0.5 text-xs font-bold ${r.kind === "official" ? "bg-lilac-500 text-white" : "bg-lilac-100 text-lilac-700"}`}
+                >
+                  {r.kind === "official" ? "오피셜" : "팬튜브"}
+                </span>
+                <a
+                  href={`https://www.youtube.com/channel/${r.channel_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="min-w-0 flex-1 truncate font-semibold hover:underline"
+                >
+                  {r.name}
+                </a>
+                <form action={deleteVideoChannel}>
+                  <input type="hidden" name="id" value={r.channel_id} />
+                  <button type="submit" className="border border-lilac-200 bg-white px-2.5 py-1 text-ink-soft">
+                    빼기
+                  </button>
+                </form>
+              </li>
+            ))}
           </ul>
         )}
       </section>

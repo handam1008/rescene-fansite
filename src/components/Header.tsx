@@ -15,6 +15,7 @@ const navItems: NavItem[] = [
   { label: "홈", href: "/" },
   { label: "일정", href: "/schedule" },
   { label: "최애", href: "/members" },
+  { label: "영상", href: "/videos" },
   {
     label: "소식",
     children: [
@@ -22,6 +23,7 @@ const navItems: NavItem[] = [
       { label: "신곡", href: "/songs", desc: "발매곡 · 뮤직비디오" },
       { label: "투표", href: "/votes", desc: "음악방송 · 시상식 투표" },
       { label: "LIVE", href: "/live", desc: "지금 방송 중 · 다가오는 라이브" },
+      { label: "뉴스", href: "/news", desc: "리센느 기사 모아보기" },
     ],
   },
   { label: "포카도감", href: "/photocards" },
@@ -50,7 +52,7 @@ export default function Header() {
     <header className="sticky top-0 z-20 border-b border-lilac-200/70 bg-white/80 backdrop-blur-md">
       {/* 스크롤을 따라 내려오는 반투명 헤더 (뒤 내용이 살짝 비쳐 보임) */}
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 xl:h-[72px] xl:gap-8 xl:px-6 wide:max-w-[1520px]">
-        <div className="flex min-w-0 items-center gap-6 xl:h-full">
+        <div className="flex min-w-0 items-center gap-4 xl:h-full 2xl:gap-6">
           {/* 좁은 휴대폰에서는 "팬사이트"를 작게 아랫줄로 (오른쪽 버튼 자리 확보) */}
           <Link
             href="/"
@@ -117,7 +119,7 @@ function TopLink({ item, active }: { item: NavLink; active: boolean }) {
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
-      className={`relative flex items-center px-3.5 text-[17px] font-bold transition-colors ${
+      className={`relative flex items-center px-3 text-base 2xl:px-3.5 2xl:text-[17px] font-bold transition-colors ${
         active ? "text-lilac-700" : "text-ink hover:text-lilac-700"
       }`}
     >
@@ -170,7 +172,7 @@ function NavGroup({ label, items, pathname }: { label: string; items: NavLink[];
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className={`relative flex items-center gap-1 px-3.5 text-[17px] font-bold transition-colors hover:transform-none active:transform-none ${
+        className={`relative flex items-center gap-1 px-3 text-base 2xl:px-3.5 2xl:text-[17px] font-bold transition-colors hover:transform-none active:transform-none ${
           active || open ? "text-lilac-700" : "text-ink hover:text-lilac-700"
         }`}
       >
