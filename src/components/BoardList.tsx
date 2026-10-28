@@ -36,7 +36,7 @@ function PostTitle({ post, now, showMember }: { post: PostSummary; now: number; 
     <span className="flex min-w-0 items-center gap-1">
       {post.hidden_at && <span className="shrink-0 bg-ink-soft px-1 text-[10px] leading-4 font-bold text-white">숨김</span>}
       {member && <span className="shrink-0 text-xs font-bold text-lilac-700">[{member.name}]</span>}
-      <span className="truncate">{post.title}</span>
+      <span className="font-board truncate">{post.title}</span>
       {(post.image_paths?.length ?? 0) > 0 && <ImageIcon />}
       {isNew && (
         <span aria-label="새 글" className="shrink-0 bg-blush-400 px-1 text-[10px] leading-4 font-bold text-white">

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import ScrollTopButton from "@/components/ScrollTopButton";
@@ -6,6 +7,25 @@ import { LeftRail, RightRail } from "@/components/SideRails";
 // Pretendard 폰트 (필요한 글자 조각만 내려받는 방식, OFL 라이선스)
 import "./fonts/pretendard/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
+
+// 제목·로고: 마루 부리 (네이버, OFL). 제목은 늘 굵게 쓰여서 Bold 한 벌을 600~900 굵기에 씀
+const maruBuri = localFont({
+  src: "./fonts/maruburi/MaruBuri-Bold.woff2",
+  weight: "600 900",
+  variable: "--font-maru",
+  display: "swap",
+});
+
+// 게시판 글 제목: 페이퍼로지 (OFL). 게시판 화면에서만 쓰여서 미리 받지 않음
+const paperlogy = localFont({
+  src: [
+    { path: "./fonts/paperlogy/Paperlogy-5Medium.woff2", weight: "400 500" },
+    { path: "./fonts/paperlogy/Paperlogy-7Bold.woff2", weight: "600 900" },
+  ],
+  variable: "--font-paper",
+  display: "swap",
+  preload: false,
+});
 
 const SITE_NAME = "RESCENE 팬사이트 (비공식)";
 const DESCRIPTION = "리센느(RESCENE) 비공식 팬사이트 💜 컴백 일정 달력 · 다 같이 채우는 포카 도감 · 리마인 게시판";
@@ -43,7 +63,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" className={`${maruBuri.variable} ${paperlogy.variable}`}>
       <body className="flex min-h-dvh flex-col antialiased">
         <Header />
         {/* 넓은 PC 화면: 왼쪽 인기글 | 본문 | 오른쪽 다가오는 일정 */}
