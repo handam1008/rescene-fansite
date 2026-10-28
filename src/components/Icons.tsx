@@ -79,3 +79,13 @@ export const PlayIcon = (p: IconProps) => (
     <path d="M7 4.5v15L19 12Z" />
   </Svg>
 );
+
+/** filled: 속을 채운 하트 (최애로 고른 상태) */
+export const HeartIcon = ({ filled = false, ...p }: IconProps & { filled?: boolean }) => (
+  <Svg {...p}>
+    <path
+      d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z"
+      fill={filled ? "currentColor" : "none"}
+    />
+  </Svg>
+);

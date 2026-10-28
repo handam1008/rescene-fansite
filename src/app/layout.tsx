@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import ScrollTopButton from "@/components/ScrollTopButton";
 import { LeftRail, RightRail } from "@/components/SideRails";
+import TopBar from "@/components/TopBar";
 import { SITE_URL } from "@/lib/site-url";
 // Pretendard 폰트 (필요한 글자 조각만 내려받는 방식, OFL 라이선스)
 import "./fonts/pretendard/pretendardvariable-dynamic-subset.css";
@@ -66,6 +67,7 @@ export default function RootLayout({
   return (
     <html lang="ko" className={`${maruBuri.variable} ${paperlogy.variable}`}>
       <body className="flex min-h-dvh flex-col antialiased">
+        <TopBar />
         <Header />
         {/* 넓은 PC 화면: 왼쪽 인기글 | 본문 | 오른쪽 다가오는 일정 */}
         <div className="mx-auto w-full max-w-5xl flex-1 px-4 pt-6 sm:pt-10 wide:grid wide:max-w-[1520px] wide:grid-cols-[224px_minmax(0,1fr)_224px] wide:items-start wide:gap-6">

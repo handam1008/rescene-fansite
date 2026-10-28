@@ -13,7 +13,7 @@ type NavItem = NavLink | { label: string; children: NavLink[] };
 const navItems: NavItem[] = [
   { label: "홈", href: "/" },
   { label: "일정", href: "/schedule" },
-  { label: "멤버", href: "/members" },
+  { label: "최애", href: "/members" },
   {
     label: "소식",
     children: [

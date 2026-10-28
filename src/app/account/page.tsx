@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DeleteAccountForm, NicknameForm } from "@/components/AccountForms";
 import { PageHeader, SupabaseNotice } from "@/components/ui";
+import { members } from "@/data/members";
 import { safeNext } from "@/lib/auth-providers";
 import { formatFullDateTime } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -24,7 +25,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   if (!user) redirect("/login?next=/account");
 
   const { setup, next } = await searchParams;
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+  const [{ data: profile }, { data: favRows }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+    // 0012 SQL 전이면 비어 있음
+    supabase.from("favorite_members").select("member_slug"),
+  ]);
+  const favorites = members.filter((m) => (favRows ?? []).some((r) => r.member_slug === m.slug));
   const provider = String(user.app_metadata.provider ?? "email");
   const nickname: string = profile?.nickname ?? "";
   const needsNickname = setup === "1" || profile?.nickname_set === false;
@@ -41,6 +47,26 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           </p>
         )}
         <NicknameForm current={nickname} next={needsNickname ? safeNext(next) : undefined} />
+      </section>
+
+      <section className="card space-y-3 p-5 text-sm">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-bold">💜 최애 멤버</h2>
+          <Link href="/members" className="font-semibold text-lilac-700 underline">
+            {favorites.length ? "최애 바꾸기" : "최애 고르기"}
+          </Link>
+        </div>
+        {favorites.length ? (
+          <ul className="flex flex-wrap gap-1.5">
+            {favorites.map((m) => (
+              <li key={m.slug} className="px-2 py-0.5 font-semibold" style={{ backgroundColor: m.color }}>
+                {m.name}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-ink-soft">아직 고른 최애가 없어요. 여러 명도 고를 수 있어요.</p>
+        )}
       </section>
 
       <section className="card p-5 text-sm">
