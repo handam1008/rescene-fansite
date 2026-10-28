@@ -70,7 +70,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
       <article className="border-t-2 border-lilac-500 bg-white">
         {/* 제목 · 글쓴이 정보 */}
         <header className="border-b border-lilac-200 px-4 py-3 sm:px-5">
-          <h1 className="text-lg font-bold break-words sm:text-xl">{post.title}</h1>
+          <h1 className="font-board text-lg font-bold break-words sm:text-xl">{post.title}</h1>
           <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-ink-soft">
             <span className="flex min-w-0 items-center">
               <Nickname author={post.profiles} className="font-semibold text-ink" />

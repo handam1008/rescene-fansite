@@ -46,10 +46,17 @@ body {
   background-attachment: fixed;
 }
 
-h1,
-h2,
-h3 {
-  letter-spacing: -0.025em;
+/*
+ * 제목은 마루 부리 (본문은 Pretendard 그대로).
+ * base 층에 둬야 font-board 같은 클래스로 덮어쓸 수 있음 (층 밖 규칙은 클래스보다 우선함)
+ */
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-maru), var(--font-sans);
+    letter-spacing: -0.025em;
+  }
 }
 
 /* 각진 테두리만 있는 평평한 카드 */
@@ -67,6 +74,15 @@ h3 {
   );
   background-clip: text;
   color: transparent;
+}
+
+/*
+ * 글꼴 (layout.tsx 의 next/font 가 --font-maru·--font-paper 를 만듦)
+ * font-display: 제목·로고 (마루 부리) / font-board: 게시판 글 제목 (페이퍼로지)
+ */
+@theme inline {
+  --font-display: var(--font-maru), var(--font-sans);
+  --font-board: var(--font-paper), var(--font-sans);
 }
 
 /* 메뉴 가로 스크롤 시 스크롤바 숨김 */

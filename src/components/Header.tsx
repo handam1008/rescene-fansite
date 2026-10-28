@@ -26,7 +26,7 @@ export default function Header() {
       {/* 스크롤을 따라 내려오는 반투명 헤더 (뒤 내용이 살짝 비쳐 보임) */}
       <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between wide:max-w-[1520px]">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/" className="text-dreamy text-lg font-extrabold tracking-wide whitespace-nowrap sm:text-xl">
+          <Link href="/" className="text-dreamy font-display text-lg font-extrabold tracking-wide whitespace-nowrap sm:text-xl">
             RESCENE ✦ 팬사이트
           </Link>
           <div className="sm:hidden">

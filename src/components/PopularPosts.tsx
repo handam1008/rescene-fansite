@@ -11,7 +11,7 @@ export default function PopularPosts({ posts, compact = false }: { posts: PostSu
   return (
     <section className={`card ${compact ? "p-4" : "p-5"}`}>
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-bold">🔥 인기글</h2>
+        <h2 className="font-bold whitespace-nowrap">🔥 인기글</h2>
         <MoreLink href="/board?tab=best">더 보기</MoreLink>
       </div>
 
@@ -41,7 +41,7 @@ export default function PopularPosts({ posts, compact = false }: { posts: PostSu
                     {i + 1}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm">
+                    <span className="font-board block truncate text-sm">
                       {post.title}
                       {comments > 0 && <span className="ml-1 text-xs font-bold text-lilac-500">[{comments}]</span>}
                     </span>

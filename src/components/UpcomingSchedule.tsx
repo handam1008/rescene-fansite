@@ -18,8 +18,9 @@ export default function UpcomingSchedule({ events, compact = false }: { events: 
   return (
     <section className={`card ${compact ? "p-4" : "p-5"}`}>
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-bold">📅 다가오는 일정</h2>
-        <MoreLink href="/schedule">전체 일정</MoreLink>
+        <h2 className="font-bold whitespace-nowrap">📅 다가오는 일정</h2>
+        {/* 사이드바는 좁아서 짧게 */}
+        <MoreLink href="/schedule">{compact ? "전체" : "전체 일정"}</MoreLink>
       </div>
       {events.length === 0 ? (
         <p className="mt-4 text-sm text-ink-soft">예정된 일정이 없어요.</p>
