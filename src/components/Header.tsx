@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import AuthStatus from "./AuthStatus";
 import { ChevronDownIcon } from "./Icons";
+import { LiveStrip } from "./LiveStatus";
 
 type NavLink = { label: string; href: string; desc?: string };
 type NavItem = NavLink | { label: string; children: NavLink[] };
@@ -20,6 +21,7 @@ const navItems: NavItem[] = [
       { label: "컴백", href: "/comeback", desc: "컴백 D-day · 앨범 정보" },
       { label: "신곡", href: "/songs", desc: "발매곡 · 뮤직비디오" },
       { label: "투표", href: "/votes", desc: "음악방송 · 시상식 투표" },
+      { label: "LIVE", href: "/live", desc: "지금 방송 중 · 다가오는 라이브" },
     ],
   },
   { label: "포카도감", href: "/photocards" },
@@ -103,6 +105,8 @@ export default function Header() {
           })}
         </ul>
       </nav>
+      {/* 방송 중이거나 곧 시작하면 빨간 LIVE 줄 (헤더와 같이 따라 내려옴) */}
+      <LiveStrip />
     </header>
   );
 }
