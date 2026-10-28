@@ -17,8 +17,6 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  // 영상 썸네일 (변환하지 않고 그대로 씀)
-  images: { remotePatterns: [{ protocol: "https", hostname: "i.ytimg.com" }] },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
