@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { BellIcon, LoginIcon, LogoutIcon, PencilIcon, ShieldIcon, UserIcon } from "./Icons";
 
 /**
  * 헤더 오른쪽의 로그인 상태.
@@ -53,51 +54,104 @@ export default function AuthStatus() {
 
   if (nickname === null) {
     return (
-      <div className="flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap sm:text-sm">
-        <Link href="/login" className="btn border border-lilac-300 px-2.5 py-1 text-lilac-700 hover:bg-lilac-100">
-          로그인
-        </Link>
-        <Link href="/signup" className="btn border border-lilac-300 bg-lilac-200 px-2.5 py-1 text-ink hover:bg-lilac-300">
-          회원가입
-        </Link>
+      <div className={rowClass}>
+        <Action href="/board/new" icon={<PencilIcon />} label="글쓰기" hideOnPhone />
+        <Action href="/login" icon={<LoginIcon />} label="로그인" />
+        <Action href="/signup" icon={<UserIcon />} label="회원가입" accent />
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 text-sm">
-      {isAdmin && (
-        <Link href="/admin" className="btn bg-ink px-2 py-0.5 text-xs font-bold text-white hover:bg-lilac-700">
-          🛠 운영자
-        </Link>
-      )}
-      <Link href="/notifications" className="btn relative px-1 text-base" aria-label={`알림${unread ? ` ${unread}개` : ""}`}>
-        🔔
-        {unread > 0 && (
-          <span className="absolute -top-1 -right-1.5 min-w-4 bg-blush-400 px-1 text-center text-[10px] leading-4 font-bold text-white">
-            {unread > 99 ? "99+" : unread}
-          </span>
-        )}
-      </Link>
+    <div className={rowClass}>
+      {isAdmin && <Action href="/admin" icon={<ShieldIcon />} label="운영자" />}
+      <Action href="/board/new" icon={<PencilIcon />} label="글쓰기" hideOnPhone />
+      <Action
+        href="/notifications"
+        icon={<BellIcon />}
+        label="알림"
+        badge={unread > 0 ? (unread > 99 ? "99+" : String(unread)) : undefined}
+        ariaLabel={`알림${unread ? ` ${unread}개` : ""}`}
+      />
       {needsNickname ? (
-        <Link href="/account?setup=1" className="btn bg-blush-400 px-2 py-0.5 text-xs font-bold text-white">
-          닉네임 정하기
-        </Link>
+        <Action href="/account?setup=1" icon={<UserIcon />} label="닉네임 정하기" short="닉네임" accent />
       ) : (
-        <Link href="/account" className="font-semibold hover:underline" title="내 정보">
-          {nickname}
-        </Link>
+        <Action href="/account" icon={<UserIcon />} label={nickname} short="내 정보" title="내 정보" />
       )}
-      <button
-        type="button"
+      <Action
+        icon={<LogoutIcon />}
+        label="로그아웃"
         onClick={async () => {
           await createClient().auth.signOut();
           router.refresh();
         }}
-        className="text-ink-soft underline hover:text-ink"
-      >
-        로그아웃
-      </button>
+      />
     </div>
+  );
+}
+
+const rowClass = "flex shrink-0 items-center gap-0.5 xl:gap-1";
+
+/**
+ * 헤더 오른쪽 버튼 한 칸. 휴대폰은 아이콘 아래 작은 글자, PC 는 아이콘 옆 글자.
+ * short: 휴대폰에서 대신 보여줄 짧은 글자 (긴 닉네임 등)
+ * badge: 안 읽은 알림 수 (휴대폰은 아이콘 위, PC 는 글자 옆)
+ */
+function Action({
+  href,
+  onClick,
+  icon,
+  label,
+  short,
+  title,
+  ariaLabel,
+  badge,
+  accent,
+  hideOnPhone,
+}: {
+  href?: string;
+  onClick?: () => void;
+  icon: React.ReactNode;
+  label: string;
+  short?: string;
+  title?: string;
+  ariaLabel?: string;
+  badge?: string;
+  accent?: boolean;
+  /** 좁은 휴대폰에서는 숨김 (게시판 화면에 같은 버튼이 있음) */
+  hideOnPhone?: boolean;
+}) {
+  const className = `btn ${hideOnPhone ? "hidden sm:flex" : "flex"} min-w-11 flex-col items-center gap-0.5 px-1.5 py-1 text-[11px] font-semibold whitespace-nowrap xl:min-w-0 xl:flex-row xl:gap-1.5 xl:px-3 xl:py-2 xl:text-[15px] ${
+    accent ? "text-lilac-700 xl:bg-lilac-200 xl:text-ink xl:hover:bg-lilac-300" : "text-ink-soft hover:bg-lilac-50 hover:text-ink"
+  }`;
+  const badgeClass = "min-w-4 bg-blush-400 px-1 text-center text-[10px] leading-4 font-bold text-white";
+  const body = (
+    <>
+      <span className="relative">
+        {icon}
+        {badge && <span className={`absolute -top-1 -right-2.5 xl:hidden ${badgeClass}`}>{badge}</span>}
+      </span>
+      {short ? (
+        <>
+          <span className="xl:hidden">{short}</span>
+          <span className="hidden max-w-28 truncate xl:inline">{label}</span>
+        </>
+      ) : (
+        <span>{label}</span>
+      )}
+      {badge && <span className={`hidden xl:inline ${badgeClass}`}>{badge}</span>}
+    </>
+  );
+  if (href) {
+    return (
+      <Link href={href} className={className} title={title} aria-label={ariaLabel}>
+        {body}
+      </Link>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} className={className}>
+      {body}
+    </button>
   );
 }

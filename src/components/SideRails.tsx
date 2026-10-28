@@ -11,7 +11,7 @@ import { getSchedule } from "@/lib/schedule";
  */
 
 // 사이드바 자체를 sticky 로 (안쪽 상자에 주면 사이드바 높이만큼만 움직일 수 있어서 따라오지 않음)
-const railClass = "hidden wide:sticky wide:top-20 wide:block";
+const railClass = "hidden wide:sticky wide:top-24 wide:block";
 
 async function PopularRail() {
   const posts = isSupabaseConfigured ? await getPopularPosts(5) : [];
