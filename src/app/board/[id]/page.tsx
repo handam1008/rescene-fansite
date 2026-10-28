@@ -10,14 +10,25 @@ import ViewCounter from "@/components/ViewCounter";
 import { SupabaseNotice } from "@/components/ui";
 import { getMember } from "@/data/members";
 import { hiddenReasons } from "@/data/moderation";
-import { getPost, getPosts, postImageUrl } from "@/lib/community";
+import { getPost, getPostPreview, getPosts, postImageUrl } from "@/lib/community";
 import { formatFullDateTime } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { adminDeletePost, hidePost, restorePost } from "../../admin/actions";
 import { deleteComment, deletePost } from "../actions";
 
-export const metadata: Metadata = { title: "게시판" };
+/** 글 링크를 공유하면 미리보기에 글 제목과 첫 부분이 뜨게 (숨긴 글은 공개 조회에서 빠져서 기본값) */
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const id = Number((await params).id);
+  const post = Number.isInteger(id) && id > 0 ? await getPostPreview(id) : null;
+  if (!post) return { title: "게시판" };
+  const description = post.content.replace(/\s+/g, " ").trim().slice(0, 120);
+  return {
+    title: post.title,
+    description,
+    openGraph: { title: post.title, description: `${post.nickname} · ${description}` },
+  };
+}
 
 const smallButton = "btn border border-lilac-200 bg-white px-3 py-1.5 text-sm hover:bg-lilac-50";
 

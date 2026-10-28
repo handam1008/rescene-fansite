@@ -4,12 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { FormState } from "@/app/auth/actions";
 import { safeNext } from "@/lib/auth-providers";
+import { NICKNAME_RULE, nicknameFormatOk } from "@/lib/nickname";
 import { POST_IMAGE_BUCKET, PROOF_BUCKET } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 export async function updateNickname(_prev: FormState, formData: FormData): Promise<FormState> {
   const nickname = String(formData.get("nickname") ?? "").trim();
-  if (nickname.length < 2 || nickname.length > 20) return { error: "닉네임은 2~20자로 정해주세요." };
+  if (!nicknameFormatOk(nickname)) return { error: `닉네임은 ${NICKNAME_RULE}` };
 
   const supabase = await createClient();
   const {
