@@ -7,19 +7,34 @@ import { LeftRail, RightRail } from "@/components/SideRails";
 import "./fonts/pretendard/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
 
+const SITE_NAME = "RESCENE 팬사이트 (비공식)";
+const DESCRIPTION = "리센느(RESCENE) 비공식 팬사이트 💜 컴백 일정 달력 · 다 같이 채우는 포카 도감 · 리마인 게시판";
+
 export const metadata: Metadata = {
+  // 공유 미리보기의 이미지 주소를 절대 주소로 만들 때 쓰는 기준 주소
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://rescene-fansite.vercel.app"),
   title: {
-    default: "RESCENE 팬사이트 (비공식)",
-    template: "%s | RESCENE 팬사이트 (비공식)",
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: "리센느(RESCENE) 컴백·신곡·투표 소식을 모아보는 비공식 팬사이트",
+  description: DESCRIPTION,
+  // 디스코드·카톡·트위터 미리보기 (대표 이미지는 app/opengraph-image.tsx)
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: DESCRIPTION,
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 // 사이드바의 인기글·다가오는 일정이 정적 페이지에서도 5분마다 새로 고쳐지도록
 export const revalidate = 300;
 
 export const viewport: Viewport = {
-  themeColor: "#efe8ff",
+  // 디스코드 미리보기 왼쪽 띠 색, 휴대폰 브라우저 주소창 색
+  themeColor: "#9b84d9",
 };
 
 export default function RootLayout({

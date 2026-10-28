@@ -81,6 +81,22 @@ export const getPopularPosts = cache(async (limit = 5): Promise<PostSummary[]> =
   }
 });
 
+/** 공유 미리보기용 글 제목·내용·글쓴이 (쿠키 없는 공개 조회라 숨긴 글은 안 나옴) */
+export async function getPostPreview(id: number) {
+  try {
+    const { data } = await createPublicClient()
+      .from("posts")
+      .select("title, content, profiles(nickname)")
+      .eq("id", id)
+      .maybeSingle();
+    if (!data) return null;
+    const profile = data.profiles as unknown as { nickname: string } | null;
+    return { title: data.title as string, content: data.content as string, nickname: profile?.nickname ?? "리마인" };
+  } catch {
+    return null;
+  }
+}
+
 export async function getPost(id: number) {
   const supabase = await createClient();
   const [{ data: post }, { data: comments }, mine] = await Promise.all([
