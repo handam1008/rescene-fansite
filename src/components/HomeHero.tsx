@@ -15,6 +15,8 @@ export default function HomeHero() {
             alt={hero.imageAlt}
             fill
             priority
+            // 원본이 2400px 라 레티나 화면에서도 선명하게. 대표 사진이라 화질을 기본(75)보다 높임
+            quality={85}
             sizes="(min-width: 1024px) 1000px, 100vw"
             className="object-cover"
             style={{ objectPosition: hero.imagePosition }}
