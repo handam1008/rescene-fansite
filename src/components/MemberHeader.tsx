@@ -1,15 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
-import { members, type Member, type MemberSlug } from "@/data/members";
+import { members, nameOf, type Member, type MemberSlug } from "@/data/members";
+import { fmt, type Locale } from "@/i18n/config";
+import { getI18n } from "@/i18n/server";
 import { FavoriteToggle, FavoritesProvider } from "./FavoriteMembers";
 
 /** 멤버 사진 (사진이 없으면 멤버 색 네모에 이름 첫 글자) */
-export function MemberAvatar({ member, size = 64 }: { member: Member; size?: number }) {
+export function MemberAvatar({ member, size = 64, locale = "ko" }: { member: Member; size?: number; locale?: Locale }) {
   if (member.image) {
     return (
       <Image
         src={member.image}
-        alt={`${member.name} 사진`}
+        alt={nameOf(member, locale)}
         width={size}
         height={size}
         className="shrink-0 object-cover"
@@ -23,33 +25,35 @@ export function MemberAvatar({ member, size = 64 }: { member: Member; size?: num
       className="flex shrink-0 items-center justify-center font-black text-ink"
       style={{ width: size, height: size, backgroundColor: member.color, fontSize: size * 0.4 }}
     >
-      {member.name[0]}
+      {nameOf(member, locale)[0]}
     </span>
   );
 }
 
 /** 멤버 페이지 위쪽: 멤버 바꾸기 + 이름 + 탭(프로필·일정 / 게시판) */
-export default function MemberHeader({ member, active }: { member: Member; active: "profile" | "board" }) {
+export default async function MemberHeader({ member, active }: { member: Member; active: "profile" | "board" }) {
+  const { m, locale } = await getI18n();
+  const name = nameOf(member, locale);
   const tabs = [
-    { key: "profile", label: "프로필 · 일정", href: `/members/${member.slug}` },
-    { key: "board", label: `${member.name} 게시판`, href: `/members/${member.slug}/board` },
+    { key: "profile", label: m.members.tabProfile, href: `/members/${member.slug}` },
+    { key: "board", label: fmt(m.members.tabBoard, { name }), href: `/members/${member.slug}/board` },
   ] as const;
 
   return (
     <div className="mb-6">
-      <nav aria-label="멤버 선택" className="no-scrollbar -mx-4 mb-5 overflow-x-auto px-4">
+      <nav aria-label={m.members.memberSelect} className="no-scrollbar -mx-4 mb-5 overflow-x-auto px-4">
         <ul className="flex gap-1.5 whitespace-nowrap">
-          {members.map((m) => (
-            <li key={m.slug}>
+          {members.map((mem) => (
+            <li key={mem.slug}>
               <Link
-                href={active === "board" ? `/members/${m.slug}/board` : `/members/${m.slug}`}
-                aria-current={m.slug === member.slug ? "page" : undefined}
+                href={active === "board" ? `/members/${mem.slug}/board` : `/members/${mem.slug}`}
+                aria-current={mem.slug === member.slug ? "page" : undefined}
                 className={`flex items-center gap-1.5 border px-2.5 py-1 text-sm ${
-                  m.slug === member.slug ? "border-lilac-500 bg-white font-bold" : "border-lilac-200 bg-white/70 text-ink-soft hover:bg-white"
+                  mem.slug === member.slug ? "border-lilac-500 bg-white font-bold" : "border-lilac-200 bg-white/70 text-ink-soft hover:bg-white"
                 }`}
               >
-                <span aria-hidden className="h-2.5 w-2.5" style={{ backgroundColor: m.color }} />
-                {m.name}
+                <span aria-hidden className="h-2.5 w-2.5" style={{ backgroundColor: mem.color }} />
+                {nameOf(mem, locale)}
               </Link>
             </li>
           ))}
@@ -57,14 +61,14 @@ export default function MemberHeader({ member, active }: { member: Member; activ
       </nav>
 
       <div className="flex items-center gap-4">
-        <MemberAvatar member={member} size={72} />
+        <MemberAvatar member={member} size={72} locale={locale} />
         <div>
-          <p className="text-xs font-semibold tracking-[0.2em] text-lilac-500 uppercase">{member.english}</p>
-          <h1 className="text-3xl font-extrabold">{member.name}</h1>
+          <p className="text-xs font-semibold tracking-[0.2em] text-lilac-500 uppercase">{locale === "en" ? member.name : member.english}</p>
+          <h1 className="text-3xl font-extrabold">{name}</h1>
         </div>
         <div className="ml-auto">
           <FavoritesProvider>
-            <FavoriteToggle slug={member.slug as MemberSlug} name={member.name} compact />
+            <FavoriteToggle slug={member.slug as MemberSlug} name={name} compact />
           </FavoritesProvider>
         </div>
       </div>

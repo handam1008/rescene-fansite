@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { PostForm } from "@/components/BoardForms";
 import { PageHeader, SupabaseNotice } from "@/components/ui";
+import { getI18n } from "@/i18n/server";
 import { getPost } from "@/lib/community";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "글 수정" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { m } = await getI18n();
+  return { title: m.board.editPost };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -23,10 +27,11 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
   const { post } = await getPost(id);
   if (!post) notFound();
   if (post.user_id !== user.id) redirect(`/board/${id}`);
+  const { m } = await getI18n();
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader eyebrow="Board" title="글 수정" />
+      <PageHeader eyebrow="Board" title={m.board.editPost} />
       <PostForm
         userId={user.id}
         editing={{

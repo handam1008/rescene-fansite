@@ -2,10 +2,14 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { NewPasswordForm } from "@/components/PasswordForms";
 import { PageHeader, SupabaseNotice } from "@/components/ui";
+import { getI18n } from "@/i18n/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "비밀번호 바꾸기", robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const { m } = await getI18n();
+  return { title: m.authPage.newPasswordTitle, robots: { index: false } };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +21,11 @@ export default async function NewPasswordPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?error=reset");
+  const { m } = await getI18n();
 
   return (
     <div className="mx-auto max-w-md">
-      <PageHeader eyebrow="Password" title="비밀번호 바꾸기" description="앞으로 로그인할 때 쓸 새 비밀번호를 정해주세요." />
+      <PageHeader eyebrow="Password" title={m.authPage.newPasswordTitle} description={m.authPage.newPasswordDesc} />
       <NewPasswordForm />
     </div>
   );

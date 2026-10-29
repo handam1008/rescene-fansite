@@ -1,24 +1,24 @@
 import type { VoteWithStatus } from "@/lib/data";
 import { formatDateTime } from "@/lib/format";
+import { getI18n } from "@/i18n/server";
+import { localizeVote } from "@/lib/localize";
 import type { VoteStatus } from "@/types";
 import { ExternalButton, SampleBadge } from "./ui";
 
-const statusStyle: Record<VoteStatus, { label: string; className: string }> = {
-  ongoing: { label: "진행 중", className: "bg-mint-dream-200 text-emerald-700" },
-  upcoming: { label: "예정", className: "bg-sky-dream-200 text-sky-700" },
-  ended: { label: "종료", className: "bg-gray-200 text-gray-500" },
+const statusStyle: Record<VoteStatus, string> = {
+  ongoing: "bg-mint-dream-200 text-emerald-700",
+  upcoming: "bg-sky-dream-200 text-sky-700",
+  ended: "bg-gray-200 text-gray-500",
 };
 
-export function VoteStatusBadge({ status }: { status: VoteStatus }) {
-  const s = statusStyle[status];
-  return (
-    <span className={`px-2.5 py-0.5 text-xs font-bold ${s.className}`}>
-      {s.label}
-    </span>
-  );
+export async function VoteStatusBadge({ status }: { status: VoteStatus }) {
+  const { m } = await getI18n();
+  return <span className={`px-2.5 py-0.5 text-xs font-bold ${statusStyle[status]}`}>{m.vote[status]}</span>;
 }
 
-export default function VoteCard({ vote }: { vote: VoteWithStatus }) {
+export default async function VoteCard({ vote: raw }: { vote: VoteWithStatus }) {
+  const { m, locale } = await getI18n();
+  const vote = localizeVote(raw, locale);
   const ended = vote.status === "ended";
 
   return (
@@ -31,8 +31,8 @@ export default function VoteCard({ vote }: { vote: VoteWithStatus }) {
       {vote.category && <p className="text-sm text-ink-soft">{vote.category}</p>}
 
       <p className="mt-3 bg-lilac-50 px-3 py-2 text-sm">
-        <span className="font-semibold">투표 기간 </span>
-        {formatDateTime(vote.startDate)} ~ {formatDateTime(vote.endDate)}
+        <span className="font-semibold">{m.vote.period} </span>
+        {formatDateTime(vote.startDate, locale)} ~ {formatDateTime(vote.endDate, locale)}
       </p>
 
       {vote.steps.length > 0 && (

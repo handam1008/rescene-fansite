@@ -6,34 +6,39 @@ import { useEffect, useRef, useState } from "react";
 import AuthStatus from "./AuthStatus";
 import { ChevronDownIcon } from "./Icons";
 import { LiveStrip } from "./LiveStatus";
+import { useI18n } from "@/i18n/client";
+import type { Messages } from "@/i18n/messages";
 
 type NavLink = { label: string; href: string; desc?: string };
 type NavItem = NavLink | { label: string; children: NavLink[] };
 
-/** PC 에서는 컴백·신곡·투표를 "소식" 아래로 묶어 메뉴를 6개로 줄임 (휴대폰은 전부 펼쳐서 가로 스크롤) */
-const navItems: NavItem[] = [
-  { label: "홈", href: "/" },
-  { label: "일정", href: "/schedule" },
-  { label: "최애", href: "/members" },
-  {
-    label: "소식",
-    children: [
-      { label: "컴백", href: "/comeback", desc: "컴백 D-day · 앨범 정보" },
-      { label: "신곡", href: "/songs", desc: "발매곡 · 뮤직비디오" },
-      { label: "투표", href: "/votes", desc: "음악방송 · 시상식 투표" },
-      { label: "LIVE", href: "/live", desc: "지금 방송 중 · 다가오는 라이브" },
-    ],
-  },
-  { label: "포카도감", href: "/photocards" },
-  { label: "게시판", href: "/board" },
-];
-
-const flatItems: NavLink[] = navItems.flatMap((item) => ("children" in item ? item.children : [item]));
+/** PC 에서는 컴백·신곡·투표·LIVE 를 "소식" 아래로 묶어 메뉴를 6개로 줄임 (휴대폰은 전부 펼쳐서 가로 스크롤) */
+function navItems(m: Messages): NavItem[] {
+  return [
+    { label: m.nav.home, href: "/" },
+    { label: m.nav.schedule, href: "/schedule" },
+    { label: m.nav.favorite, href: "/members" },
+    {
+      label: m.nav.news,
+      children: [
+        { label: m.nav.comeback, href: "/comeback", desc: m.nav.comebackDesc },
+        { label: m.nav.songs, href: "/songs", desc: m.nav.songsDesc },
+        { label: m.nav.votes, href: "/votes", desc: m.nav.votesDesc },
+        { label: m.nav.live, href: "/live", desc: m.nav.liveDesc },
+      ],
+    },
+    { label: m.nav.photocards, href: "/photocards" },
+    { label: m.nav.board, href: "/board" },
+  ];
+}
 
 const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
 export default function Header() {
   const pathname = usePathname();
+  const { m } = useI18n();
+  const items = navItems(m);
+  const flatItems: NavLink[] = items.flatMap((item) => ("children" in item ? item.children : [item]));
   const mobileNav = useRef<HTMLElement>(null);
 
   // 휴대폰 메뉴 줄: 지금 페이지 메뉴가 화면 밖에 있으면 보이게 밀어줌 (예: 게시판)
@@ -57,13 +62,13 @@ export default function Header() {
             className="text-dreamy font-display shrink-0 py-1.5 text-xl leading-[1.1] font-extrabold tracking-wide whitespace-nowrap sm:py-3 xl:py-0 xl:text-2xl"
           >
             RESCENE ✦<br className="sm:hidden" />
-            <span className="text-[13px] tracking-[0.3em] sm:text-[1em] sm:tracking-wide"> 팬사이트</span>
+            <span className="text-[13px] tracking-[0.3em] sm:text-[1em] sm:tracking-wide"> {m.nav.logoSuffix}</span>
           </Link>
 
           {/* PC: 한 줄 큰 메뉴 */}
-          <nav aria-label="주요 메뉴" className="hidden h-full xl:block">
+          <nav aria-label={m.nav.mainMenu} className="hidden h-full xl:block">
             <ul className="flex h-full items-stretch">
-              {navItems.map((item) =>
+              {items.map((item) =>
                 "children" in item ? (
                   <li key={item.label} className="flex">
                     <NavGroup label={item.label} items={item.children} pathname={pathname} />
@@ -84,7 +89,7 @@ export default function Header() {
       {/* 휴대폰·태블릿: 둘째 줄에 메뉴 전부 (가로로 밀어서 보기) */}
       <nav
         ref={mobileNav}
-        aria-label="주요 메뉴"
+        aria-label={m.nav.mainMenu}
         className="no-scrollbar relative overflow-x-auto border-t border-lilac-100 xl:hidden">
         <ul className="flex gap-1 px-2 whitespace-nowrap">
           {flatItems.map((item) => {

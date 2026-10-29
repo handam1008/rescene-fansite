@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { scheduleTypeLabels, type ScheduleEvent, type ScheduleType } from "@/data/schedule";
-import { kstDateKey } from "@/lib/schedule";
+import type { ScheduleEvent, ScheduleType } from "@/data/schedule";
+import { fmt, INTL_LOCALE } from "@/i18n/config";
+import { getI18n } from "@/i18n/server";
+import { formatMonthDay, formatMonthShort, formatMonthYear, weekdayNames } from "@/lib/format";
+import { eventTitle, kstDateKey } from "@/lib/schedule";
 import { EventRow, typeStyle } from "./ScheduleList";
 import { EmptyState } from "./ui";
-
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 /** 달력 칸의 작은 점 색 (휴대폰) */
 const dotStyle: Record<ScheduleType, string> = {
@@ -23,7 +24,7 @@ const keyOf = (y: number, m: number, d: number) => `${y}-${pad(m)}-${pad(d)}`;
  * 월 달력. 넓은 화면은 칸 안에 일정 제목, 휴대폰은 색 점으로 보여주고,
  * 아래에 그 달 일정을 날짜별로 자세히 보여줌 (칸을 누르면 그 날짜로 이동)
  */
-export default function ScheduleCalendar({
+export default async function ScheduleCalendar({
   year,
   month,
   events,
@@ -36,6 +37,7 @@ export default function ScheduleCalendar({
   /** 다른 달로 가는 주소 */
   hrefFor: (year: number, month: number) => string;
 }) {
+  const { m, locale } = await getI18n();
   const today = kstDateKey(new Date());
   const daysInMonth = new Date(year, month, 0).getDate();
   const firstWeekday = new Date(year, month - 1, 1).getDay();
@@ -67,20 +69,20 @@ export default function ScheduleCalendar({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <Link href={hrefFor(prev[0], prev[1])} className="btn border border-lilac-200 bg-white px-3 py-1.5 text-sm" aria-label="이전 달">
-          ‹ {prev[1]}월
+        <Link href={hrefFor(prev[0], prev[1])} className="btn border border-lilac-200 bg-white px-3 py-1.5 text-sm" aria-label={m.schedule.prevMonth}>
+          ‹ {formatMonthShort(prev[1], locale)}
         </Link>
         <h2 className="text-xl font-extrabold tabular-nums">
-          {year}년 {month}월
+          {formatMonthYear(year, month, locale)}
         </h2>
-        <Link href={hrefFor(next[0], next[1])} className="btn border border-lilac-200 bg-white px-3 py-1.5 text-sm" aria-label="다음 달">
-          {next[1]}월 ›
+        <Link href={hrefFor(next[0], next[1])} className="btn border border-lilac-200 bg-white px-3 py-1.5 text-sm" aria-label={m.schedule.nextMonth}>
+          {formatMonthShort(next[1], locale)} ›
         </Link>
       </div>
 
       <div className="card overflow-hidden">
         <div className="grid grid-cols-7 border-b border-lilac-200 bg-lilac-50 text-center text-xs font-semibold">
-          {WEEKDAYS.map((w, i) => (
+          {weekdayNames(locale).map((w, i) => (
             <div key={w} className={`py-2 ${i === 0 ? "text-red-500" : i === 6 ? "text-sky-700" : "text-ink-soft"}`}>
               {w}
             </div>
@@ -122,14 +124,16 @@ export default function ScheduleCalendar({
                       className={`block truncate px-1 text-[11px] leading-4 ${
                         e.tentative ? "border border-dashed border-lilac-300 bg-white text-ink-soft" : typeStyle[e.type]
                       } ${e.important ? "font-bold ring-1 ring-amber-400" : ""}`}
-                      title={`${e.title}${e.tentative ? " (미확정)" : ""}`}
+                      title={`${eventTitle(e, locale)}${e.tentative ? m.schedule.tentativeSuffix : ""}`}
                     >
                       {e.important && "★ "}
                       {e.tentative && "? "}
-                      {e.title}
+                      {eventTitle(e, locale)}
                     </span>
                   ))}
-                  {list.length > 3 && <span className="block text-[11px] text-ink-soft">+{list.length - 3}개</span>}
+                  {list.length > 3 && (
+                    <span className="block text-[11px] text-ink-soft">{fmt(m.schedule.more, { n: list.length - 3 })}</span>
+                  )}
                 </span>
               </>
             );
@@ -137,7 +141,7 @@ export default function ScheduleCalendar({
               (i + 1) % 7 === 0 ? "border-r-0" : ""
             } ${isToday ? "bg-lilac-50" : "bg-white"}`;
             return list.length > 0 ? (
-              <a key={k} href={`#d-${k}`} className={`${cellClass} hover:bg-lilac-100`} aria-label={`${month}월 ${day}일 일정 ${list.length}개`}>
+              <a key={k} href={`#d-${k}`} className={`${cellClass} hover:bg-lilac-100`} aria-label={fmt(m.schedule.dayAria, { date: formatMonthDay(k, locale), n: list.length })}>
                 {inner}
               </a>
             ) : (
@@ -149,40 +153,41 @@ export default function ScheduleCalendar({
         </div>
       </div>
 
-      <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-soft" aria-label="일정 종류">
-        {(Object.keys(scheduleTypeLabels) as ScheduleType[]).map((t) => (
+      <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-soft" aria-label={m.schedule.legendAria}>
+        {(Object.keys(dotStyle) as ScheduleType[]).map((t) => (
           <li key={t} className="flex items-center gap-1">
             <span className={`h-2 w-2 ${dotStyle[t]}`} />
-            {scheduleTypeLabels[t]}
+            {m.schedule.types[t]}
           </li>
         ))}
         <li className="flex items-center gap-1">
-          <span className="text-amber-500">★</span>중요 (컴백 등)
+          <span className="text-amber-500">★</span>
+          {m.schedule.legendImportant}
         </li>
         <li className="flex items-center gap-1">
           <span className="h-2 w-2 border border-dashed border-ink-soft" />
-          미확정 (예상)
+          {m.schedule.legendTentative}
         </li>
       </ul>
 
       {agenda.size === 0 ? (
-        <EmptyState>이 달에는 일정이 없어요.</EmptyState>
+        <EmptyState>{m.schedule.emptyMonth}</EmptyState>
       ) : (
         <div className="space-y-4">
           {[...agenda.entries()]
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([k, list]) => {
               const d = new Date(`${k}T00:00:00+09:00`);
-              const label = d.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", weekday: "short" });
+              const label = d.toLocaleDateString(INTL_LOCALE[locale], { timeZone: "Asia/Seoul", month: "long", day: "numeric", weekday: "short" });
               return (
                 <section key={k} id={`d-${k}`} className="scroll-mt-32 xl:scroll-mt-24">
                   <h3 className={`mb-1.5 text-sm font-bold ${k === today ? "text-lilac-700" : ""}`}>
                     {label}
-                    {k === today && <span className="ml-1.5 bg-lilac-500 px-1 text-[10px] text-white">오늘</span>}
+                    {k === today && <span className="ml-1.5 bg-lilac-500 px-1 text-[10px] text-white">{m.schedule.today}</span>}
                   </h3>
                   <ul className="card">
                     {list.map((e) => (
-                      <EventRow key={e.id} event={e} />
+                      <EventRow key={e.id} event={e} locale={locale} m={m} />
                     ))}
                   </ul>
                 </section>

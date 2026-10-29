@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { FormState } from "@/app/auth/actions";
 import { reportReasons } from "@/data/moderation";
+import { getI18n } from "@/i18n/server";
 import { POST_IMAGE_BUCKET } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -27,11 +28,12 @@ export async function deletePost(formData: FormData) {
 export async function addComment(_prev: FormState, formData: FormData): Promise<FormState> {
   const postId = Number(formData.get("postId"));
   const content = String(formData.get("content") ?? "").trim();
-  if (!content || content.length > 1000) return { error: "댓글은 1~1000자로 적어주세요." };
+  const { m } = await getI18n();
+  if (!content || content.length > 1000) return { error: m.board.errComment };
 
   const supabase = await createClient();
   const { error } = await supabase.from("comments").insert({ post_id: postId, content });
-  if (error) return { error: "댓글을 저장하지 못했어요. 로그인 상태를 확인해 주세요." };
+  if (error) return { error: m.board.errCommentSave };
 
   revalidatePath(`/board/${postId}`);
   return { message: "" };
@@ -66,14 +68,15 @@ export async function reportPost(_prev: FormState, formData: FormData): Promise<
   const postId = Number(formData.get("postId"));
   const reason = String(formData.get("reason") ?? "");
   const detail = String(formData.get("detail") ?? "").trim().slice(0, 200);
-  if (!(reason in reportReasons)) return { error: "신고 사유를 골라주세요." };
+  const { m } = await getI18n();
+  if (!(reason in reportReasons)) return { error: m.board.errReasonPick };
 
   const supabase = await createClient();
   const { error } = await supabase.from("post_reports").insert({ post_id: postId, reason, detail: detail || null });
   if (error) {
-    return { error: error.code === "23505" ? "이미 신고한 글이에요." : "신고하지 못했어요. 로그인 상태를 확인해 주세요." };
+    return { error: error.code === "23505" ? m.board.errAlreadyReported : m.board.errReport };
   }
   revalidatePath(`/board/${postId}`);
   revalidatePath("/board");
-  return { message: "신고했어요. 운영자가 확인할게요." };
+  return { message: m.board.reportedOk };
 }

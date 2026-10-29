@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { LiveBoard } from "@/components/LiveStatus";
 import ScheduleList from "@/components/ScheduleList";
 import { PageHeader } from "@/components/ui";
+import { getI18n } from "@/i18n/server";
 import { getSchedule } from "@/lib/schedule";
 
 export const metadata: Metadata = { title: "LIVE" };
@@ -11,6 +12,7 @@ export const revalidate = 300;
 
 export default async function LivePage() {
   const { upcoming } = await getSchedule();
+  const { m } = await getI18n();
   const shows = upcoming.filter((e) => e.type === "broadcast" || e.type === "event").slice(0, 8);
 
   return (
@@ -18,14 +20,14 @@ export default async function LivePage() {
       <PageHeader
         eyebrow="Live"
         title="LIVE"
-        description="리센느가 출연하는 방송·공연, 안원잘부 최초 공개를 여기서 바로 봐요. 라이브가 시작되면 사이트 위쪽에 빨간 LIVE 줄이 떠요."
+        description={m.live.pageDesc}
       />
       <LiveBoard />
       {shows.length > 0 && (
         <section className="mt-10">
-          <h2 className="mb-3 text-lg font-bold">다가오는 방송·행사</h2>
+          <h2 className="mb-3 text-lg font-bold">{m.live.upcomingShows}</h2>
           <ScheduleList events={shows} />
-          <p className="mt-2 text-xs text-ink-soft">라이브 주소가 나오면 시작 시각에 맞춰 위쪽에 LIVE 로 알려드려요.</p>
+          <p className="mt-2 text-xs text-ink-soft">{m.live.upcomingNote}</p>
         </section>
       )}
     </>

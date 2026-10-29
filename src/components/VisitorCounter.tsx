@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/i18n/client";
+import { fmt, INTL_LOCALE } from "@/i18n/config";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -9,6 +11,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
  * 한 브라우저는 하루(한국 시간)에 한 번만 셈. 오늘 이미 셌으면 숫자만 가져옴
  */
 export default function VisitorCounter() {
+  const { m, locale } = useI18n();
   const [stats, setStats] = useState<{ today: number; total: number } | null>(null);
 
   useEffect(() => {
@@ -43,13 +46,13 @@ export default function VisitorCounter() {
   if (!stats) return <span aria-hidden />;
 
   return (
-    <p className="flex items-center gap-2 tabular-nums" aria-label={`오늘 방문자 ${stats.today}명, 누적 방문자 ${stats.total}명`}>
+    <p className="flex items-center gap-2 tabular-nums" aria-label={fmt(m.top.visitorsAria, stats)}>
       <span>
-        <span className="font-semibold text-lilac-700">오늘</span> {stats.today.toLocaleString()}
+        <span className="font-semibold text-lilac-700">{m.top.today}</span> {stats.today.toLocaleString(INTL_LOCALE[locale])}
       </span>
       <span aria-hidden className="text-lilac-300">|</span>
       <span>
-        <span className="font-semibold text-lilac-700">누적</span> {stats.total.toLocaleString()}
+        <span className="font-semibold text-lilac-700">{m.top.total}</span> {stats.total.toLocaleString(INTL_LOCALE[locale])}
       </span>
     </p>
   );

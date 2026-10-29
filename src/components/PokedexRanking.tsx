@@ -1,10 +1,13 @@
-import { contributorTitleFor } from "@/data/titles";
+import { contributorTitleFor, titleName } from "@/data/titles";
+import { fmt } from "@/i18n/config";
+import { getI18n } from "@/i18n/server";
 import type { ContributorRank } from "@/lib/community";
 
 /** 도감 기여 랭킹: 빈 카드를 처음 채운 장수 순 */
-export default function PokedexRanking({ ranking, myId }: { ranking: ContributorRank[]; myId?: string }) {
+export default async function PokedexRanking({ ranking, myId }: { ranking: ContributorRank[]; myId?: string }) {
+  const { m, locale } = await getI18n();
   if (ranking.length === 0) {
-    return <p className="text-sm text-ink-soft">아직 채워진 카드가 없어요. 첫 번째 개척자가 되어주세요!</p>;
+    return <p className="text-sm text-ink-soft">{m.pokedex.rankingEmpty}</p>;
   }
   return (
     <ol className="divide-y divide-lilac-100">
@@ -19,9 +22,11 @@ export default function PokedexRanking({ ranking, myId }: { ranking: Contributor
             </span>
             <span className="min-w-0 flex-1 truncate font-semibold">{r.nickname}</span>
             {title && r.contributor_rank <= 10 && (
-              <span className={`hidden shrink-0 px-1 text-[10px] leading-4 font-bold sm:inline ${title.className}`}>{title.name}</span>
+              <span className={`hidden shrink-0 px-1 text-[10px] leading-4 font-bold sm:inline ${title.className}`}>
+                {titleName(title, locale)}
+              </span>
             )}
-            <span className="shrink-0 text-xs text-ink-soft tabular-nums">{r.contributed_count}장</span>
+            <span className="shrink-0 text-xs text-ink-soft tabular-nums">{fmt(m.pokedex.rankingCount, { n: r.contributed_count })}</span>
           </li>
         );
       })}

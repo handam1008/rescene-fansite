@@ -35,6 +35,8 @@ export type Comeback = SampleFlag & {
   /** 출처 기사·공지 링크 (선택) */
   sourceUrl?: string;
   teasers: TeaserEvent[];
+  /** 일본어·영어 설명·수록곡·티저 제목 (teasers 는 같은 순서로). 앨범 종류는 자동 번역 */
+  i18n?: Partial<Record<"ja" | "en", { description?: string; tracklist?: string[]; teasers?: string[] }>>;
 };
 
 export type StreamingPlatform =
@@ -85,6 +87,8 @@ export type Vote = SampleFlag & {
   /** 투표 방법을 순서대로 */
   steps: string[];
   note?: string;
+  /** 일본어·영어 (없는 칸은 한국어 그대로) */
+  i18n?: Partial<Record<"ja" | "en", { awardName?: string; category?: string; steps?: string[]; note?: string }>>;
 };
 
 export type VoteStatus = "upcoming" | "ongoing" | "ended";

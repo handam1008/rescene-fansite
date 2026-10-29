@@ -1,10 +1,13 @@
+import { getI18n } from "@/i18n/server";
+
 /** 공식 유튜브 영상 임베드. 영상 파일을 직접 올리지 않고 유튜브 플레이어만 사용합니다. */
-export default function YouTubeEmbed({ videoId, title }: { videoId?: string; title: string }) {
+export default async function YouTubeEmbed({ videoId, title }: { videoId?: string; title: string }) {
+  const { m } = await getI18n();
   if (!videoId) {
     return (
       <div className="flex aspect-video w-full flex-col items-center justify-center gap-1 border-2 border-dashed border-lilac-200 bg-lilac-50/70 p-4 text-center text-sm text-ink-soft">
         <span className="text-2xl" aria-hidden>▶</span>
-        <span>뮤직비디오 준비 중</span>
+        <span>{m.songs.mvPreparing}</span>
       </div>
     );
   }

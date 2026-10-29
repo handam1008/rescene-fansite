@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState, useOptimistic, useState } from "react";
 import { reportPost, votePost } from "@/app/board/actions";
-import { reportReasons } from "@/data/moderation";
+import { useI18n } from "@/i18n/client";
 import { FormMessage, inputClass } from "./ui";
 
 /**
@@ -31,6 +31,7 @@ export default function PostReactions({
   canReact: boolean;
   isOwner: boolean;
 }) {
+  const { m } = useI18n();
   const [showReport, setShowReport] = useState(false);
   const [state, action, pending] = useActionState(reportPost, undefined);
   const loginHref = `/login?next=/board/${postId}`;
@@ -43,7 +44,7 @@ export default function PostReactions({
 
   const voteButton = (value: 1 | -1) => {
     const active = view.myVote === value;
-    const label = value === 1 ? "추천" : "비추";
+    const label = value === 1 ? m.board.like : m.board.dislikeShort;
     const count = value === 1 ? view.likes : view.dislikes;
     // 누르기 전에는 두 버튼 모양이 같고, 내가 누른 쪽만 색이 채워짐
     const className = `btn flex w-24 flex-col items-center border-2 py-2 font-bold ${
@@ -96,25 +97,27 @@ export default function PostReactions({
       </div>
       <p className="mt-2 text-center text-xs text-ink-soft">
         {isOwner
-          ? "내 글에는 추천·비추천과 신고를 할 수 없어요."
+          ? m.board.ownPost
           : voted
-            ? `${view.myVote === 1 ? "추천" : "비추천"}했어요. 한 번 누르면 바꿀 수 없어요.`
+            ? view.myVote === 1
+              ? m.board.votedLike
+              : m.board.votedDislike
             : canReact && loggedIn
-              ? "한 번 누르면 바꾸거나 취소할 수 없어요."
+              ? m.board.voteOnce
               : null}
       </p>
 
       {canReact && (
         <div className="mt-3 text-right text-xs">
           {reported || state?.message ? (
-            <span className="text-ink-soft">🚨 신고한 글이에요</span>
+            <span className="text-ink-soft">{m.board.reported}</span>
           ) : !loggedIn ? (
             <Link href={loginHref} className="text-ink-soft underline hover:text-ink">
-              🚨 신고
+              {m.board.report}
             </Link>
           ) : (
             <button type="button" onClick={() => setShowReport((v) => !v)} className="text-ink-soft underline hover:text-ink">
-              🚨 신고
+              {m.board.report}
             </button>
           )}
         </div>
@@ -124,9 +127,9 @@ export default function PostReactions({
         <form action={action} className="mt-2 space-y-2 border border-lilac-200 bg-lilac-50 p-3 text-sm">
           <input type="hidden" name="postId" value={postId} />
           <fieldset>
-            <legend className="mb-1.5 font-semibold">신고 사유</legend>
+            <legend className="mb-1.5 font-semibold">{m.board.reportReason}</legend>
             <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-              {Object.entries(reportReasons).map(([key, label]) => (
+              {Object.entries(m.board.reasons).map(([key, label]) => (
                 <label key={key} className="flex items-center gap-1.5">
                   <input type="radio" name="reason" value={key} required />
                   {label}
@@ -134,18 +137,18 @@ export default function PostReactions({
               ))}
             </div>
           </fieldset>
-          <input name="detail" maxLength={200} placeholder="자세한 내용 (선택)" className={inputClass} />
+          <input name="detail" maxLength={200} placeholder={m.board.reportDetail} className={inputClass} />
           <FormMessage error={state?.error} />
           <div className="flex justify-end gap-2">
             <button type="button" onClick={() => setShowReport(false)} className="border border-lilac-200 bg-white px-3 py-1.5">
-              취소
+              {m.board.cancel}
             </button>
             <button type="submit" disabled={pending} className="border border-ink bg-ink px-3 py-1.5 font-bold text-white">
-              {pending ? "신고 중…" : "신고하기"}
+              {pending ? m.board.reporting : m.board.submitReport}
             </button>
           </div>
           <p className="text-[11px] text-ink-soft">
-            신고가 여러 건 쌓이면 글이 자동으로 숨겨지고 운영자가 확인해요. 허위 신고는 제재될 수 있어요.
+            {m.board.reportNote}
           </p>
         </form>
       )}

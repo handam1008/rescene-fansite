@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/ui";
 import { PRIVACY_EFFECTIVE_DATE, privacyOfficer } from "@/data/privacy";
+import { getI18n } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "개인정보처리방침" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { m } = await getI18n();
+  return { title: m.privacy.title };
+}
 
 function Section({ n, title, children }: { n: number; title: string; children: ReactNode }) {
   return (
@@ -19,9 +23,12 @@ function Section({ n, title, children }: { n: number; title: string; children: R
 const th = "border border-lilac-200 bg-lilac-50 px-2 py-1.5 text-left font-semibold text-ink";
 const td = "border border-lilac-200 px-2 py-1.5 align-top";
 
-export default function PrivacyPage() {
+/** 본문은 한국어로만 둠 (법적 문서라 번역본과 뜻이 어긋나지 않게). 다른 언어로 볼 때는 위에 안내만 */
+export default async function PrivacyPage() {
+  const { m } = await getI18n();
   return (
     <div className="mx-auto max-w-3xl">
+      {m.privacy.koreanOnly && <p className="mb-4 border border-lilac-200 bg-lilac-50 px-4 py-2.5 text-sm">ℹ️ {m.privacy.koreanOnly}</p>}
       <PageHeader
         eyebrow="Privacy"
         title="개인정보처리방침"

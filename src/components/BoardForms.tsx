@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 import type { FormState } from "@/app/auth/actions";
 import { addComment } from "@/app/board/actions";
-import { members } from "@/data/members";
+import { members, nameOf } from "@/data/members";
+import { useI18n } from "@/i18n/client";
+import { fmt } from "@/i18n/config";
 import { shrinkImage, storagePath } from "@/lib/image";
 import { createClient } from "@/lib/supabase/client";
 import { POST_IMAGE_BUCKET } from "@/lib/supabase/env";
@@ -34,6 +36,7 @@ export function PostForm({
   editing?: EditablePost;
 }) {
   const router = useRouter();
+  const { locale, m } = useI18n();
   const [kept, setKept] = useState<string[]>(editing?.image_paths ?? []);
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -49,13 +52,13 @@ export function PostForm({
   async function addFiles(list: FileList | null) {
     setError(undefined);
     const picked = Array.from(list ?? []);
-    if (picked.some((f) => !ACCEPT.includes(f.type))) return setError("사진은 JPG·PNG·WEBP·GIF만 올릴 수 있어요.");
+    if (picked.some((f) => !ACCEPT.includes(f.type))) return setError(m.board.errImgType);
     // 휴대폰 사진은 크기를 줄여서 올림 (GIF는 그대로)
     const shrunk = await Promise.all(picked.map((f) => shrinkImage(f)));
-    if (shrunk.some((f) => f.size > MAX_BYTES)) return setError("사진 한 장은 5MB 이하여야 해요. (GIF는 줄일 수 없어요)");
+    if (shrunk.some((f) => f.size > MAX_BYTES)) return setError(m.board.errImgSize);
     const next = [...files, ...shrunk];
     const room = MAX_IMAGES - kept.length;
-    if (next.length > room) setError(`사진은 최대 ${MAX_IMAGES}장까지예요.`);
+    if (next.length > room) setError(fmt(m.board.errImgMax, { n: MAX_IMAGES }));
     setFiles(next.slice(0, room));
   }
 
@@ -66,8 +69,8 @@ export function PostForm({
     const content = String(form.get("content") ?? "").trim();
     const member = String(form.get("member") ?? "");
     setError(undefined);
-    if (!title || title.length > 100) return setError("제목은 1~100자로 적어주세요.");
-    if (!content || content.length > 5000) return setError("내용은 1~5000자로 적어주세요.");
+    if (!title || title.length > 100) return setError(m.board.errTitle);
+    if (!content || content.length > 5000) return setError(m.board.errContent);
 
     setPending(true);
     const supabase = createClient();
@@ -81,7 +84,7 @@ export function PostForm({
       if (uploadError) {
         if (uploaded.length) await supabase.storage.from(POST_IMAGE_BUCKET).remove(uploaded);
         setPending(false);
-        return setError(`사진을 올리지 못했어요: ${uploadError.message}`);
+        return setError(fmt(m.board.errUpload, { msg: uploadError.message }));
       }
       uploaded.push(path);
     }
@@ -94,7 +97,7 @@ export function PostForm({
       if (updateError) {
         if (uploaded.length) await supabase.storage.from(POST_IMAGE_BUCKET).remove(uploaded);
         setPending(false);
-        return setError("글을 고치지 못했어요. 이용이 제한된 상태인지 확인해 주세요.");
+        return setError(m.board.errEdit);
       }
       const removed = editing.image_paths.filter((p) => !kept.includes(p));
       if (removed.length) await supabase.storage.from(POST_IMAGE_BUCKET).remove(removed);
@@ -111,7 +114,7 @@ export function PostForm({
     if (insertError) {
       if (uploaded.length) await supabase.storage.from(POST_IMAGE_BUCKET).remove(uploaded);
       setPending(false);
-      return setError("글을 저장하지 못했어요. 로그인 상태나 이용 제한 여부를 확인해 주세요.");
+      return setError(m.board.errSave);
     }
 
     router.push(`/board/${data.id}`);
@@ -120,20 +123,20 @@ export function PostForm({
 
   return (
     <form onSubmit={handleSubmit} className="border border-lilac-200 bg-white">
-      <div className="border-b border-lilac-200 bg-lilac-50 px-4 py-2.5 text-sm font-bold">{editing ? "글 수정" : "글쓰기"}</div>
+      <div className="border-b border-lilac-200 bg-lilac-50 px-4 py-2.5 text-sm font-bold">{editing ? m.board.editPost : m.board.writePost}</div>
       <div className="space-y-3 p-4">
         <div className="flex gap-2">
           <select
             name="member"
             defaultValue={editing ? (editing.member ?? "") : defaultMember}
-            aria-label="게시판 선택"
+            aria-label={m.board.boardSelect}
             // inputClass 의 w-full 과 겹치지 않게 너비를 따로 지정 (겹치면 제목 칸이 밀려 사라짐)
             className="w-28 shrink-0 border border-lilac-200 bg-white px-2 py-2 text-sm outline-none focus:border-lilac-500"
           >
-            <option value="">전체</option>
-            {members.map((m) => (
-              <option key={m.slug} value={m.slug}>
-                {m.name}
+            <option value="">{m.board.boardAll}</option>
+            {members.map((member) => (
+              <option key={member.slug} value={member.slug}>
+                {nameOf(member, locale)}
               </option>
             ))}
           </select>
@@ -143,7 +146,7 @@ export function PostForm({
             maxLength={100}
             defaultValue={editing?.title}
             className={`${inputClass} min-w-0 flex-1`}
-            placeholder="제목을 입력해 주세요"
+            placeholder={m.board.titlePlaceholder}
           />
         </div>
         <textarea
@@ -153,15 +156,15 @@ export function PostForm({
           rows={14}
           defaultValue={editing?.content}
           className={`${inputClass} leading-relaxed`}
-          placeholder="내용을 입력해 주세요"
+          placeholder={m.board.contentPlaceholder}
         />
 
         <div className="border border-dashed border-lilac-300 bg-lilac-50 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-sm font-semibold">
-              사진 첨부{" "}
+              {m.board.attach}{" "}
               <span className="font-normal text-ink-soft">
-                ({kept.length + files.length}/{MAX_IMAGES}, 한 장 5MB 이하)
+                {fmt(m.board.attachInfo, { n: kept.length + files.length, max: MAX_IMAGES })}
               </span>
             </span>
             <label
@@ -169,7 +172,7 @@ export function PostForm({
                 kept.length + files.length >= MAX_IMAGES ? "pointer-events-none opacity-40" : ""
               }`}
             >
-              + 사진 선택
+              {m.board.pickPhotos}
               <input
                 type="file"
                 accept={ACCEPT.join(",")}
@@ -188,12 +191,12 @@ export function PostForm({
               {kept.map((path, i) => (
                 <li key={path} className="relative">
                   {/* eslint-disable-next-line @next/next/no-img-element -- 이미 올린 사진 */}
-                  <img src={postImageUrl(path)} alt={`기존 사진 ${i + 1}`} className="aspect-square w-full border border-lilac-200 object-cover" />
+                  <img src={postImageUrl(path)} alt={fmt(m.board.oldPhotoAlt, { n: i + 1 })} className="aspect-square w-full border border-lilac-200 object-cover" />
                   <button
                     type="button"
                     onClick={() => setKept(kept.filter((p) => p !== path))}
                     className="absolute top-1 right-1 bg-ink/70 px-1.5 text-xs text-white hover:bg-ink"
-                    aria-label={`기존 사진 ${i + 1} 빼기`}
+                    aria-label={fmt(m.board.removeOldPhoto, { n: i + 1 })}
                   >
                     ✕
                   </button>
@@ -202,12 +205,12 @@ export function PostForm({
               {previews.map((src, i) => (
                 <li key={src} className="relative">
                   {/* eslint-disable-next-line @next/next/no-img-element -- 로컬 미리보기 */}
-                  <img src={src} alt={`첨부 사진 ${i + 1}`} className="aspect-square w-full border border-lilac-200 object-cover" />
+                  <img src={src} alt={fmt(m.board.attachAlt, { n: i + 1 })} className="aspect-square w-full border border-lilac-200 object-cover" />
                   <button
                     type="button"
                     onClick={() => setFiles(files.filter((_, j) => j !== i))}
                     className="absolute top-1 right-1 bg-ink/70 px-1.5 text-xs text-white hover:bg-ink"
-                    aria-label={`사진 ${i + 1} 빼기`}
+                    aria-label={fmt(m.board.removePhoto, { n: i + 1 })}
                   >
                     ✕
                   </button>
@@ -221,10 +224,10 @@ export function PostForm({
 
         <div className="flex justify-end gap-2">
           <button type="button" onClick={() => router.back()} className="border border-lilac-200 bg-white px-4 py-2 text-sm hover:bg-lilac-50">
-            취소
+            {m.board.cancel}
           </button>
           <button type="submit" disabled={pending} className={buttonClass}>
-            {pending ? (files.length ? "사진 올리는 중…" : "저장 중…") : editing ? "수정 완료" : "등록"}
+            {pending ? (files.length ? m.board.uploadingPhotos : m.board.saving) : editing ? m.board.saveEdit : m.board.post}
           </button>
         </div>
       </div>
@@ -233,6 +236,7 @@ export function PostForm({
 }
 
 export function CommentForm({ postId }: { postId: number }) {
+  const { m } = useI18n();
   const [state, formAction, pending] = useActionState<FormState, FormData>(addComment, undefined);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -251,10 +255,10 @@ export function CommentForm({ postId }: { postId: number }) {
           maxLength={1000}
           rows={3}
           className={`${inputClass} flex-1 resize-none`}
-          placeholder="타인의 권리를 침해하거나 명예를 훼손하는 댓글은 삭제될 수 있어요."
+          placeholder={m.board.commentPlaceholder}
         />
         <button type="submit" disabled={pending} className={`${buttonClass} w-20 shrink-0`}>
-          {pending ? "…" : "등록"}
+          {pending ? "…" : m.board.post}
         </button>
       </div>
       <FormMessage error={state?.error} />

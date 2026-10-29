@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import BoardList from "@/components/BoardList";
 import MemberHeader from "@/components/MemberHeader";
 import { SupabaseNotice } from "@/components/ui";
-import { getMember } from "@/data/members";
+import { getMember, nameOf } from "@/data/members";
+import { fmt } from "@/i18n/config";
+import { getI18n } from "@/i18n/server";
 import { cleanSearch, getPosts, type BoardTab } from "@/lib/community";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -13,7 +15,8 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const member = getMember((await params).slug);
-  return { title: member ? `${member.name} 게시판` : "게시판" };
+  const { m, locale } = await getI18n();
+  return { title: member ? fmt(m.members.tabBoard, { name: nameOf(member, locale) }) : m.nav.board };
 }
 
 export default async function MemberBoardPage({

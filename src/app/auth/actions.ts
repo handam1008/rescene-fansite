@@ -3,29 +3,33 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { safeNext } from "@/lib/auth-providers";
-import { NICKNAME_RULE, nicknameFormatOk } from "@/lib/nickname";
+import { fmt } from "@/i18n/config";
+import type { Messages } from "@/i18n/messages";
+import { getI18n } from "@/i18n/server";
+import { nicknameFormatOk } from "@/lib/nickname";
 import { createClient } from "@/lib/supabase/server";
 
 export type FormState = { error?: string; message?: string } | undefined;
 
-function translateAuthError(message: string) {
-  if (message.includes("Invalid login credentials")) return "이메일 또는 비밀번호가 맞지 않아요.";
-  if (message.includes("Email not confirmed")) return "메일함에서 인증 링크를 먼저 눌러주세요.";
-  if (message.includes("already registered")) return "이미 가입된 이메일이에요.";
-  if (message.includes("Password should be")) return "비밀번호는 6자 이상이어야 해요.";
-  if (message.includes("Database error saving new user")) return "이미 사용 중인 닉네임이에요.";
-  if (message.toLowerCase().includes("rate limit")) return "잠시 후 다시 시도해 주세요.";
-  return `문제가 생겼어요: ${message}`;
+function translateAuthError(message: string, t: Messages["authPage"]) {
+  if (message.includes("Invalid login credentials")) return t.errInvalid;
+  if (message.includes("Email not confirmed")) return t.errNotConfirmed;
+  if (message.includes("already registered")) return t.errRegistered;
+  if (message.includes("Password should be")) return t.errPasswordLength;
+  if (message.includes("Database error saving new user")) return t.errNickInUse;
+  if (message.toLowerCase().includes("rate limit")) return t.errRateLimit;
+  return fmt(t.errUnknown, { msg: message });
 }
 
 export async function login(_prev: FormState, formData: FormData): Promise<FormState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  if (!email || !password) return { error: "이메일과 비밀번호를 입력해 주세요." };
+  const t = (await getI18n()).m.authPage;
+  if (!email || !password) return { error: t.errEmailPassword };
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: translateAuthError(error.message) };
+  if (error) return { error: translateAuthError(error.message, t) };
 
   redirect(safeNext(formData.get("next")));
 }
@@ -35,14 +39,15 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
-  if (!nicknameFormatOk(nickname)) return { error: `닉네임은 ${NICKNAME_RULE}` };
-  if (password.length < 6) return { error: "비밀번호는 6자 이상이어야 해요." };
+  const t = (await getI18n()).m.authPage;
+  if (!nicknameFormatOk(nickname)) return { error: fmt(t.errNickRule, { rule: t.nickRule }) };
+  if (password.length < 6) return { error: t.errPasswordLength };
 
   const supabase = await createClient();
 
   // 대소문자·공백만 다른 닉네임, 운영자 사칭 단어도 막음 (0010 nickname_available)
   const { data: available } = await supabase.rpc("nickname_available", { n: nickname });
-  if (available === false) return { error: "이미 사용 중이거나 쓸 수 없는 닉네임이에요." };
+  if (available === false) return { error: t.errNickUnavailable };
 
   const origin = (await headers()).get("origin") ?? "";
   const { data, error } = await supabase.auth.signUp({
@@ -53,12 +58,12 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
       emailRedirectTo: `${origin}/auth/callback`,
     },
   });
-  if (error) return { error: translateAuthError(error.message) };
+  if (error) return { error: translateAuthError(error.message, t) };
 
   // 메일 인증을 끈 프로젝트면 바로 로그인 상태가 됩니다.
   if (data.session) redirect("/");
 
-  return { message: `${email} 로 인증 메일을 보냈어요. 메일의 링크를 누르면 가입이 끝나요.` };
+  return { message: fmt(t.signupSent, { email }) };
 }
 
 /**
@@ -67,7 +72,8 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
  */
 export async function requestPasswordReset(_prev: FormState, formData: FormData): Promise<FormState> {
   const email = String(formData.get("email") ?? "").trim();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "이메일을 정확히 적어주세요." };
+  const t = (await getI18n()).m.authPage;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: t.errEmailFormat };
 
   const supabase = await createClient();
   const origin = (await headers()).get("origin") ?? "";
@@ -75,7 +81,7 @@ export async function requestPasswordReset(_prev: FormState, formData: FormData)
     redirectTo: `${origin}/auth/confirm?next=/account/password`,
   });
   if (error?.message.toLowerCase().includes("rate limit")) {
-    return { error: "메일을 너무 자주 보냈어요. 잠시 후 다시 시도해 주세요." };
+    return { error: t.errMailRate };
   }
-  return { message: `${email} 로 가입되어 있다면 비밀번호 재설정 메일을 보냈어요. 메일함(스팸함도)을 확인해 주세요.` };
+  return { message: fmt(t.resetSent, { email }) };
 }

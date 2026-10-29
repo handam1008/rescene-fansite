@@ -26,5 +26,17 @@ export const comebacks: Comeback[] = [
       { date: "2026-10-27T00:00:00+09:00", title: "타이틀 프리뷰 · 스페셜 콘텐츠" },
       { date: "2026-10-30T00:00:00+09:00", title: "'With' 뮤직비디오 티저" },
     ],
+    i18n: {
+      ja: {
+        description: "「心臓の鼓動」を意味するPULSE。3rdミニアルバム『lip bomb』以来、約1年ぶりのフィジカルアルバムです。",
+        tracklist: ["With（タイトル曲）", "Finest Thing", "百花繚乱 (Inside Out)", "MEME", "Dragon"],
+        teasers: ["予約販売開始", "コンセプトフォトA", "コンセプトフォトB", "コンセプトトレーラー", "アルバムディテール・トラックリスト", "ハイライトメドレー", "タイトル曲プレビュー・スペシャルコンテンツ", "『With』MVティーザー"],
+      },
+      en: {
+        description: "PULSE means 'heartbeat'. It's their first physical album in about a year, since the 3rd mini album 'lip bomb'.",
+        tracklist: ["With (title track)", "Finest Thing", "Baekhwayoran (Inside Out)", "MEME", "Dragon"],
+        teasers: ["Pre-orders open", "Concept photo A", "Concept photo B", "Concept trailer", "Album details · Tracklist", "Highlight medley", "Title preview · Special content", "'With' MV teaser"],
+      },
+    },
   },
 ];

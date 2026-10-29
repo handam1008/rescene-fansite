@@ -3,37 +3,57 @@ import Link from "next/link";
 import CardImage from "@/components/CardImage";
 import PokedexRanking from "@/components/PokedexRanking";
 import { EmptyState, PageHeader, SupabaseNotice } from "@/components/ui";
-import { pokedexMemberName, pokedexMembers } from "@/data/members";
-import { cardSourceUrl, pokedexSets, pokedexSources } from "@/data/pokedex-sets";
-import { contributorTitleFor, nextTitle, titleFor } from "@/data/titles";
+import { pokedexMemberName, pokedexMembersFor } from "@/data/members";
+import { cardLabel, cardSourceUrl, pokedexSources, setInfo, setName, sourceName } from "@/data/pokedex-sets";
+import { contributorTitleFor, nextTitle, titleFor, titleName } from "@/data/titles";
+import { fmt, type Locale } from "@/i18n/config";
+import type { Messages } from "@/i18n/messages";
+import { getI18n } from "@/i18n/server";
 import { getCatalog, getContributorRanking, getMyCollections, getNicknames } from "@/lib/community";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/supabase/server";
 import type { CatalogCard, CollectionEntry } from "@/types";
 
-export const metadata: Metadata = { title: "포카 도감" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { m } = await getI18n();
+  return { title: m.pokedex.title };
+}
 
 // 내 수집 현황을 매번 새로 불러옴
 export const dynamic = "force-dynamic";
 
-const statusBadge: Record<CollectionEntry["status"], { label: string; className: string }> = {
-  approved: { label: "✓ 수집", className: "bg-lilac-500 text-white" },
-  pending: { label: "확인 중", className: "bg-sky-dream-200 text-sky-700" },
-  rejected: { label: "다시 인증", className: "bg-blush-200 text-ink" },
+const statusBadge: Record<CollectionEntry["status"], { label: "statusApproved" | "statusPending" | "statusRejected"; className: string }> = {
+  approved: { label: "statusApproved", className: "bg-lilac-500 text-white" },
+  pending: { label: "statusPending", className: "bg-sky-dream-200 text-sky-700" },
+  rejected: { label: "statusRejected", className: "bg-blush-200 text-ink" },
 };
 
-function CardTile({ card, entry, contributor }: { card: CatalogCard; entry?: CollectionEntry; contributor?: string }) {
+function CardTile({
+  card,
+  entry,
+  contributor,
+  m,
+  locale,
+}: {
+  card: CatalogCard;
+  entry?: CollectionEntry;
+  contributor?: string;
+  m: Messages;
+  locale: Locale;
+}) {
   const badge = entry ? statusBadge[entry.status] : null;
   return (
     <Link href={`/photocards/${card.id}`} className="group block">
       <div className="relative">
         <CardImage card={card} />
         {badge && (
-          <span className={`absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[10px] font-bold ${badge.className}`}>{badge.label}</span>
+          <span className={`absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[10px] font-bold ${badge.className}`}>
+            {m.pokedex[badge.label]}
+          </span>
         )}
       </div>
-      <p className="mt-1 truncate text-xs font-semibold">{pokedexMemberName(card.member)}</p>
-      {card.label && <p className="truncate text-[11px] text-ink-soft">{card.label}</p>}
+      <p className="mt-1 truncate text-xs font-semibold">{pokedexMemberName(card.member, locale)}</p>
+      {card.label && <p className="truncate text-[11px] text-ink-soft">{cardLabel(card.label, locale)}</p>}
       {contributor && <p className="truncate text-[11px] text-lilac-700">📷 {contributor}</p>}
     </Link>
   );
@@ -79,10 +99,11 @@ export default async function PhotocardsPage({
 }: {
   searchParams: Promise<{ member?: string; source?: string; need?: string }>;
 }) {
+  const { m, locale } = await getI18n();
   if (!isSupabaseConfigured) {
     return (
       <>
-        <PageHeader eyebrow="Photocard" title="포카 도감" />
+        <PageHeader eyebrow="Photocard" title={m.pokedex.title} />
         <SupabaseNotice />
       </>
     );
@@ -100,16 +121,17 @@ export default async function PhotocardsPage({
   const present = [...new Set(catalog.map(sourceOf))];
   const sources = [...pokedexSources.filter((s) => present.includes(s)), ...present.filter((s) => !pokedexSources.includes(s))];
   const source = sources.find((s) => s === params.source) ?? "";
-  const member = pokedexMembers.find((m) => m.slug === params.member)?.slug ?? "";
+  const memberList = pokedexMembersFor(locale);
+  const member = memberList.find((x) => x.slug === params.member)?.slug ?? "";
   // 도감 이미지가 아직 없는 카드만 보기
   const needImage = params.need === "image";
 
   const hrefWith = (next: { source?: string; member?: string; needImage?: boolean }) => {
     const q = new URLSearchParams();
     const s = next.source ?? source;
-    const m = next.member ?? member;
+    const mem = next.member ?? member;
     if (s) q.set("source", s);
-    if (m) q.set("member", m);
+    if (mem) q.set("member", mem);
     if (next.needImage ?? needImage) q.set("need", "image");
     const qs = q.toString();
     return qs ? `/photocards?${qs}` : "/photocards";
@@ -133,8 +155,8 @@ export default async function PhotocardsPage({
   const title = titleFor(user?.collectedCount);
   const next = nextTitle(user?.collectedCount ?? 0);
   // 한 멤버 카드를 전부 모은 경우 "OO 컴플리트"
-  const completed = pokedexMembers.filter((m) => {
-    const theirs = catalog.filter((c) => c.member === m.slug);
+  const completed = memberList.filter((mem) => {
+    const theirs = catalog.filter((c) => c.member === mem.slug);
     return theirs.length > 0 && theirs.every((c) => mine.get(c.id)?.status === "approved");
   });
 
@@ -142,16 +164,19 @@ export default async function PhotocardsPage({
     <>
       <PageHeader
         eyebrow="Photocard"
-        title="포카 도감"
-        description="리센느 공식 포토카드를 다 같이 직접 찍은 사진으로 채워가요. 빈 카드를 처음 채우면 첫 제공자로 이름이 남고, 랭킹에 올라요."
+        title={m.pokedex.title}
+        description={m.pokedex.desc}
       />
 
       {/* 다 같이 채우는 도감 */}
       <section className="mb-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_300px]">
         <div className="card p-5">
-          <p className="text-sm font-semibold text-lilac-700">다 같이 채운 리센느 도감</p>
+          <p className="text-sm font-semibold text-lilac-700">{m.pokedex.together}</p>
           <p className="mt-0.5 text-3xl font-extrabold tabular-nums">
-            {filled} <span className="text-base font-semibold text-ink-soft">/ {catalog.length}장 · {filledPercent}%</span>
+            {filled}{" "}
+            <span className="text-base font-semibold text-ink-soft">
+              {fmt(m.pokedex.countOf, { total: catalog.length, percent: filledPercent })}
+            </span>
           </p>
           <div className="mt-3 h-3 bg-lilac-100">
             <div className="h-full bg-gradient-to-r from-lilac-500 to-blush-400" style={{ width: `${filledPercent}%` }} />
@@ -159,23 +184,23 @@ export default async function PhotocardsPage({
           <p className="mt-3 text-sm leading-relaxed text-ink-soft">
             {missingImages > 0 ? (
               <>
-                아직 <b className="text-ink">{missingImages}장</b>이 비어 있어요. 가진 카드를 찍어 인증하면서{" "}
-                <b className="text-ink">도감 이미지 공개</b>에 동의하면, 승인 후 그 사진으로 도감이 채워져요.{" "}
+                {m.pokedex.missingBefore}
+                <b className="text-ink">{fmt(m.pokedex.missingCount, { n: missingImages })}</b>
+                {m.pokedex.missingAfter}
                 <Link href={hrefWith({ needImage: true })} className="font-semibold text-lilac-700 underline">
-                  빈 카드 보기
+                  {m.pokedex.seeEmpty}
                 </Link>
               </>
             ) : (
-              "🎉 모든 카드가 채워졌어요! 함께해 주신 리마인 여러분 고마워요."
+              m.pokedex.allFilled
             )}
           </p>
         </div>
         <div className="card p-5">
-          <h2 className="mb-2 font-bold">🏆 도감 개척 랭킹</h2>
+          <h2 className="mb-2 font-bold">{m.pokedex.ranking}</h2>
           <PokedexRanking ranking={ranking} myId={user?.id} />
           <p className="mt-3 border-t border-lilac-100 pt-2 text-[11px] leading-relaxed text-ink-soft">
-            빈 카드를 처음 채운 장수 순이에요. 1위 <b>👑 도감 개척왕</b>, 2~3위 <b>TOP3</b>, 4~10위 <b>TOP10</b> 칭호가
-            닉네임 옆에 붙어요.
+            {m.pokedex.rankingNote}
           </p>
         </div>
       </section>
@@ -186,31 +211,35 @@ export default async function PhotocardsPage({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
               <p className="text-sm">
-                <span className="text-ink-soft">내 수집 </span>
+                <span className="text-ink-soft">{m.pokedex.myCollection} </span>
                 <b className="tabular-nums">
                   {approved} / {catalog.length}
                 </b>
-                {pendingCount > 0 && <span className="ml-1.5 text-xs text-sky-700">확인 중 {pendingCount}</span>}
+                {pendingCount > 0 && <span className="ml-1.5 text-xs text-sky-700">{fmt(m.pokedex.pendingN, { n: pendingCount })}</span>}
               </p>
               <p className="text-sm">
-                <span className="text-ink-soft">내가 처음 채운 카드 </span>
-                <b className="tabular-nums">{user.contributedCount}장</b>
-                {user.contributorRank && <span className="ml-1 text-xs text-lilac-700">({user.contributorRank}위)</span>}
+                <span className="text-ink-soft">{m.pokedex.firstFilled} </span>
+                <b className="tabular-nums">{fmt(m.pokedex.cards, { n: user.contributedCount ?? 0 })}</b>
+                {user.contributorRank && (
+                  <span className="ml-1 text-xs text-lilac-700">{fmt(m.pokedex.rankN, { n: user.contributorRank })}</span>
+                )}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
               {myContribution && (
-                <span className={`px-2 py-0.5 text-xs font-bold ${myContribution.className}`}>{myContribution.name}</span>
+                <span className={`px-2 py-0.5 text-xs font-bold ${myContribution.className}`}>{titleName(myContribution, locale)}</span>
               )}
-              {title && <span className={`px-2 py-0.5 text-xs font-bold ${title.className}`}>{title.name}</span>}
-              {completed.map((m) => (
-                <span key={m.slug} className="border border-lilac-500 px-2 py-0.5 text-xs font-bold text-lilac-700">
-                  {m.name} 컴플리트
+              {title && <span className={`px-2 py-0.5 text-xs font-bold ${title.className}`}>{titleName(title, locale)}</span>}
+              {completed.map((mem) => (
+                <span key={mem.slug} className="border border-lilac-500 px-2 py-0.5 text-xs font-bold text-lilac-700">
+                  {fmt(m.pokedex.complete, { name: mem.name })}
                 </span>
               ))}
               {next && (
                 <span className="text-xs text-ink-soft">
-                  {next.remaining}장 더 모으면 <b className="text-ink">{next.title.name}</b>
+                  {fmt(m.pokedex.nextTitleBefore, { n: next.remaining })}
+                  <b className="text-ink">{titleName(next.title, locale)}</b>
+                  {m.pokedex.nextTitleAfter}
                 </span>
               )}
             </div>
@@ -218,16 +247,16 @@ export default async function PhotocardsPage({
         ) : (
           <p className="text-sm">
             <Link href="/login?next=/photocards" className="font-semibold text-lilac-700 underline">
-              로그인
+              {m.pokedex.login}
             </Link>
-            하면 내 포카를 인증해서 도감을 채우고 칭호를 받을 수 있어요.
+            {m.pokedex.loginAfter}
           </p>
         )}
         {user?.isAdmin && (
           <p className="mt-3 border-t border-lilac-100 pt-3 text-xs">
-            운영자 메뉴:{" "}
+            {m.pokedex.adminMenu}{" "}
             <Link href="/admin" className="font-semibold text-lilac-700 underline">
-              도감 카드 등록 · 인증 확인
+              {m.pokedex.adminLink}
             </Link>
           </p>
         )}
@@ -236,7 +265,7 @@ export default async function PhotocardsPage({
       {/* 출처 탭 (전체 / 앨범 / CU 리센느빵 / 할리스 …) */}
       <div className="mb-2 flex border-b-2 border-lilac-500">
         <div className="no-scrollbar flex overflow-x-auto">
-          {[{ key: "", name: "전체" }, ...sources.map((s) => ({ key: s, name: s }))].map((t) => (
+          {[{ key: "", name: m.pokedex.all }, ...sources.map((s) => ({ key: s, name: sourceName(s, locale) }))].map((t) => (
             <Link
               key={t.key || "all"}
               href={hrefWith({ source: t.key })}
@@ -252,8 +281,8 @@ export default async function PhotocardsPage({
       </div>
       <div className="mb-6 space-y-2">
         <FilterChips
-          label="멤버 필터"
-          items={[{ key: "", name: "모든 멤버" }, ...pokedexMembers.map((m) => ({ key: m.slug, name: m.name }))]}
+          label={m.pokedex.memberFilter}
+          items={[{ key: "", name: m.pokedex.allMembers }, ...memberList.map((mem) => ({ key: mem.slug, name: mem.name }))]}
           activeKey={member}
           hrefFor={(key) => hrefWith({ member: key })}
         />
@@ -266,38 +295,39 @@ export default async function PhotocardsPage({
                 needImage ? "border-lilac-500 bg-lilac-500 text-white" : "border-lilac-500 bg-white text-lilac-700 hover:bg-lilac-100"
               }`}
             >
-              📷 이미지 필요한 카드 {missingImages}장{needImage && " ✕"}
+              {fmt(m.pokedex.needImage, { n: missingImages })}
+              {needImage && " ✕"}
             </Link>
-            <span>가진 카드를 인증하면 도감 이미지가 되고, 제공자로 닉네임이 표시돼요.</span>
+            <span>{m.pokedex.needImageHint}</span>
           </p>
         )}
       </div>
 
       {catalog.length === 0 ? (
         <EmptyState>
-          <p className="font-semibold text-ink">도감을 준비하고 있어요</p>
-          <p className="mt-1">운영자가 공식 포토카드를 등록하면 여기에 채워져요.</p>
+          <p className="font-semibold text-ink">{m.pokedex.preparing}</p>
+          <p className="mt-1">{m.pokedex.preparingDesc}</p>
         </EmptyState>
       ) : cards.length === 0 ? (
-        <EmptyState>조건에 맞는 카드가 아직 없어요.</EmptyState>
+        <EmptyState>{m.pokedex.noMatch}</EmptyState>
       ) : (
         <div className="space-y-10">
           {orderedSets.map(([album, list]) => {
             const got = list.filter((c) => mine.get(c.id)?.status === "approved").length;
             const setFilled = list.filter((c) => c.image_path).length;
-            const meta = pokedexSets[album];
+            const meta = setInfo(album, locale);
             const link = cardSourceUrl(list[0]);
             return (
               <section key={album}>
                 <div className="mb-3 border-b-2 border-lilac-500 pb-1.5">
                   <div className="flex items-baseline justify-between gap-2">
                     <h2 className="font-bold">
-                      {album}
-                      {!source && <span className="ml-2 text-xs font-semibold text-lilac-500">{sourceOf(list[0])}</span>}
+                      {setName(album, locale)}
+                      {!source && <span className="ml-2 text-xs font-semibold text-lilac-500">{sourceName(sourceOf(list[0]), locale)}</span>}
                     </h2>
                     <span className="shrink-0 text-xs text-ink-soft tabular-nums">
-                      채움 {setFilled} / {list.length}
-                      {user && <span className="ml-2 text-lilac-700">내 수집 {got}</span>}
+                      {fmt(m.pokedex.setFilled, { a: setFilled, b: list.length })}
+                      {user && <span className="ml-2 text-lilac-700">{fmt(m.pokedex.setMine, { n: got })}</span>}
                     </span>
                   </div>
                   {(meta || link) && (
@@ -306,7 +336,7 @@ export default async function PhotocardsPage({
                       {meta?.note && <span className="block text-[11px] text-ink-soft/80">※ {meta.note}</span>}
                       {link && (
                         <a href={link} target="_blank" rel="noopener noreferrer" className="ml-1.5 underline hover:text-ink">
-                          출처 ↗
+                          {m.pokedex.source}
                         </a>
                       )}
                     </p>
@@ -319,6 +349,8 @@ export default async function PhotocardsPage({
                         card={card}
                         entry={mine.get(card.id)}
                         contributor={card.first_contributor ? contributorNames.get(card.first_contributor) : undefined}
+                        m={m}
+                        locale={locale}
                       />
                     </li>
                   ))}

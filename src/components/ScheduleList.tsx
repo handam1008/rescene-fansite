@@ -1,5 +1,10 @@
-import { getMember } from "@/data/members";
-import { scheduleTypeLabels, type ScheduleEvent, type ScheduleType } from "@/data/schedule";
+import { getMember, nameOf } from "@/data/members";
+import type { ScheduleEvent, ScheduleType } from "@/data/schedule";
+import { INTL_LOCALE, type Locale } from "@/i18n/config";
+import type { Messages } from "@/i18n/messages";
+import { getI18n } from "@/i18n/server";
+import { formatMonthYear } from "@/lib/format";
+import { eventPlace, eventTitle } from "@/lib/schedule";
 import { EmptyState } from "./ui";
 
 const TIME_ZONE = "Asia/Seoul";
@@ -13,8 +18,8 @@ export const typeStyle: Record<ScheduleType, string> = {
   etc: "bg-gray-100 text-gray-600",
 };
 
-function parts(iso: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+function parts(iso: string, locale: Locale) {
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
     timeZone: TIME_ZONE,
     year: "numeric",
     month: "2-digit",
@@ -28,13 +33,14 @@ function parts(iso: string) {
     .reduce<Record<string, string>>((acc, p) => ({ ...acc, [p.type]: p.value }), {});
 }
 
-export function EventRow({ event }: { event: ScheduleEvent }) {
-  const start = parts(event.date);
-  const end = event.endDate ? parts(event.endDate) : null;
+/** 일정 한 줄. 문구·언어는 목록(ScheduleList)·달력(ScheduleCalendar)에서 받음 */
+export function EventRow({ event, locale, m }: { event: ScheduleEvent; locale: Locale; m: Messages }) {
+  const start = parts(event.date, locale);
+  const end = event.endDate ? parts(event.endDate, locale) : null;
   const multiDay = end && `${end.month}${end.day}` !== `${start.month}${start.day}`;
   const who = (event.members ?? []).map((slug) => getMember(slug)).filter((m) => m !== undefined);
   const when = multiDay ? `${start.month}.${start.day} ~ ${end.month}.${end.day}` : event.allDay ? "" : `${start.hour}:${start.minute}`;
-  const meta = [when, event.place].filter(Boolean).join(" · ");
+  const meta = [when, eventPlace(event, locale)].filter(Boolean).join(" · ");
 
   return (
     <li
@@ -48,33 +54,35 @@ export function EventRow({ event }: { event: ScheduleEvent }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
-          {event.important && <span className="bg-amber-400 px-1.5 py-0.5 text-[11px] font-bold text-white">★ 중요</span>}
+          {event.important && <span className="bg-amber-400 px-1.5 py-0.5 text-[11px] font-bold text-white">{m.schedule.important}</span>}
           {event.tentative && (
-            <span className="border border-dashed border-ink-soft px-1.5 py-0.5 text-[11px] font-bold text-ink-soft">미확정</span>
+            <span className="border border-dashed border-ink-soft px-1.5 py-0.5 text-[11px] font-bold text-ink-soft">
+              {m.schedule.tentative}
+            </span>
           )}
           <span className={`px-1.5 py-0.5 text-[11px] font-bold ${typeStyle[event.type]}`}>
-            {scheduleTypeLabels[event.type]}
+            {m.schedule.types[event.type]}
           </span>
           {who.length === 0 ? (
-            <span className="border border-lilac-200 px-1.5 py-0.5 text-[11px] font-semibold text-lilac-700">단체</span>
+            <span className="border border-lilac-200 px-1.5 py-0.5 text-[11px] font-semibold text-lilac-700">{m.schedule.group}</span>
           ) : (
-            who.map((m) => (
-              <span key={m.slug} className="px-1.5 py-0.5 text-[11px] font-semibold text-ink" style={{ backgroundColor: m.color }}>
-                {m.name}
+            who.map((mem) => (
+              <span key={mem.slug} className="px-1.5 py-0.5 text-[11px] font-semibold text-ink" style={{ backgroundColor: mem.color }}>
+                {nameOf(mem, locale)}
               </span>
             ))
           )}
         </div>
         <p className="mt-1 font-semibold break-keep">
           {event.important && <span className="mr-1 text-amber-500">★</span>}
-          {event.title}
+          {eventTitle(event, locale)}
         </p>
         {(meta || event.link) && (
           <p className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-ink-soft">
             {meta && <span>{meta}</span>}
             {event.link && (
               <a href={event.link} target="_blank" rel="noopener noreferrer" className="underline hover:text-ink">
-                자세히 ↗
+                {m.schedule.details}
               </a>
             )}
           </p>
@@ -85,13 +93,14 @@ export function EventRow({ event }: { event: ScheduleEvent }) {
 }
 
 /** 일정 목록: 달별로 묶어서 보여줍니다 */
-export default function ScheduleList({ events, emptyText = "예정된 일정이 없어요." }: { events: ScheduleEvent[]; emptyText?: string }) {
-  if (events.length === 0) return <EmptyState>{emptyText}</EmptyState>;
+export default async function ScheduleList({ events, emptyText }: { events: ScheduleEvent[]; emptyText?: string }) {
+  const { m, locale } = await getI18n();
+  if (events.length === 0) return <EmptyState>{emptyText ?? m.schedule.empty}</EmptyState>;
 
   const months = new Map<string, ScheduleEvent[]>();
   for (const e of events) {
-    const p = parts(e.date);
-    const key = `${p.year}년 ${Number(p.month)}월`;
+    const p = parts(e.date, "ko");
+    const key = formatMonthYear(Number(p.year), Number(p.month), locale);
     months.set(key, [...(months.get(key) ?? []), e]);
   }
 
@@ -102,7 +111,7 @@ export default function ScheduleList({ events, emptyText = "예정된 일정이 
           <h3 className="mb-2 text-sm font-bold text-lilac-700">{month}</h3>
           <ul className="card">
             {list.map((e) => (
-              <EventRow key={e.id} event={e} />
+              <EventRow key={e.id} event={e} locale={locale} m={m} />
             ))}
           </ul>
         </section>

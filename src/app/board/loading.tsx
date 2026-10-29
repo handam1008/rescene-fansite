@@ -1,5 +1,8 @@
+"use client";
+
 import LoadingList from "@/components/LoadingList";
+import { useI18n } from "@/i18n/client";
 
 export default function Loading() {
-  return <LoadingList title="게시판" />;
+  return <LoadingList title={useI18n().m.board.title} />;
 }
