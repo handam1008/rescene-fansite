@@ -41,11 +41,21 @@ async function callDeepL(text: string, locale: Locale): Promise<string> {
   return out;
 }
 
+/**
+ * DeepL 이 그룹·팬덤 이름을 소리 나는 대로 옮기지 않게 (리센느 → "Lisenne" 같은 오역) 공식 영문 이름으로 바꿔서 보냄.
+ * 다른 낱말에 섞일 일이 없는 이름만. 멤버 이름(메이·리브 등)은 "메이크업"처럼 다른 말에 들어 있어서 건드리지 않음
+ */
+const FIXED_NAMES: [RegExp, string][] = [
+  [/리센느/g, "RESCENE"],
+  [/리마인/g, "REMINE"],
+];
+
 /** 한 문장(글 제목·본문·댓글)을 화면 언어로 번역. 실패하면 TranslateError */
 export async function translate(text: string, locale: Locale): Promise<string> {
   if (!text.trim()) return text;
-  const hash = createHash("sha256").update(text).digest("hex");
-  return unstable_cache(() => callDeepL(text, locale), ["deepl", locale, hash], { revalidate: false })();
+  const source = locale === "ko" ? text : FIXED_NAMES.reduce((t, [from, to]) => t.replace(from, to), text);
+  const hash = createHash("sha256").update(source).digest("hex");
+  return unstable_cache(() => callDeepL(source, locale), ["deepl", locale, hash], { revalidate: false })();
 }
 
 /**
