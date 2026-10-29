@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/i18n/client";
 
 type Parts = { days: number; hours: number; minutes: number; seconds: number };
 
@@ -29,6 +30,7 @@ export default function Countdown({
   target: string;
   compact?: boolean;
 }) {
+  const { m } = useI18n();
   const targetTime = new Date(target).getTime();
   const [now, setNow] = useState<number | null>(null);
 
@@ -43,7 +45,7 @@ export default function Countdown({
   if (parts === null) {
     return (
       <p className={`font-extrabold text-dreamy ${compact ? "text-lg" : "text-3xl"}`}>
-        컴백 완료! 🎉
+        {m.countdown.done}
       </p>
     );
   }
@@ -51,10 +53,10 @@ export default function Countdown({
   const dLabel = parts ? (parts.days === 0 ? "D-DAY" : `D-${parts.days}`) : "D-…";
 
   const units: [string, number | undefined][] = [
-    ["일", parts?.days],
-    ["시간", parts?.hours],
-    ["분", parts?.minutes],
-    ["초", parts?.seconds],
+    [m.countdown.days, parts?.days],
+    [m.countdown.hours, parts?.hours],
+    [m.countdown.minutes, parts?.minutes],
+    [m.countdown.seconds, parts?.seconds],
   ];
   const pad = (value: number | undefined) => (value === undefined ? "--" : String(value).padStart(2, "0"));
 

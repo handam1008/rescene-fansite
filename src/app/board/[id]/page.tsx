@@ -8,8 +8,9 @@ import Nickname from "@/components/Nickname";
 import PostReactions from "@/components/PostReactions";
 import ViewCounter from "@/components/ViewCounter";
 import { SupabaseNotice } from "@/components/ui";
-import { getMember } from "@/data/members";
-import { hiddenReasons } from "@/data/moderation";
+import { getMember, nameOf } from "@/data/members";
+import { fmt } from "@/i18n/config";
+import { getI18n } from "@/i18n/server";
 import { getPost, getPostPreview, getPosts, postImageUrl } from "@/lib/community";
 import { formatFullDateTime } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -21,7 +22,7 @@ import { deleteComment, deletePost } from "../actions";
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const id = Number((await params).id);
   const post = Number.isInteger(id) && id > 0 ? await getPostPreview(id) : null;
-  if (!post) return { title: "게시판" };
+  if (!post) return { title: (await getI18n()).m.board.title };
   const description = post.content.replace(/\s+/g, " ").trim().slice(0, 120);
   return {
     title: post.title,
@@ -35,6 +36,7 @@ const smallButton = "btn border border-lilac-200 bg-white px-3 py-1.5 text-sm ho
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   if (!isSupabaseConfigured) return <SupabaseNotice />;
 
+  const { locale, m } = await getI18n();
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id < 1) notFound();
 
@@ -44,7 +46,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   // 멤버 게시판 글이면 그 멤버 게시판으로 묶어서 보여줌
   const member = getMember(post.member);
   const boardPath = member ? `/members/${member.slug}/board` : "/board";
-  const boardName = member ? `${member.name} 게시판` : "게시판";
+  const boardName = member ? fmt(m.board.memberBoard, { name: nameOf(member, locale) }) : m.board.title;
   const list = await getPosts(1, "all", member?.slug);
 
   const isOwner = user?.id === post.user_id;
@@ -62,8 +64,11 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
       {post.hidden_at && (
         <p className="border border-blush-400 bg-blush-100 px-4 py-3 text-sm">
-          🚫 {hiddenReasons[post.hidden_reason ?? "admin"]} 숨겨진 글이에요. 지금은 {isOwner ? "글쓴이(나)" : "운영자"}만 볼 수 있어요.
-          {isOwner && " 운영자가 확인 후 복구하거나 삭제해요."}
+          {fmt(m.board.hiddenNotice, {
+            reason: m.board.hiddenReasons[post.hidden_reason ?? "admin"],
+            who: isOwner ? m.board.hiddenOwner : m.board.hiddenAdmin,
+          })}
+          {isOwner && m.board.hiddenOwnerHint}
         </p>
       )}
 
@@ -77,17 +82,17 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
               <span className="mx-1.5 text-lilac-200">|</span>
               <span className="shrink-0">{formatFullDateTime(post.created_at)}</span>
               {post.edited_at && (
-                <span className="ml-1.5 shrink-0" title={`${formatFullDateTime(post.edited_at)} 수정`}>
-                  (수정됨)
+                <span className="ml-1.5 shrink-0" title={fmt(m.board.editedAt, { date: formatFullDateTime(post.edited_at) })}>
+                  {m.board.edited}
                 </span>
               )}
             </span>
             <span>
-              조회 {post.view_count ?? 0}
+              {fmt(m.board.views, { n: post.view_count ?? 0 })}
               <span className="mx-1.5 text-lilac-200">|</span>
-              추천 {post.like_count ?? 0}
+              {fmt(m.board.likes, { n: post.like_count ?? 0 })}
               <span className="mx-1.5 text-lilac-200">|</span>
-              댓글 {comments.length}
+              {fmt(m.board.comments, { n: comments.length })}
             </span>
           </div>
         </header>
@@ -101,7 +106,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                 <img
                   key={path}
                   src={postImageUrl(path)}
-                  alt={`첨부 사진 ${i + 1}`}
+                  alt={fmt(m.board.attachAlt, { n: i + 1 })}
                   loading={i === 0 ? "eager" : "lazy"}
                   className="mx-auto block h-auto max-h-[80vh] max-w-full"
                 />
@@ -124,7 +129,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
         <div className="flex justify-between gap-2 border-t border-lilac-200 px-4 py-3 sm:px-5">
           <Link href={boardPath} className={smallButton}>
-            목록
+            {m.board.list}
           </Link>
           <div className="flex gap-2">
             {user?.isAdmin && !isOwner && (
@@ -132,31 +137,33 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                 <form action={post.hidden_at ? restorePost : hidePost}>
                   <input type="hidden" name="id" value={post.id} />
                   <button type="submit" className={smallButton}>
-                    {post.hidden_at ? "복구" : "숨기기"}
+                    {post.hidden_at ? m.board.restore : m.board.hide}
                   </button>
                 </form>
                 <form action={adminDeletePost}>
                   <input type="hidden" name="id" value={post.id} />
                   <input type="hidden" name="back" value={boardPath} />
                   <button type="submit" className={smallButton}>
-                    운영자 삭제
+                    {m.board.adminDelete}
                   </button>
                 </form>
               </>
             )}
             {isOwner && (
               <Link href={`/board/${post.id}/edit`} className={smallButton}>
-                수정
+                {m.board.edit}
               </Link>
             )}
             {isOwner && (
               <form action={deletePost}>
                 <input type="hidden" name="id" value={post.id} />
-                <button type="submit" className={smallButton}>삭제</button>
+                <button type="submit" className={smallButton}>
+                  {m.board.delete}
+                </button>
               </form>
             )}
             <Link href={writeHref} className={smallButton}>
-              글쓰기
+              {m.board.write}
             </Link>
           </div>
         </div>
@@ -165,7 +172,9 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
       {/* 댓글 */}
       <section className="border-t-2 border-lilac-500 bg-white">
         <h2 className="border-b border-lilac-200 px-4 py-2.5 text-sm font-bold sm:px-5">
-          전체 댓글 <span className="text-lilac-500">{comments.length}</span>개
+          {m.board.commentsBefore}
+          <span className="text-lilac-500">{comments.length}</span>
+          {m.board.commentsAfter}
         </h2>
         {comments.length > 0 && (
           <ul>
@@ -179,7 +188,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                     <form action={deleteComment}>
                       <input type="hidden" name="id" value={c.id} />
                       <input type="hidden" name="postId" value={post.id} />
-                      <button type="submit" aria-label="댓글 삭제" className="hover:text-ink">✕</button>
+                      <button type="submit" aria-label={m.board.deleteComment} className="hover:text-ink">✕</button>
                     </form>
                   )}
                 </span>
@@ -195,9 +204,9 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           ) : (
             <p className="text-sm text-ink-soft">
               <Link href={`/login?next=/board/${post.id}`} className="font-semibold text-lilac-700 underline">
-                로그인
+                {m.board.login}
               </Link>
-              하면 댓글을 남길 수 있어요.
+              {m.board.loginToComment}
             </p>
           )}
         </div>

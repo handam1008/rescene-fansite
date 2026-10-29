@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import PopularPosts from "@/components/PopularPosts";
 import UpcomingSchedule from "@/components/UpcomingSchedule";
+import { getI18n } from "@/i18n/server";
 import { getPopularPosts } from "@/lib/community";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getSchedule } from "@/lib/schedule";
@@ -23,9 +24,10 @@ async function ScheduleRail() {
   return <UpcomingSchedule events={upcoming.slice(0, 6)} compact />;
 }
 
-export function LeftRail() {
+export async function LeftRail() {
+  const { m } = await getI18n();
   return (
-    <aside className={railClass} aria-label="인기글">
+    <aside className={railClass} aria-label={m.common.popularAria}>
       <Suspense fallback={null}>
         <PopularRail />
       </Suspense>
@@ -33,9 +35,10 @@ export function LeftRail() {
   );
 }
 
-export function RightRail() {
+export async function RightRail() {
+  const { m } = await getI18n();
   return (
-    <aside className={railClass} aria-label="다가오는 일정">
+    <aside className={railClass} aria-label={m.common.upcomingAria}>
       <Suspense fallback={null}>
         <ScheduleRail />
       </Suspense>

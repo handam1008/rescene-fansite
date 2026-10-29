@@ -3,8 +3,10 @@
  * 나중에 Supabase로 옮길 때 이 파일 안쪽만 바꾸면 됩니다.
  */
 import { members, type MemberSlug } from "@/data/members";
-import { anwonjalbuPlan, schedule, type ScheduleEvent } from "@/data/schedule";
+import { anwonjalbuPlan, placeI18n, schedule, type ScheduleEvent } from "@/data/schedule";
 import { songs } from "@/data/songs";
+import type { Locale } from "@/i18n/config";
+import { albumLabel } from "@/lib/album";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -21,6 +23,7 @@ function birthdayEvents(years: number[]): ScheduleEvent[] {
       date: `${y}-${m.birthday.slice(5)}T00:00:00+09:00`,
       allDay: true,
       title: `${m.name} 생일 🎂`,
+      i18n: { ja: `${m.ja}の誕生日 🎂`, en: `${m.english}'s Birthday 🎂` },
       type: "birthday" as const,
       members: [m.slug],
     })),
@@ -38,6 +41,7 @@ function releaseEvents(): ScheduleEvent[] {
       id: `song-${s.id}`,
       date: s.releaseDate,
       title: `${s.album} 발매 · ${s.title}`,
+      i18n: { ja: `${albumLabel(s.album, "ja")} リリース・${s.title}`, en: `${albumLabel(s.album, "en")} release · ${s.title}` },
       type: "release" as const,
       important: true,
       place: "각종 음원 사이트",
@@ -70,6 +74,7 @@ function anwonjalbuEstimates(now: Date): ScheduleEvent[] {
       date: `${key}T00:00:00+09:00`,
       allDay: true,
       title: "[안원잘부] 새 에피소드 업로드 예상",
+      i18n: { ja: "[안원잘부] 新エピソード公開予定", en: "[안원잘부] New episode expected" },
       type: "content",
       tentative: true,
       place: "유튜브 안녕하세요원이입니다잘부탁드립니다 · 매주 금요일 목표(요일·주기 바뀔 수 있음)",
@@ -123,3 +128,8 @@ export async function getMonthSchedule(year: number, month: number, now: Date = 
     .filter((e) => kstDateKey(e.date) <= last && kstDateKey(e.endDate ?? e.date) >= first)
     .sort(byDate);
 }
+
+/** 화면 언어에 맞는 일정 제목·장소 (번역이 없으면 한국어 그대로) */
+export const eventTitle = (e: ScheduleEvent, locale: Locale) => (locale === "ko" ? e.title : (e.i18n?.[locale] ?? e.title));
+export const eventPlace = (e: ScheduleEvent, locale: Locale) =>
+  !e.place || locale === "ko" ? e.place : (placeI18n[e.place]?.[locale] ?? e.place);

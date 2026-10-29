@@ -2,11 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EmptyState, PageHeader, SupabaseNotice } from "@/components/ui";
+import { fmt } from "@/i18n/config";
+import { getI18n } from "@/i18n/server";
 import { formatFullDateTime } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "알림", robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const { m } = await getI18n();
+  return { title: m.notice.title, robots: { index: false } };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +42,7 @@ export default async function NotificationsPage() {
     .order("created_at", { ascending: false })
     .limit(50);
   const items = (data ?? []) as unknown as NotificationRow[];
+  const { m } = await getI18n();
 
   if (items.some((n) => !n.read_at)) {
     await supabase.from("notifications").update({ read_at: new Date().toISOString() }).is("read_at", null);
@@ -44,9 +50,9 @@ export default async function NotificationsPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <PageHeader eyebrow="Notice" title="알림" description="내 글에 달린 댓글을 알려드려요. 최근 50개까지 보여요." />
+      <PageHeader eyebrow="Notice" title={m.notice.title} description={m.notice.desc} />
       {items.length === 0 ? (
-        <EmptyState>아직 알림이 없어요.</EmptyState>
+        <EmptyState>{m.notice.empty}</EmptyState>
       ) : (
         <ul className="card divide-y divide-lilac-100">
           {items.map((n) => (
@@ -57,8 +63,10 @@ export default async function NotificationsPage() {
               >
                 <span aria-hidden>💬</span>
                 <span className="min-w-0 flex-1">
-                  <b>{n.actor?.nickname ?? "누군가"}</b>님이 내 글{" "}
-                  <b className="text-lilac-700">‘{n.post?.title ?? "삭제된 글"}’</b>에 댓글을 남겼어요.
+                  <b>{n.actor?.nickname ?? m.notice.someone}</b>
+                  {m.notice.commentMid}
+                  <b className="text-lilac-700">{fmt(m.notice.commentQuote, { t: n.post?.title ?? m.notice.deletedPost })}</b>
+                  {m.notice.commentEnd}
                   <span className="mt-0.5 block text-xs text-ink-soft">{formatFullDateTime(n.created_at)}</span>
                 </span>
                 {!n.read_at && <span className="shrink-0 bg-blush-400 px-1.5 text-[10px] leading-4 font-bold text-white">NEW</span>}

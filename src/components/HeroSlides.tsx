@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { HeroSlide } from "@/data/site";
+import { useI18n } from "@/i18n/client";
+import { fmt } from "@/i18n/config";
 import { PauseIcon, PlayIcon } from "./Icons";
 
 /** 다음 사진으로 넘어가는 간격 */
@@ -15,6 +17,7 @@ const INTERVAL = 6000;
  * - 처음엔 지금 사진과 다음 사진만 불러와서 첫 화면이 느려지지 않게 함
  */
 export default function HeroSlides({ slides }: { slides: HeroSlide[] }) {
+  const { m, locale } = useI18n();
   const [current, setCurrent] = useState(0);
   const [mounted, setMounted] = useState(Math.min(2, slides.length));
   const [hovered, setHovered] = useState(false);
@@ -70,7 +73,7 @@ export default function HeroSlides({ slides }: { slides: HeroSlide[] }) {
         >
           <Image
             src={s.image}
-            alt={s.alt}
+            alt={s.alt[locale]}
             fill
             priority={i === 0}
             // 원본이 2400px 라 레티나 화면에서도 선명하게. 대표 사진이라 화질을 기본(75)보다 높임
@@ -90,7 +93,7 @@ export default function HeroSlides({ slides }: { slides: HeroSlide[] }) {
 
       {/* 휴대폰은 왼쪽 아래 넘김 표시와 겹치지 않게 폭을 줄여 두 줄로 */}
       <p className="absolute right-2 bottom-2 max-w-[calc(100%-8.5rem)] bg-ink/45 px-1.5 py-0.5 text-right text-[10px] text-white sm:max-w-none">
-        {slides[current].credit}
+        {slides[current].credit[locale]}
       </p>
 
       {/* 넘김 표시: 휴대폰은 왼쪽 아래(얼굴을 가리지 않게), PC 는 글씨와 겹치지 않게 오른쪽 위 */}
@@ -101,7 +104,7 @@ export default function HeroSlides({ slides }: { slides: HeroSlide[] }) {
               key={s.image}
               type="button"
               onClick={() => go(i)}
-              aria-label={`${i + 1}번째 사진`}
+              aria-label={fmt(m.hero.photoN, { n: i + 1 })}
               aria-current={i === current ? "true" : undefined}
               className={`h-2 transition-all hover:transform-none ${i === current ? "w-6 bg-white" : "w-2 bg-white/50 hover:bg-white/80"}`}
             />
@@ -110,7 +113,7 @@ export default function HeroSlides({ slides }: { slides: HeroSlide[] }) {
             <button
               type="button"
               onClick={() => setStopped((v) => !v)}
-              aria-label={paused ? "사진 자동 넘김 다시 시작" : "사진 자동 넘김 멈추기"}
+              aria-label={paused ? m.hero.resume : m.hero.pause}
               className="ml-1 text-white/90 hover:text-white"
             >
               {paused ? <PlayIcon className="h-3.5 w-3.5" /> : <PauseIcon className="h-3.5 w-3.5" />}

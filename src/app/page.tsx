@@ -7,6 +7,10 @@ import { VoteStatusBadge } from "@/components/VoteCard";
 import { EmptyState, MoreLink, SampleBadge } from "@/components/ui";
 import { getContributorRanking, getPokedexNews, getPopularPosts } from "@/lib/community";
 import { getLatestComeback, getSongs, getVotes } from "@/lib/data";
+import { fmt } from "@/i18n/config";
+import { getI18n } from "@/i18n/server";
+import { albumLabel } from "@/lib/album";
+import { localizeComeback, localizeVote } from "@/lib/localize";
 import { getSchedule } from "@/lib/schedule";
 import { formatDate, formatDateTime } from "@/lib/format";
 
@@ -14,7 +18,7 @@ import { formatDate, formatDateTime } from "@/lib/format";
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const [comeback, songs, votes, popularPosts, schedule, pokedex, ranking] = await Promise.all([
+  const [rawComeback, songs, votes, popularPosts, schedule, pokedex, ranking] = await Promise.all([
     getLatestComeback(),
     getSongs(),
     getVotes(),
@@ -23,8 +27,13 @@ export default async function HomePage() {
     getPokedexNews(5),
     getContributorRanking(3),
   ]);
+  const { m, locale } = await getI18n();
+  const comeback = rawComeback && localizeComeback(rawComeback, locale);
   const latestSong = songs[0];
-  const activeVotes = votes.filter((v) => v.status !== "ended").slice(0, 2);
+  const activeVotes = votes
+    .filter((v) => v.status !== "ended")
+    .slice(0, 2)
+    .map((v) => localizeVote(v, locale));
 
   return (
     <div className="space-y-8">
@@ -34,28 +43,28 @@ export default async function HomePage() {
         {/* 컴백 */}
         <section className="card flex flex-col p-5">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="font-bold">💌 최신 컴백 소식</h2>
+            <h2 className="font-bold">{m.home.comebackTitle}</h2>
             {comeback && <SampleBadge show={comeback.isSample} />}
           </div>
           {comeback ? (
             <div className="mt-4 flex-1">
               <Countdown target={comeback.releaseDate} compact />
               <p className="mt-2 font-semibold">{comeback.albumTitle}</p>
-              <p className="text-sm text-ink-soft">타이틀곡 · {comeback.titleTrack}</p>
-              <p className="mt-1 text-sm text-ink-soft">{formatDateTime(comeback.releaseDate)} 발매</p>
+              <p className="text-sm text-ink-soft">{fmt(m.home.titleTrack, { t: comeback.titleTrack })}</p>
+              <p className="mt-1 text-sm text-ink-soft">{fmt(m.home.releaseAt, { date: formatDateTime(comeback.releaseDate, locale) })}</p>
             </div>
           ) : (
-            <p className="mt-4 flex-1 text-sm text-ink-soft">예정된 컴백 소식이 없어요.</p>
+            <p className="mt-4 flex-1 text-sm text-ink-soft">{m.home.noComeback}</p>
           )}
           <div className="mt-4">
-            <MoreLink href="/comeback">컴백 일정 보기</MoreLink>
+            <MoreLink href="/comeback">{m.home.comebackMore}</MoreLink>
           </div>
         </section>
 
         {/* 신곡 */}
         <section className="card flex flex-col p-5">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="font-bold">🎧 최신 신곡</h2>
+            <h2 className="font-bold">{m.home.songTitle}</h2>
             {latestSong && <SampleBadge show={latestSong.isSample} />}
           </div>
           {latestSong ? (
@@ -65,20 +74,20 @@ export default async function HomePage() {
               </div>
               <p className="mt-3 text-lg font-semibold">{latestSong.title}</p>
               <p className="text-sm text-ink-soft">
-                {latestSong.album} · {formatDate(latestSong.releaseDate)}
+                {albumLabel(latestSong.album, locale)} · {formatDate(latestSong.releaseDate, locale)}
               </p>
             </div>
           ) : (
-            <p className="mt-4 flex-1 text-sm text-ink-soft">등록된 곡이 없어요.</p>
+            <p className="mt-4 flex-1 text-sm text-ink-soft">{m.home.noSong}</p>
           )}
           <div className="mt-4">
-            <MoreLink href="/songs">뮤비 · 음원 링크</MoreLink>
+            <MoreLink href="/songs">{m.home.songMore}</MoreLink>
           </div>
         </section>
 
         {/* 투표 */}
         <section className="card flex flex-col p-5">
-          <h2 className="font-bold">🗳️ 진행 중인 투표</h2>
+          <h2 className="font-bold">{m.home.voteTitle}</h2>
           {activeVotes.length > 0 ? (
             <ul className="mt-4 flex-1 space-y-3">
               {activeVotes.map((vote) => (
@@ -88,17 +97,17 @@ export default async function HomePage() {
                     <SampleBadge show={vote.isSample} />
                   </div>
                   <p className="mt-1.5 text-sm font-semibold">{vote.awardName}</p>
-                  <p className="text-xs text-ink-soft">~ {formatDateTime(vote.endDate)} 마감</p>
+                  <p className="text-xs text-ink-soft">{fmt(m.home.voteEnds, { date: formatDateTime(vote.endDate, locale) })}</p>
                 </li>
               ))}
             </ul>
           ) : (
             <div className="mt-4 flex-1">
-              <EmptyState>지금 진행 중인 투표가 없어요.</EmptyState>
+              <EmptyState>{m.home.noVote}</EmptyState>
             </div>
           )}
           <div className="mt-4">
-            <MoreLink href="/votes">투표 방법 보기</MoreLink>
+            <MoreLink href="/votes">{m.home.voteMore}</MoreLink>
           </div>
         </section>
       </div>

@@ -1,15 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-/** 샘플 데이터에 붙는 "예시" 뱃지 */
-export function SampleBadge({ show }: { show?: boolean }) {
-  if (!show) return null;
-  return (
-    <span className="inline-flex shrink-0 items-center border border-dashed border-blush-400 bg-blush-100 px-2 py-0.5 text-[11px] font-semibold text-blush-400">
-      예시
-    </span>
-  );
-}
+// 언어에 따라 글자가 바뀌는 것 (브라우저 컴포넌트)
+export { SampleBadge, SupabaseNotice } from "./ui-client";
 
 export function PageHeader({
   eyebrow,
@@ -85,14 +78,4 @@ export function FormMessage({ error, message }: { error?: string; message?: stri
     return <p className="border border-mint-dream-200 bg-mint-dream-100 px-3 py-2 text-sm text-ink">{message}</p>;
   }
   return null;
-}
-
-/** Supabase 환경 변수가 없을 때 회원·포카·게시판 자리에 보여주는 안내 */
-export function SupabaseNotice() {
-  return (
-    <EmptyState>
-      <p className="font-semibold text-ink">준비 중이에요</p>
-      <p className="mt-1">회원 기능이 아직 연결되지 않았어요. 곧 열릴 예정이에요!</p>
-    </EmptyState>
-  );
 }

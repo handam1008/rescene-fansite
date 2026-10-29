@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { NICKNAME_RULE, nicknameFormatOk } from "@/lib/nickname";
+import { useI18n } from "@/i18n/client";
+import { nicknameFormatOk } from "@/lib/nickname";
 import { createClient } from "@/lib/supabase/client";
 import { inputClass } from "./ui";
 
@@ -12,6 +13,7 @@ type Status = "idle" | "checking" | "ok" | "taken" | "short" | "format";
  * (겹침·대소문자만 다름·user_·운영자 사칭 단어). 최종 확인은 저장할 때 서버와 DB 가 다시 함.
  */
 export default function NicknameInput({ defaultValue = "", className = "" }: { defaultValue?: string; className?: string }) {
+  const t = useI18n().m.authPage;
   const [value, setValue] = useState(defaultValue);
   const [status, setStatus] = useState<Status>("idle");
 
@@ -31,11 +33,11 @@ export default function NicknameInput({ defaultValue = "", className = "" }: { d
 
   const message: Record<Status, string | null> = {
     idle: null,
-    checking: "확인 중…",
-    ok: "✓ 쓸 수 있는 닉네임이에요",
-    taken: "이미 사용 중이거나 쓸 수 없는 닉네임이에요",
-    short: "2자 이상 적어주세요",
-    format: `${NICKNAME_RULE}`,
+    checking: t.nickChecking,
+    ok: t.nickOk,
+    taken: t.nickTaken,
+    short: t.nickShort,
+    format: t.nickRule,
   };
 
   return (
@@ -47,12 +49,12 @@ export default function NicknameInput({ defaultValue = "", className = "" }: { d
         maxLength={20}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="2~20자"
-        aria-label="닉네임"
+        placeholder={t.nickPlaceholder}
+        aria-label={t.nickname}
         aria-invalid={status === "taken" || status === "format"}
         className={`${inputClass} ${status === "taken" || status === "format" ? "border-blush-400" : ""}`}
       />
-      {status === "idle" && <p className="text-xs text-ink-soft">{NICKNAME_RULE}</p>}
+      {status === "idle" && <p className="text-xs text-ink-soft">{t.nickRule}</p>}
       {message[status] && (
         <p className={`text-xs ${status === "ok" ? "text-emerald-700" : status === "checking" ? "text-ink-soft" : "text-red-600"}`}>
           {message[status]}

@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useI18n } from "@/i18n/client";
+import { fmt } from "@/i18n/config";
 import { useEffect, useState } from "react";
 import { sharePath, shrinkImage, storagePath } from "@/lib/image";
 import { createClient } from "@/lib/supabase/client";
@@ -26,6 +28,7 @@ export default function ProofForm({
   previous?: { id: number; photo_path: string };
 }) {
   const router = useRouter();
+  const { m } = useI18n();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string>();
@@ -40,7 +43,7 @@ export default function ProofForm({
   }, [file]);
 
   async function submit() {
-    if (!file) return setError("카드 사진을 찍어주세요.");
+    if (!file) return setError(m.pokedex.errNoFile);
     setError(undefined);
     setPending(true);
     const supabase = createClient();
@@ -48,13 +51,13 @@ export default function ProofForm({
     const photo = await shrinkImage(file, 1280);
     if (!["image/jpeg", "image/png", "image/webp"].includes(photo.type)) {
       setPending(false);
-      return setError("JPG·PNG·WEBP 사진만 올릴 수 있어요.");
+      return setError(m.pokedex.errType);
     }
     const path = storagePath(userId, photo);
     const { error: uploadError } = await supabase.storage.from(PROOF_BUCKET).upload(path, photo, { contentType: photo.type });
     if (uploadError) {
       setPending(false);
-      return setError(`사진을 올리지 못했어요: ${uploadError.message}`);
+      return setError(fmt(m.pokedex.errUpload, { msg: uploadError.message }));
     }
     // 도감 공개용 사본: 원본 화질은 공개하지 않도록 작게
     if (share) {
@@ -65,7 +68,7 @@ export default function ProofForm({
       if (shareError) {
         await supabase.storage.from(PROOF_BUCKET).remove([path]);
         setPending(false);
-        return setError(`사진을 올리지 못했어요: ${shareError.message}`);
+        return setError(fmt(m.pokedex.errUpload, { msg: shareError.message }));
       }
     }
 
@@ -80,7 +83,7 @@ export default function ProofForm({
     if (insertError) {
       await supabase.storage.from(PROOF_BUCKET).remove([path, sharePath(path)]);
       setPending(false);
-      return setError("인증을 신청하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      return setError(m.pokedex.errSubmit);
     }
 
     router.refresh();
@@ -91,12 +94,12 @@ export default function ProofForm({
       <label className="flex cursor-pointer flex-col items-center justify-center gap-1 border-2 border-dashed border-lilac-300 bg-lilac-50 p-5 text-center hover:bg-lilac-100">
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element -- 로컬 미리보기
-          <img src={preview} alt="찍은 카드 사진" className="max-h-64 w-auto" />
+          <img src={preview} alt={m.pokedex.previewAlt} className="max-h-64 w-auto" />
         ) : (
           <>
             <span className="text-3xl" aria-hidden>📷</span>
-            <span className="text-sm font-semibold">실물 카드 찍기</span>
-            <span className="text-xs text-ink-soft">카드 앞면 전체가 잘 보이게 직접 찍어주세요 (인터넷에서 받은 사진은 반려돼요)</span>
+            <span className="text-sm font-semibold">{m.pokedex.takePhoto}</span>
+            <span className="text-xs text-ink-soft">{m.pokedex.takePhotoHint}</span>
           </>
         )}
         <input
@@ -110,16 +113,13 @@ export default function ProofForm({
       <label className="flex items-start gap-2 text-xs leading-relaxed">
         <input type="checkbox" checked={share} onChange={(e) => setShare(e.target.checked)} className="mt-0.5" />
         <span>
-          <b>도감 이미지로 공개하는 데 동의해요.</b>{" "}
-          {cardHasImage
-            ? "더 잘 나온 사진이면 운영자가 도감 이미지를 이 사진으로 바꿀 수 있어요."
-            : "승인되면 이 사진(작게 줄인 사본)이 도감 이미지가 되고, 첫 제공자로 닉네임이 남아요."}
-          <span className="block text-ink-soft">동의하지 않아도 내 수집 인증은 똑같이 돼요.</span>
+          <b>{m.pokedex.consent}</b> {cardHasImage ? m.pokedex.consentReplace : m.pokedex.consentFirst}
+          <span className="block text-ink-soft">{m.pokedex.consentOptional}</span>
         </span>
       </label>
       <FormMessage error={error} />
       <button type="button" onClick={submit} disabled={pending || !file} className={`${buttonClass} w-full`}>
-        {pending ? "올리는 중…" : previous ? "다시 인증 신청" : "인증 신청"}
+        {pending ? m.pokedex.uploading : previous ? m.pokedex.resubmit : m.pokedex.submit}
       </button>
     </div>
   );

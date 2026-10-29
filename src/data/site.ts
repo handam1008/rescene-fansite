@@ -1,3 +1,5 @@
+import type { Locale } from "@/i18n/config";
+
 /**
  * 홈 상단 큰 박스(히어로) 설정.
  *
@@ -7,43 +9,70 @@
  * RESCENE 글씨가 왼쪽 아래에 겹치므로, 왼쪽 아래에 얼굴이 있는 사진은 피해주세요.
  * slides 를 비우면 사진 자리에 은은한 그라데이션이 보입니다.
  */
+type L10n = Record<Locale, string>;
+
 export type HeroSlide = {
   image: string;
-  alt: string;
+  /** 사진 설명 (화면 읽기 프로그램용), 언어별 */
+  alt: L10n;
   /** PC 에서 잘릴 때 기준점. "center bottom" = 아래쪽을 남김 */
   position: string;
-  /** 사진 출처 */
-  credit: string;
+  /** 사진 출처, 언어별 */
+  credit: L10n;
 };
 
-const PULSE = "사진: 더뮤즈엔터테인먼트 (미니 4집 'PULSE' 콘셉트 포토)";
-const PRETTY_GIRL = "사진: 더뮤즈엔터테인먼트 (스페셜 싱글 'Pretty Girl' 콘셉트 포토)";
+const PULSE: L10n = {
+  ko: "사진: 더뮤즈엔터테인먼트 (미니 4집 'PULSE' 콘셉트 포토)",
+  ja: "写真：THE MUZE エンターテインメント（4thミニアルバム『PULSE』コンセプトフォト）",
+  en: "Photo: THE MUZE Entertainment (4th Mini Album 'PULSE' concept photo)",
+};
+const PRETTY_GIRL: L10n = {
+  ko: "사진: 더뮤즈엔터테인먼트 (스페셜 싱글 'Pretty Girl' 콘셉트 포토)",
+  ja: "写真：THE MUZE エンターテインメント（スペシャルシングル『Pretty Girl』コンセプトフォト）",
+  en: "Photo: THE MUZE Entertainment (Special Single 'Pretty Girl' concept photo)",
+};
 
-export const hero: { title: string; tagline: string; slides: HeroSlide[] } = {
+/** 문구(tagline)는 언어별로 src/i18n/messages/shell.ts 의 hero.tagline */
+export const hero: { title: string; slides: HeroSlide[] } = {
   title: "RESCENE",
-  tagline: "향기로 다시(RE) 장면(SCENE)을 떠올린다",
   slides: [
     {
       image: "/images/hero/pulse-car.jpg",
-      alt: "하얀 깃털로 덮인 자동차 앞에 나란히 앉은 리센느 다섯 멤버",
+      alt: {
+        ko: "하얀 깃털로 덮인 자동차 앞에 나란히 앉은 리센느 다섯 멤버",
+        ja: "白い羽根に覆われた車の前に並んで座るRESCENEの5人",
+        en: "The five members of RESCENE sitting in front of a car covered in white feathers",
+      },
       position: "center bottom",
       credit: PULSE,
     },
     {
       image: "/images/hero/pulse-blue.jpg",
-      alt: "푸른 빛 속에서 하얀 원피스를 입은 리센느 다섯 멤버",
+      alt: {
+        ko: "푸른 빛 속에서 하얀 원피스를 입은 리센느 다섯 멤버",
+        ja: "青い光の中で白いワンピースを着たRESCENEの5人",
+        en: "The five members of RESCENE in white dresses under blue light",
+      },
       position: "center top",
       credit: PULSE,
     },
     {
       image: "/images/hero/pulse-box.jpg",
-      alt: "회색 공간에 날개를 달고 나란히 선 리센느 다섯 멤버",
+      alt: {
+        ko: "회색 공간에 날개를 달고 나란히 선 리센느 다섯 멤버",
+        ja: "グレーの空間で翼をつけて並んで立つRESCENEの5人",
+        en: "The five members of RESCENE standing in a row with wings in a gray room",
+      },
       position: "center top",
       credit: PULSE,
     },
     {
       image: "/images/hero/prettygirl-room.jpg",
-      alt: "분홍색 방 침대 위에 모인 리센느 다섯 멤버",
+      alt: {
+        ko: "분홍색 방 침대 위에 모인 리센느 다섯 멤버",
+        ja: "ピンクの部屋のベッドに集まったRESCENEの5人",
+        en: "The five members of RESCENE gathered on a bed in a pink room",
+      },
       position: "center top",
       credit: PRETTY_GIRL,
     },

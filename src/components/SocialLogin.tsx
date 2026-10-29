@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useI18n } from "@/i18n/client";
 import type { SocialProvider } from "@/lib/auth-providers";
 import { createClient } from "@/lib/supabase/client";
 import { FormMessage } from "./ui";
 
 const base = "flex h-11 w-full items-center justify-center gap-2 text-sm font-semibold transition disabled:opacity-60";
 
-const buttons: Record<SocialProvider, { label: string; className: string; icon: React.ReactNode }> = {
+const buttons: Record<SocialProvider, { className: string; icon: React.ReactNode }> = {
   kakao: {
-    label: "카카오로 시작하기",
     className: "bg-[#FEE500] text-black/85 hover:brightness-95",
     icon: (
       <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
@@ -21,7 +21,6 @@ const buttons: Record<SocialProvider, { label: string; className: string; icon: 
     ),
   },
   google: {
-    label: "Google로 시작하기",
     className: "border border-[#dadce0] bg-white text-[#1f1f1f] hover:bg-[#f8f9fa]",
     icon: (
       <svg viewBox="0 0 48 48" className="h-5 w-5" aria-hidden>
@@ -36,6 +35,7 @@ const buttons: Record<SocialProvider, { label: string; className: string; icon: 
 
 /** 소셜 로그인 버튼. 켜져 있는 것만 받아서 보여줌 (lib/auth-providers.ts) */
 export default function SocialLogin({ providers, next = "/" }: { providers: SocialProvider[]; next?: string }) {
+  const t = useI18n().m.authPage;
   const [busy, setBusy] = useState<SocialProvider | null>(null);
   const [error, setError] = useState<string>();
   if (providers.length === 0) return null;
@@ -49,7 +49,7 @@ export default function SocialLogin({ providers, next = "/" }: { providers: Soci
     });
     if (error) {
       setBusy(null);
-      setError("로그인 화면을 열지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setError(t.socialError);
     }
   }
 
@@ -58,13 +58,13 @@ export default function SocialLogin({ providers, next = "/" }: { providers: Soci
       {providers.map((p) => (
         <button key={p} type="button" onClick={() => start(p)} disabled={busy !== null} className={`${base} ${buttons[p].className}`}>
           {buttons[p].icon}
-          {busy === p ? "이동 중…" : buttons[p].label}
+          {busy === p ? t.redirecting : t[p]}
         </button>
       ))}
       <FormMessage error={error} />
       <div className="flex items-center gap-3 py-2 text-xs text-ink-soft">
         <span className="h-px flex-1 bg-lilac-200" />
-        또는 이메일로
+        {t.orEmail}
         <span className="h-px flex-1 bg-lilac-200" />
       </div>
     </div>

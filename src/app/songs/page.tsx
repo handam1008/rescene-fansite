@@ -3,30 +3,38 @@ import YouTubeEmbed from "@/components/YouTubeEmbed";
 import { EmptyState, ExternalButton, PageHeader, SampleBadge } from "@/components/ui";
 import { getSongs } from "@/lib/data";
 import { formatDate, platformLabels } from "@/lib/format";
+import { fmt } from "@/i18n/config";
+import { getI18n } from "@/i18n/server";
+import { albumLabel } from "@/lib/album";
 
-export const metadata: Metadata = { title: "신곡" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { m } = await getI18n();
+  return { title: m.songs.title };
+}
 
 // 발매 시각이 지난 곡이 자동으로 나타나도록 1시간마다 다시 생성
 export const revalidate = 3600;
 
 export default async function SongsPage() {
   const [latest, ...previous] = await getSongs();
+  const { m, locale } = await getI18n();
+  const platforms = platformLabels(locale);
 
   if (!latest) {
     return (
       <>
-        <PageHeader eyebrow="New Release" title="신곡" />
-        <EmptyState>등록된 곡이 없어요.</EmptyState>
+        <PageHeader eyebrow="New Release" title={m.songs.title} />
+        <EmptyState>{m.songs.empty}</EmptyState>
       </>
     );
   }
 
   return (
     <>
-      <PageHeader eyebrow="New Release" title="신곡" description="공식 뮤직비디오와 음원 사이트 바로가기" />
+      <PageHeader eyebrow="New Release" title={m.songs.title} description={m.songs.desc} />
 
       <section className="card p-4 sm:p-6">
-        <YouTubeEmbed videoId={latest.youtubeId} title={`${latest.title} 뮤직비디오`} />
+        <YouTubeEmbed videoId={latest.youtubeId} title={fmt(m.songs.mvTitle, { title: latest.title })} />
         <div className="mt-5 flex flex-wrap items-center gap-2">
           <span className="bg-blush-100 px-2.5 py-0.5 text-xs font-bold text-blush-400">
             LATEST
@@ -35,13 +43,13 @@ export default async function SongsPage() {
         </div>
         <h2 className="mt-2 text-2xl font-extrabold sm:text-3xl">{latest.title}</h2>
         <p className="text-sm text-ink-soft">
-          {latest.album} · {formatDate(latest.releaseDate)}
+          {albumLabel(latest.album, locale)} · {formatDate(latest.releaseDate, locale)}
         </p>
         {latest.streamingLinks.length > 0 && (
           <div className="mt-5 flex flex-wrap gap-2">
             {latest.streamingLinks.map((link, i) => (
               <ExternalButton key={link.platform} href={link.url} variant={i === 0 ? "solid" : "soft"}>
-                {platformLabels[link.platform]}
+                {platforms[link.platform]}
               </ExternalButton>
             ))}
           </div>
@@ -50,7 +58,7 @@ export default async function SongsPage() {
 
       {previous.length > 0 && (
         <section className="mt-10">
-          <h2 className="mb-4 text-lg font-bold">이전 곡</h2>
+          <h2 className="mb-4 text-lg font-bold">{m.songs.previous}</h2>
           <ul className="grid gap-4 sm:grid-cols-2">
             {previous.map((song) => (
               <li key={song.id} className="card p-4">
@@ -65,7 +73,7 @@ export default async function SongsPage() {
                     {/* eslint-disable-next-line @next/next/no-img-element -- 유튜브 썸네일 */}
                     <img
                       src={`https://i.ytimg.com/vi/${song.youtubeId}/hqdefault.jpg`}
-                      alt={`${song.title} 뮤직비디오 썸네일`}
+                      alt={fmt(m.songs.thumbAlt, { title: song.title })}
                       loading="lazy"
                       className="h-full w-full object-cover"
                     />
@@ -78,7 +86,7 @@ export default async function SongsPage() {
                   <div>
                     <p className="font-semibold">{song.title}</p>
                     <p className="text-xs text-ink-soft">
-                      {song.album} · {formatDate(song.releaseDate)}
+                      {albumLabel(song.album, locale)} · {formatDate(song.releaseDate, locale)}
                     </p>
                   </div>
                   <SampleBadge show={song.isSample} />
@@ -93,7 +101,7 @@ export default async function SongsPage() {
                         rel="noopener noreferrer"
                         className="border border-lilac-200 bg-white px-3 py-1 text-xs font-medium hover:bg-lilac-100"
                       >
-                        {platformLabels[link.platform]} ↗
+                        {platforms[link.platform]} ↗
                       </a>
                     ))}
                   </div>

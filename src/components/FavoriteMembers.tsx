@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
-import { members, type MemberSlug } from "@/data/members";
+import { members, nameOf, type MemberSlug } from "@/data/members";
+import { useI18n } from "@/i18n/client";
+import { fmt } from "@/i18n/config";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { HeartIcon } from "./Icons";
@@ -69,7 +71,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     // 23505: 이미 고른 상태 (다른 탭에서 먼저 누른 경우) → 성공과 같음
     if (err && err.code !== "23505") {
       setFavs((s) => flip(s, slug));
-      setError("저장하지 못했어요. 잠시 후 다시 눌러주세요.");
+      setError("save");
     }
     setPending((s) => {
       const next = new Set(s);
@@ -92,6 +94,7 @@ function useFavorites() {
 /** 멤버 하나의 최애 버튼. compact: 멤버 페이지 이름 옆에 놓는 작은 버튼 */
 export function FavoriteToggle({ slug, name, compact = false }: { slug: MemberSlug; name: string; compact?: boolean }) {
   const { userId, favs, pending, toggle } = useFavorites();
+  const { m } = useI18n();
   const pathname = usePathname();
   const size = compact ? "px-3 py-1.5 text-sm" : "w-full px-3 py-2 text-sm";
 
@@ -106,7 +109,7 @@ export function FavoriteToggle({ slug, name, compact = false }: { slug: MemberSl
         className={`btn flex items-center justify-center gap-1.5 border border-lilac-300 font-semibold text-lilac-700 hover:bg-lilac-100 ${size}`}
       >
         <HeartIcon className="h-4 w-4" />
-        최애하기
+        {m.fav.pick}
       </Link>
     );
   }
@@ -118,13 +121,13 @@ export function FavoriteToggle({ slug, name, compact = false }: { slug: MemberSl
       onClick={() => toggle(slug)}
       disabled={pending.has(slug)}
       aria-pressed={on}
-      aria-label={on ? `${name} 최애 취소` : `${name} 최애로 고르기`}
+      aria-label={fmt(on ? m.fav.removeAria : m.fav.pickAria, { name })}
       className={`flex items-center justify-center gap-1.5 border font-semibold ${size} ${
         on ? "border-lilac-500 bg-lilac-500 text-white hover:bg-lilac-700" : "border-lilac-300 text-lilac-700 hover:bg-lilac-100"
       }`}
     >
       <HeartIcon filled={on} className="h-4 w-4" />
-      {on ? "내 최애" : "최애하기"}
+      {on ? m.fav.mine : m.fav.pick}
     </button>
   );
 }
@@ -132,39 +135,41 @@ export function FavoriteToggle({ slug, name, compact = false }: { slug: MemberSl
 /** 최애 페이지 위쪽: 지금 고른 최애 요약 / 로그인 안내 */
 export function FavoriteSummary() {
   const { userId, favs, error } = useFavorites();
+  const { m, locale } = useI18n();
   const pathname = usePathname();
 
   if (!isSupabaseConfigured || userId === undefined) return <div aria-hidden className="mb-5 h-12" />;
 
-  const picked = members.filter((m) => favs.has(m.slug as MemberSlug));
+  const picked = members.filter((mem) => favs.has(mem.slug as MemberSlug));
 
   return (
     <div className="card mb-5 flex min-h-12 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 text-sm">
       {userId === null ? (
         <>
-          <span>로그인하면 최애 멤버를 고를 수 있어요. 여러 명도 괜찮아요!</span>
+          <span>{m.fav.loginPrompt}</span>
           <Link href={`/login?next=${encodeURIComponent(pathname)}`} className="font-semibold text-lilac-700 underline">
-            로그인
+            {m.auth.login}
           </Link>
         </>
       ) : picked.length === 0 ? (
-        <span>아직 최애가 없어요. 아래에서 💜 최애하기를 눌러 골라주세요. 여러 명도 괜찮아요!</span>
+        <span>{m.fav.none}</span>
       ) : (
         <>
           <span className="flex items-center gap-1 font-bold text-lilac-700">
-            <HeartIcon filled className="h-4 w-4" />내 최애
+            <HeartIcon filled className="h-4 w-4" />
+            {m.fav.mine}
           </span>
           <ul className="flex flex-wrap gap-1.5">
-            {picked.map((m) => (
-              <li key={m.slug} className="px-2 py-0.5 font-semibold" style={{ backgroundColor: m.color }}>
-                {m.name}
+            {picked.map((mem) => (
+              <li key={mem.slug} className="px-2 py-0.5 font-semibold" style={{ backgroundColor: mem.color }}>
+                {nameOf(mem, locale)}
               </li>
             ))}
           </ul>
-          <span className="text-xs text-ink-soft">다시 누르면 취소돼요</span>
+          <span className="text-xs text-ink-soft">{m.fav.undoHint}</span>
         </>
       )}
-      {error && <span className="w-full text-xs font-semibold text-blush-400">{error}</span>}
+      {error && <span className="w-full text-xs font-semibold text-blush-400">{m.fav.saveError}</span>}
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { useI18n } from "@/i18n/client";
+import { fmt } from "@/i18n/config";
 import { BellIcon, LoginIcon, LogoutIcon, PencilIcon, ShieldIcon, UserIcon } from "./Icons";
 
 /**
@@ -13,6 +15,7 @@ import { BellIcon, LoginIcon, LogoutIcon, PencilIcon, ShieldIcon, UserIcon } fro
  */
 export default function AuthStatus() {
   const router = useRouter();
+  const { m } = useI18n();
   // 서버에서 로그인한 뒤 페이지가 바뀌면 다시 확인
   const pathname = usePathname();
   const [nickname, setNickname] = useState<string | null | undefined>(undefined);
@@ -36,7 +39,8 @@ export default function AuthStatus() {
         // 안 읽은 댓글 알림 수 (0010 SQL 전이면 0)
         supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
       ]);
-      setNickname(data?.nickname ?? "리마인");
+      // 닉네임이 비어 있으면 화면에서 기본 이름("리마인")으로 보여줌
+      setNickname(data?.nickname ?? "");
       setNeedsNickname(data?.nickname_set === false);
       setIsAdmin(data?.is_admin === true);
       setUnread(count ?? 0);
@@ -55,32 +59,32 @@ export default function AuthStatus() {
   if (nickname === null) {
     return (
       <div className={rowClass}>
-        <Action href="/board/new" icon={<PencilIcon />} label="글쓰기" hideOnPhone />
-        <Action href="/login" icon={<LoginIcon />} label="로그인" />
-        <Action href="/signup" icon={<UserIcon />} label="회원가입" accent />
+        <Action href="/board/new" icon={<PencilIcon />} label={m.auth.write} hideOnPhone />
+        <Action href="/login" icon={<LoginIcon />} label={m.auth.login} />
+        <Action href="/signup" icon={<UserIcon />} label={m.auth.signup} accent />
       </div>
     );
   }
 
   return (
     <div className={rowClass}>
-      {isAdmin && <Action href="/admin" icon={<ShieldIcon />} label="운영자" />}
-      <Action href="/board/new" icon={<PencilIcon />} label="글쓰기" hideOnPhone />
+      {isAdmin && <Action href="/admin" icon={<ShieldIcon />} label={m.auth.admin} />}
+      <Action href="/board/new" icon={<PencilIcon />} label={m.auth.write} hideOnPhone />
       <Action
         href="/notifications"
         icon={<BellIcon />}
-        label="알림"
+        label={m.auth.notifications}
         badge={unread > 0 ? (unread > 99 ? "99+" : String(unread)) : undefined}
-        ariaLabel={`알림${unread ? ` ${unread}개` : ""}`}
+        ariaLabel={unread ? fmt(m.auth.notificationsAria, { n: unread }) : m.auth.notifications}
       />
       {needsNickname ? (
-        <Action href="/account?setup=1" icon={<UserIcon />} label="닉네임 정하기" short="닉네임" accent />
+        <Action href="/account?setup=1" icon={<UserIcon />} label={m.auth.setNickname} short={m.auth.setNicknameShort} accent />
       ) : (
-        <Action href="/account" icon={<UserIcon />} label={nickname} short="내 정보" title="내 정보" />
+        <Action href="/account" icon={<UserIcon />} label={nickname || m.auth.defaultNickname} short={m.auth.myPage} title={m.auth.myPage} />
       )}
       <Action
         icon={<LogoutIcon />}
-        label="로그아웃"
+        label={m.auth.logout}
         onClick={async () => {
           await createClient().auth.signOut();
           router.refresh();

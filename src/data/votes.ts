@@ -8,6 +8,7 @@ import type { Vote } from "@/types";
 export const votes: Vote[] = [
   {
     id: "mma2026-top10",
+    i18n: { ja: {"awardName": "MMA 2026（メロンミュージックアワード）", "steps": ["Melonアプリをインストールしてログインします。（本人認証済みのアカウントのみ投票可能）", "画面下部または上部のMMAタブに入ります。", "「TOP10投票する」を押します。", "RESCENEを選んで投票します。"], "note": "1人1アカウント。TOP10は音源60%＋審査20%＋投票20%で決まります。"}, en: {"awardName": "MMA 2026 (Melon Music Awards)", "steps": ["Install the Melon app and log in. (Only identity-verified accounts can vote)", "Open the MMA tab at the bottom or top.", "Tap 'Vote TOP10'.", "Choose RESCENE and vote."], "note": "One account per person. TOP10 is decided by streaming 60% + judges 20% + votes 20%."} },
     awardName: "MMA 2026 (멜론뮤직어워드)",
     category: "TOP10",
     startDate: "2026-10-15T00:00:00+09:00",
@@ -23,6 +24,7 @@ export const votes: Vote[] = [
   },
   {
     id: "mma2026-category",
+    i18n: { ja: {"awardName": "MMA 2026（メロンミュージックアワード）", "category": "部門別投票", "steps": ["Melonアプリ → MMAタブに入ります。", "部門別投票で、RESCENEがノミネートされた部門を選びます。", "RESCENEを選んで投票します。"], "note": "報道に基づく日程です。RESCENEがノミネートされた部門は、投票開始後にMelonのお知らせで確認してください。"}, en: {"awardName": "MMA 2026 (Melon Music Awards)", "category": "Category votes", "steps": ["Melon app → open the MMA tab.", "In category voting, pick the categories RESCENE is nominated in.", "Choose RESCENE and vote."], "note": "Dates are based on press reports. Once voting opens, check Melon's notice for the categories RESCENE is nominated in."} },
     awardName: "MMA 2026 (멜론뮤직어워드)",
     category: "부문별 투표",
     startDate: "2026-10-30T00:00:00+09:00",
@@ -37,6 +39,7 @@ export const votes: Vote[] = [
   },
   {
     id: "mama2026-fans-choice-2",
+    i18n: { ja: {"category": "FANS' CHOICE 女性部門 2次", "steps": ["Mnet Plusアプリをインストールしてログインします。", "2026 MAMA AWARDS → FANS' CHOICE → 女性部門に入ります。", "RESCENEに投票します。", "Xで #2026MAMAVOTE と #RESCENE の両方のハッシュタグを入れて投稿すると追加投票になります。（公開アカウントにつき1日1回）"], "note": "Mnet Plus 90%＋X 10%の合算。RESCENEの2次進出は、1次の結果発表後にMnet Plusで確認してください。"}, en: {"category": "FANS' CHOICE Female, round 2", "steps": ["Install the Mnet Plus app and log in.", "Go to 2026 MAMA AWARDS → FANS' CHOICE → Female.", "Vote for RESCENE.", "On X, post with both #2026MAMAVOTE and #RESCENE for an extra vote. (Once a day per public account)"], "note": "Mnet Plus 90% + X 10%. Check Mnet Plus after the round 1 results to see whether RESCENE advanced to round 2."} },
     awardName: "2026 MAMA AWARDS",
     category: "FANS' CHOICE 여자 부문 2차",
     startDate: "2026-10-28T18:00:00+09:00",
@@ -55,6 +58,7 @@ export const votes: Vote[] = [
   },
   {
     id: "mama2026-fans-choice-1",
+    i18n: { ja: {"category": "FANS' CHOICE 女性部門 1次", "steps": ["Mnet Plusアプリ → 2026 MAMA AWARDS FANS' CHOICE 1次投票に入ります。", "ファンズチョイス女性部門 → RESCENEに投票します。"]}, en: {"category": "FANS' CHOICE Female, round 1", "steps": ["Mnet Plus app → open 2026 MAMA AWARDS FANS' CHOICE round 1.", "Fans' Choice Female → vote for RESCENE."]} },
     awardName: "2026 MAMA AWARDS",
     category: "FANS' CHOICE 여자 부문 1차",
     startDate: "2026-10-12T19:00:00+09:00",

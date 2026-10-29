@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { formatDateTime } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
+import { fmt } from "@/i18n/config";
+import { formatDateTime, formatTime } from "@/lib/format";
 import { scheduleLives, splitLive, youtubeId, type LiveItem } from "@/lib/live";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -59,8 +61,6 @@ function useLive() {
 }
 
 const isYouTube = (url: string) => youtubeId(url) !== null;
-const timeOnly = (iso: string) =>
-  new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso));
 
 function LiveDot({ pulse = true }: { pulse?: boolean }) {
   return (
@@ -74,6 +74,7 @@ function LiveDot({ pulse = true }: { pulse?: boolean }) {
 /** 헤더 바로 아래 빨간 줄: 방송 중이거나 30분 안에 시작하면 보임 */
 export function LiveStrip() {
   const s = useLive();
+  const { m, locale } = useI18n();
   if (!s || (s.live.length === 0 && s.soon.length === 0)) return null;
 
   const isLive = s.live.length > 0;
@@ -85,14 +86,14 @@ export function LiveStrip() {
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-1.5 text-sm xl:px-6 wide:max-w-[1520px]">
         <span className="flex shrink-0 items-center gap-1.5 font-extrabold tracking-wider">
           <LiveDot pulse={isLive} />
-          {isLive ? "LIVE" : `곧 LIVE · ${timeOnly(first.startsAt)}`}
+          {isLive ? "LIVE" : fmt(m.live.soon, { time: formatTime(first.startsAt, locale) })}
         </span>
         <Link href="/live" className="min-w-0 flex-1 truncate font-semibold hover:underline">
           {first.title}
-          {list.length > 1 && <span className="font-normal opacity-80"> 외 {list.length - 1}개</span>}
+          {list.length > 1 && <span className="font-normal opacity-80">{fmt(m.live.more, { n: list.length - 1 })}</span>}
         </Link>
         <Link href="/live" className="shrink-0 font-bold hover:underline">
-          {isLive ? "지금 보기 →" : "보러 가기 →"}
+          {isLive ? m.live.watchNow : m.live.goWatch}
         </Link>
         <a
           href={first.url}
@@ -100,7 +101,7 @@ export function LiveStrip() {
           rel="noopener noreferrer"
           className="hidden shrink-0 text-xs text-white/85 underline hover:text-white sm:inline"
         >
-          {isYouTube(first.url) ? "유튜브에서 ↗" : "원래 주소 ↗"}
+          {isYouTube(first.url) ? m.live.onYoutubeShort : m.live.originalShort}
         </a>
       </div>
     </div>
@@ -110,11 +111,12 @@ export function LiveStrip() {
 /** 위쪽 얇은 줄 오른쪽의 LIVE 버튼: 방송 중이면 빨갛게 깜빡임 */
 export function LiveBadge() {
   const s = useLive();
+  const { m } = useI18n();
   const isLive = !!s && s.live.length > 0;
   return (
     <Link
       href="/live"
-      aria-label={isLive ? `지금 라이브 ${s!.live.length}개` : "라이브 일정"}
+      aria-label={isLive ? fmt(m.live.badgeAria, { n: s!.live.length }) : m.live.badgeIdleAria}
       className={`flex items-center gap-1.5 px-2 py-0.5 font-extrabold tracking-wider ${
         isLive ? "bg-red-500 text-white" : "text-ink-soft hover:bg-lilac-100 hover:text-ink"
       }`}
@@ -128,6 +130,7 @@ export function LiveBadge() {
 /** /live 페이지 본문: 지금 방송 중(바로 재생) + 곧 시작할 라이브 */
 export function LiveBoard() {
   const s = useLive();
+  const { m, locale } = useI18n();
   if (!s) return <div aria-hidden className="h-40" />;
 
   return (
@@ -138,12 +141,10 @@ export function LiveBoard() {
             <LiveDot pulse={s.live.length > 0} />
             LIVE
           </span>
-          지금 방송 중
+          {m.live.onAir}
         </h2>
         {s.live.length === 0 ? (
-          <EmptyState>
-            지금은 라이브가 없어요. 리센느가 출연하는 방송·공연이나 안원잘부 최초 공개가 시작되면 여기서 바로 볼 수 있어요.
-          </EmptyState>
+          <EmptyState>{m.live.none}</EmptyState>
         ) : (
           <ul className="space-y-6">
             {s.live.map((item, i) => (
@@ -157,14 +158,14 @@ export function LiveBoard() {
 
       {s.upcoming.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-bold">곧 시작하는 라이브</h2>
+          <h2 className="mb-3 text-lg font-bold">{m.live.upcoming}</h2>
           <ul className="card divide-y divide-lilac-100">
             {s.upcoming.map((item) => (
               <li key={item.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-sm">
-                <span className="font-semibold text-lilac-700 tabular-nums">{formatDateTime(item.startsAt)}</span>
+                <span className="font-semibold text-lilac-700 tabular-nums">{formatDateTime(item.startsAt, locale)}</span>
                 <span className="min-w-0 flex-1 font-semibold">{item.title}</span>
                 <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-xs text-ink-soft underline hover:text-ink">
-                  미리 보기 ↗
+                  {m.live.preview}
                 </a>
               </li>
             ))}
@@ -178,12 +179,13 @@ export function LiveBoard() {
 /** 유튜브면 이 페이지에서 바로 재생 (소리는 꺼진 채 자동 재생 — 브라우저 규칙). 막힌 영상은 유튜브로 */
 function LivePlayer({ item, autoplay }: { item: LiveItem; autoplay: boolean }) {
   const id = youtubeId(item.url);
+  const { m, locale } = useI18n();
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="font-bold">{item.title}</p>
         <p className="text-xs text-ink-soft tabular-nums">
-          {timeOnly(item.startsAt)} ~ {timeOnly(item.endsAt)}
+          {formatTime(item.startsAt, locale)} ~ {formatTime(item.endsAt, locale)}
         </p>
       </div>
       {id && (
@@ -205,9 +207,9 @@ function LivePlayer({ item, autoplay }: { item: LiveItem; autoplay: boolean }) {
           rel="noopener noreferrer"
           className="btn bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-600"
         >
-          {isYouTube(item.url) ? "유튜브에서 보기 ↗" : "라이브 보러 가기 ↗"}
+          {isYouTube(item.url) ? m.live.watchOnYoutube : m.live.goLive}
         </a>
-        {id && <span className="text-xs text-ink-soft">재생이 안 되면 방송사에서 퍼가기를 막아둔 거예요. 유튜브에서 봐주세요.</span>}
+        {id && <span className="text-xs text-ink-soft">{m.live.blocked}</span>}
       </div>
     </div>
   );

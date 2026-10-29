@@ -4,13 +4,17 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { FormState } from "@/app/auth/actions";
 import { safeNext } from "@/lib/auth-providers";
-import { NICKNAME_RULE, nicknameFormatOk } from "@/lib/nickname";
+import { fmt, LOCALES } from "@/i18n/config";
+import { dictionaries } from "@/i18n/messages";
+import { getI18n } from "@/i18n/server";
+import { nicknameFormatOk } from "@/lib/nickname";
 import { POST_IMAGE_BUCKET, PROOF_BUCKET } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 export async function updateNickname(_prev: FormState, formData: FormData): Promise<FormState> {
   const nickname = String(formData.get("nickname") ?? "").trim();
-  if (!nicknameFormatOk(nickname)) return { error: `닉네임은 ${NICKNAME_RULE}` };
+  const { m } = await getI18n();
+  if (!nicknameFormatOk(nickname)) return { error: fmt(m.authPage.errNickRule, { rule: m.authPage.nickRule }) };
 
   const supabase = await createClient();
   const {
@@ -20,20 +24,27 @@ export async function updateNickname(_prev: FormState, formData: FormData): Prom
 
   // 대소문자·공백만 다른 닉네임, user_ 로 시작, 운영자 사칭 단어도 막음 (0010 nickname_available)
   const { data: available } = await supabase.rpc("nickname_available", { n: nickname });
-  if (available === false) return { error: "이미 사용 중이거나 쓸 수 없는 닉네임이에요." };
+  if (available === false) return { error: m.authPage.errNickUnavailable };
 
   const { error } = await supabase.from("profiles").update({ nickname }).eq("id", user.id);
-  if (error) return { error: error.code === "23505" ? "이미 사용 중인 닉네임이에요." : "닉네임을 바꾸지 못했어요." };
+  if (error) return { error: error.code === "23505" ? m.authPage.errNickInUse : m.account.errNickChange };
 
   revalidatePath("/", "layout");
   const next = formData.get("next");
   if (next) redirect(safeNext(next));
-  return { message: "닉네임을 바꿨어요." };
+  return { message: m.account.nickChanged };
 }
 
-/** 회원 탈퇴: 내 사진 파일을 지우고 → 계정 삭제(글·댓글·인증 기록이 함께 지워짐, 0009) */
+/**
+ * 회원 탈퇴: 내 사진 파일을 지우고 → 계정 삭제(글·댓글·인증 기록이 함께 지워짐, 0009)
+ * 확인 단어는 언어마다 다름 (탈퇴 / 退会 / DELETE). 폼을 연 뒤 언어를 바꿔도 되게 셋 다 받음
+ */
 export async function deleteAccount(_prev: FormState, formData: FormData): Promise<FormState> {
-  if (String(formData.get("confirm") ?? "").trim() !== "탈퇴") return { error: "확인 칸에 '탈퇴'라고 적어주세요." };
+  const { m } = await getI18n();
+  const typed = String(formData.get("confirm") ?? "").trim();
+  if (!LOCALES.some((l) => dictionaries[l].account.deleteWord === typed)) {
+    return { error: fmt(m.account.errDeleteConfirm, { word: m.account.deleteWord }) };
+  }
 
   const supabase = await createClient();
   const {
@@ -49,7 +60,7 @@ export async function deleteAccount(_prev: FormState, formData: FormData): Promi
   }
 
   const { error } = await supabase.rpc("delete_my_account");
-  if (error) return { error: "탈퇴하지 못했어요. 잠시 후 다시 시도해 주세요." };
+  if (error) return { error: m.account.errDelete };
 
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
@@ -58,15 +69,16 @@ export async function deleteAccount(_prev: FormState, formData: FormData): Promi
 
 export async function updatePassword(_prev: FormState, formData: FormData): Promise<FormState> {
   const password = String(formData.get("password") ?? "");
-  if (password.length < 6) return { error: "비밀번호는 6자 이상이어야 해요." };
-  if (password !== String(formData.get("confirm") ?? "")) return { error: "두 비밀번호가 달라요." };
+  const t = (await getI18n()).m.authPage;
+  if (password.length < 6) return { error: t.errPasswordLength };
+  if (password !== String(formData.get("confirm") ?? "")) return { error: t.errPasswordMismatch };
 
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
-    if (error.message.toLowerCase().includes("different from the old")) return { error: "지금 비밀번호와 다른 걸로 정해주세요." };
-    if (error.message.toLowerCase().includes("session")) return { error: "링크가 만료됐어요. 비밀번호 찾기를 다시 해주세요." };
-    return { error: "비밀번호를 바꾸지 못했어요. 잠시 후 다시 시도해 주세요." };
+    if (error.message.toLowerCase().includes("different from the old")) return { error: t.errPasswordSame };
+    if (error.message.toLowerCase().includes("session")) return { error: t.errLinkExpired };
+    return { error: t.errPasswordChange };
   }
-  return { message: "비밀번호를 바꿨어요. 다음부터 새 비밀번호로 로그인하세요." };
+  return { message: t.passwordChanged };
 }

@@ -2,12 +2,14 @@ import Link from "next/link";
 import CardImage from "@/components/CardImage";
 import PokedexRanking from "@/components/PokedexRanking";
 import { pokedexMemberName } from "@/data/members";
+import { fmt } from "@/i18n/config";
+import { getI18n } from "@/i18n/server";
 import type { ContributorRank } from "@/lib/community";
 import type { CatalogCard } from "@/types";
 import { MoreLink } from "./ui";
 
 /** 홈 화면: 다 같이 채우는 도감 진행률 · 최근 채워진 카드 · 랭킹 TOP3 */
-export default function PokedexNews({
+export default async function PokedexNews({
   total,
   filled,
   recent,
@@ -18,17 +20,18 @@ export default function PokedexNews({
   recent: { card: CatalogCard; nickname?: string }[];
   ranking: ContributorRank[];
 }) {
+  const { m, locale } = await getI18n();
   const percent = total ? Math.round((filled / total) * 100) : 0;
   return (
     <section className="card p-5">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-bold">📸 다 같이 채우는 포카 도감</h2>
-        <MoreLink href="/photocards">도감 보기</MoreLink>
+        <h2 className="font-bold">{m.home.pokedexTitle}</h2>
+        <MoreLink href="/photocards">{m.home.pokedexMore}</MoreLink>
       </div>
       <div className="mt-3 flex items-baseline gap-2">
         <span className="text-2xl font-extrabold tabular-nums">{filled}</span>
         <span className="text-sm text-ink-soft tabular-nums">
-          / {total}장 · {percent}%
+          {fmt(m.home.pokedexCount, { total, percent })}
         </span>
       </div>
       <div className="mt-2 h-2.5 bg-lilac-100">
@@ -37,14 +40,14 @@ export default function PokedexNews({
 
       <div className="mt-5 grid gap-5 md:grid-cols-[minmax(0,1fr)_260px]">
         <div>
-          <h3 className="mb-2 text-sm font-semibold">최근 채워진 카드</h3>
+          <h3 className="mb-2 text-sm font-semibold">{m.home.recentFilled}</h3>
           {recent.length === 0 ? (
             <p className="text-sm text-ink-soft">
-              아직 채워진 카드가 없어요. 가진 포카를 찍어서{" "}
+              {m.home.noFilledBefore}
               <Link href="/photocards?need=image" className="font-semibold text-lilac-700 underline">
-                첫 번째로 채워주세요
+                {m.home.noFilledLink}
               </Link>
-              !
+              {m.home.noFilledAfter}
             </p>
           ) : (
             <ul className="grid grid-cols-3 gap-3 sm:grid-cols-5">
@@ -53,9 +56,9 @@ export default function PokedexNews({
                   <Link href={`/photocards/${card.id}`} className="block">
                     <CardImage card={card} />
                     <p className="mt-1 truncate text-xs font-semibold">
-                      {card.album} · {pokedexMemberName(card.member)}
+                      {card.album} · {pokedexMemberName(card.member, locale)}
                     </p>
-                    {nickname && <p className="truncate text-[11px] text-lilac-700">🎉 {nickname}님이 채움</p>}
+                    {nickname && <p className="truncate text-[11px] text-lilac-700">{fmt(m.home.filledBy, { name: nickname })}</p>}
                   </Link>
                 </li>
               ))}
@@ -63,7 +66,7 @@ export default function PokedexNews({
           )}
         </div>
         <div>
-          <h3 className="mb-2 text-sm font-semibold">🏆 개척 랭킹 TOP3</h3>
+          <h3 className="mb-2 text-sm font-semibold">{m.home.rankingTitle}</h3>
           <PokedexRanking ranking={ranking} />
         </div>
       </div>
