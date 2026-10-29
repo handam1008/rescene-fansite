@@ -51,6 +51,11 @@ export async function generateMetadata(): Promise<Metadata> {
       description: m.meta.description,
     },
     twitter: { card: "summary_large_image" },
+    // 구글 서치콘솔·네이버 서치어드바이저 소유 확인 (공개돼도 되는 값)
+    verification: {
+      google: "XTHC9f6yRfKUB3sxhRRAmHN15B2TEw7gQkBbbB-qpeU",
+      other: { "naver-site-verification": "fe5fbb77894e2e1aea161b6d92fa1e98de661d7c" },
+    },
   };
 }
 
