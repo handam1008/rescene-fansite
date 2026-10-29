@@ -33,13 +33,14 @@ export default async function BoardPage({
   const page = Math.max(1, Number(params.page) || 1);
   const tab: BoardTab = params.tab === "best" ? "best" : "all";
   const q = cleanSearch(params.q);
-  const [{ posts, total }, user] = await Promise.all([getPosts(page, tab, undefined, q), getCurrentUser()]);
+  const [{ posts, total, notices }, user] = await Promise.all([getPosts(page, tab, undefined, q), getCurrentUser()]);
 
   return (
     <>
       <PageHeader eyebrow="Board" title={m.board.title} description={m.board.desc} />
       <BoardList
         posts={posts}
+        notices={notices}
         total={total}
         page={page}
         tab={tab}

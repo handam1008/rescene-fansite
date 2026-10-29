@@ -215,6 +215,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
       {/* 디시처럼 글 아래에 목록 */}
       <BoardList
         posts={list.posts}
+        notices={list.notices}
         total={list.total}
         page={1}
         tab="all"

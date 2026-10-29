@@ -14,6 +14,8 @@ export type BoardTab = "all" | "best";
 
 // "*" 로 읽는 이유: 새 컬럼(조회수·사진·멤버·칭호)용 SQL이 아직 실행 전이어도 게시판이 깨지지 않게
 const POST_SUMMARY_COLUMNS = "*, profiles(*), comments(count)";
+/** 글쓴이가 운영자인지로 거를 때 (profiles 가 꼭 있어야 하는 inner join) */
+const POST_NOTICE_COLUMNS = "*, profiles!inner(*), comments(count)";
 
 export { catalogImageUrl, postImageUrl } from "@/lib/storage-url";
 
@@ -23,12 +25,22 @@ export function cleanSearch(q: string | undefined) {
 }
 
 /** 게시판 목록. tab "best" 는 조회수 높은 순, member 를 주면 그 멤버 게시판 글만, q 를 주면 제목·내용 검색 */
+/** 공지로 위에 고정하는 운영자 글 수 */
+const MAX_NOTICES = 5;
+
+/**
+ * 게시판 목록. "전체글" 탭(검색 아님)에서는 운영자가 쓴 글을 공지로 맨 위에 고정하고(notices),
+ * 아래 일반 목록에서는 빼서 두 번 보이지 않게 함. 인기글 탭·검색 결과에는 운영자 글도 섞여 나옴.
+ */
 export async function getPosts(page: number, tab: BoardTab = "all", member?: string, q?: string) {
   const search = cleanSearch(q);
   const supabase = await createClient();
   const from = (page - 1) * POSTS_PER_PAGE;
+  const pinNotices = tab === "all" && !search;
   const run = (byViews: boolean) => {
-    let query = supabase.from("posts").select(POST_SUMMARY_COLUMNS, { count: "exact" });
+    let query = pinNotices
+      ? supabase.from("posts").select(POST_NOTICE_COLUMNS, { count: "exact" }).eq("profiles.is_admin", false)
+      : supabase.from("posts").select(POST_SUMMARY_COLUMNS, { count: "exact" });
     if (member) query = query.eq("member", member);
     if (search) query = query.or(`title.ilike.*${search}*,content.ilike.*${search}*`);
     if (byViews) query = query.order("view_count", { ascending: false });
@@ -39,9 +51,17 @@ export async function getPosts(page: number, tab: BoardTab = "all", member?: str
   // 조회수 컬럼(0002 SQL)이 아직 없으면 최신순으로 대신 보여줌
   if (result.error && tab === "best") result = await run(false);
   // 멤버 칸(0003 SQL)이 아직 없으면 멤버 게시판은 빈 목록으로
-  if (result.error && member) return { posts: [] as PostSummary[], total: 0 };
+  if (result.error && member) return { posts: [] as PostSummary[], total: 0, notices: [] as PostSummary[] };
   if (result.error) throw new Error(result.error.message);
-  return { posts: (result.data ?? []) as unknown as PostSummary[], total: result.count ?? 0 };
+
+  let notices: PostSummary[] = [];
+  if (pinNotices) {
+    let nq = supabase.from("posts").select(POST_NOTICE_COLUMNS).eq("profiles.is_admin", true);
+    if (member) nq = nq.eq("member", member);
+    const { data } = await nq.order("created_at", { ascending: false }).limit(MAX_NOTICES);
+    notices = (data ?? []) as unknown as PostSummary[];
+  }
+  return { posts: (result.data ?? []) as unknown as PostSummary[], total: result.count ?? 0, notices };
 }
 
 /**
