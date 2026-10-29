@@ -338,10 +338,21 @@ export const schedule: ScheduleEvent[] = [
     place: "안원잘부 몰 (helloiamwoni.com)",
     link: "https://helloiamwoni.com/",
   },
+  // 화요일(11/3) 또는 금요일(11/6) 중 하루에 업로드 → 두 날 모두 미확정으로 표시. 올라오면 실제 날짜 하나만 남기기
   {
     id: "2026-11-03-anwonjalbu",
     date: "2026-11-03T00:00:00+09:00",
-    endDate: "2026-11-06T23:59:00+09:00",
+    allDay: true,
+    tentative: true,
+    title: "[안원잘부] 새 영상 업로드 (11/3 또는 11/6)",
+    i18n: { ja: "[안원잘부] 新しい動画公開（11/3または11/6）", en: "[안원잘부] New video (Nov 3 or Nov 6)" },
+    type: "content",
+    place: "유튜브 안녕하세요원이입니다잘부탁드립니다 · 이후 약 3주 휴재(컴백 활동·연말 무대 준비)",
+    link: "https://www.youtube.com/@helloiamwoninicetomeetyou",
+  },
+  {
+    id: "2026-11-06-anwonjalbu",
+    date: "2026-11-06T00:00:00+09:00",
     allDay: true,
     tentative: true,
     title: "[안원잘부] 새 영상 업로드 (11/3 또는 11/6)",
