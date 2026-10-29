@@ -5,6 +5,7 @@ import type { Messages } from "@/i18n/messages";
 import { getI18n } from "@/i18n/server";
 import { POSTS_PER_PAGE, type BoardTab } from "@/lib/community";
 import { formatBoardDate } from "@/lib/format";
+import { translateTitles } from "@/lib/translate";
 import type { PostSummary } from "@/types";
 import Nickname from "./Nickname";
 
@@ -37,7 +38,10 @@ function PostTitle({
   showMember,
   m,
   locale,
+  translated,
 }: {
+  /** 자동 번역된 제목 (있으면 이걸 보여주고, 마우스를 올리면 원래 제목) */
+  translated?: string;
   post: PostSummary;
   now: number;
   showMember: boolean;
@@ -51,7 +55,9 @@ function PostTitle({
     <span className="flex min-w-0 items-center gap-1">
       {post.hidden_at && <span className="shrink-0 bg-ink-soft px-1 text-[10px] leading-4 font-bold text-white">{m.board.hidden}</span>}
       {member && <span className="shrink-0 text-xs font-bold text-lilac-700">[{nameOf(member, locale)}]</span>}
-      <span className="font-board truncate">{post.title}</span>
+      <span className="font-board truncate" title={translated ? post.title : undefined}>
+        {translated ?? post.title}
+      </span>
       {(post.image_paths?.length ?? 0) > 0 && <ImageIcon label={m.board.photoAria} />}
       {isNew && (
         <span aria-label={m.board.newAria} className="shrink-0 bg-blush-400 px-1 text-[10px] leading-4 font-bold text-white">
@@ -138,6 +144,8 @@ export default async function BoardList({
     { key: "all", label: m.board.tabAll },
     { key: "best", label: m.board.tabBest },
   ];
+  // 다른 언어로 쓴 제목은 화면 언어로 (한 번 번역한 제목은 서버에 저장돼서 다시 번역하지 않음)
+  const titles = await translateTitles([...notices, ...posts], locale);
   const rowClass = (id: number) => (id === currentPostId ? "bg-lilac-100 font-semibold" : "hover:bg-lilac-50");
 
   return (
@@ -205,7 +213,7 @@ export default async function BoardList({
                   </td>
                   <td className="py-2 pr-3 font-bold">
                     <Link href={`/board/${post.id}`} className="block hover:underline">
-                      <PostTitle post={post} now={now} showMember={showMember} m={m} locale={locale} />
+                      <PostTitle post={post} now={now} showMember={showMember} m={m} locale={locale} translated={titles.get(post.id)} />
                     </Link>
                   </td>
                   <td className="py-2 text-center">
@@ -221,7 +229,7 @@ export default async function BoardList({
                   <td className="py-2 text-center text-xs text-ink-soft tabular-nums">{post.id}</td>
                   <td className="py-2 pr-3">
                     <Link href={`/board/${post.id}`} className="block hover:underline">
-                      <PostTitle post={post} now={now} showMember={showMember} m={m} locale={locale} />
+                      <PostTitle post={post} now={now} showMember={showMember} m={m} locale={locale} translated={titles.get(post.id)} />
                     </Link>
                   </td>
                   <td className="py-2 text-center">
@@ -242,7 +250,7 @@ export default async function BoardList({
                 <Link href={`/board/${post.id}`} className="block px-3 py-2.5">
                   <span className="flex items-center gap-1.5 text-[15px] font-bold">
                     <span className="shrink-0 bg-lilac-500 px-1.5 py-0.5 text-[11px] text-white">{m.board.notice}</span>
-                    <PostTitle post={post} now={now} showMember={showMember} m={m} locale={locale} />
+                    <PostTitle post={post} now={now} showMember={showMember} m={m} locale={locale} translated={titles.get(post.id)} />
                   </span>
                 </Link>
               </li>
@@ -251,7 +259,7 @@ export default async function BoardList({
               <li key={post.id} className={`border-b border-lilac-100 last:border-0 ${rowClass(post.id)}`}>
                 <Link href={`/board/${post.id}`} className="block px-3 py-2.5">
                   <span className="text-[15px]">
-                    <PostTitle post={post} now={now} showMember={showMember} m={m} locale={locale} />
+                    <PostTitle post={post} now={now} showMember={showMember} m={m} locale={locale} translated={titles.get(post.id)} />
                   </span>
                   <span className="mt-0.5 flex items-center gap-2 text-xs text-ink-soft">
                     <Nickname author={post.profiles} />

@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { unstable_cache } from "next/cache";
 import type { Locale } from "@/i18n/config";
+import { needsTranslation } from "@/lib/translate-detect";
 
 /**
  * 게시판 글·댓글 번역 (DeepL API).
@@ -28,6 +29,8 @@ async function callDeepL(text: string, locale: Locale): Promise<string> {
     headers: { Authorization: `DeepL-Auth-Key ${API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({ text: [text], target_lang: TARGET[locale], preserve_formatting: true }),
     cache: "no-store",
+    // DeepL 이 느려도 게시판 목록이 오래 멈추지 않게
+    signal: AbortSignal.timeout(5000),
   });
   // 456: 이번 달 무료 한도를 다 씀
   if (res.status === 456) throw new TranslateError("quota");
@@ -43,4 +46,24 @@ export async function translate(text: string, locale: Locale): Promise<string> {
   if (!text.trim()) return text;
   const hash = createHash("sha256").update(text).digest("hex");
   return unstable_cache(() => callDeepL(text, locale), ["deepl", locale, hash], { revalidate: false })();
+}
+
+/**
+ * 게시판 목록용: 화면 언어와 다른 언어로 쓴 글 제목만 골라 번역 (글 id → 번역된 제목).
+ * 번역이 안 되면(키 없음·한도·오류) 그 글은 빠지고 원래 제목이 그대로 보임
+ */
+export async function translateTitles(posts: { id: number; title: string }[], locale: Locale) {
+  const out = new Map<number, string>();
+  if (!isTranslationEnabled) return out;
+  await Promise.all(
+    posts.map(async (p) => {
+      if (!needsTranslation(p.title, locale)) return;
+      try {
+        out.set(p.id, await translate(p.title, locale));
+      } catch {
+        // 원래 제목으로
+      }
+    }),
+  );
+  return out;
 }

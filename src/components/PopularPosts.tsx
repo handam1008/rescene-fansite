@@ -2,6 +2,7 @@ import Link from "next/link";
 import { fmt } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
 import { formatBoardDate } from "@/lib/format";
+import { translateTitles } from "@/lib/translate";
 import type { PostSummary } from "@/types";
 import { MoreLink } from "./ui";
 
@@ -10,7 +11,8 @@ import { MoreLink } from "./ui";
  * compact: 넓은 PC 화면 왼쪽 사이드바용 (제목 한 줄 + 정보 한 줄)
  */
 export default async function PopularPosts({ posts, compact = false }: { posts: PostSummary[]; compact?: boolean }) {
-  const { m } = await getI18n();
+  const { m, locale } = await getI18n();
+  const titles = await translateTitles(posts, locale);
   return (
     <section className={`card ${compact ? "p-4" : "p-5"}`}>
       <div className="flex items-center justify-between gap-2">
@@ -45,7 +47,7 @@ export default async function PopularPosts({ posts, compact = false }: { posts: 
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="font-board block truncate text-sm">
-                      {post.title}
+                      {titles.get(post.id) ?? post.title}
                       {comments > 0 && <span className="ml-1 text-xs font-bold text-lilac-500">[{comments}]</span>}
                     </span>
                     {compact && (
