@@ -7,15 +7,18 @@ import { FavoriteToggle, FavoritesProvider } from "./FavoriteMembers";
 
 /** 멤버 사진 (사진이 없으면 멤버 색 네모에 이름 첫 글자) */
 export function MemberAvatar({ member, size = 64, locale = "ko" }: { member: Member; size?: number; locale?: Locale }) {
-  if (member.image) {
+  // 사진 칸은 비워둘 수도 있어서 string 으로 넓혀서 확인
+  const image: string = member.image;
+  if (image) {
     return (
       <Image
-        src={member.image}
+        src={image}
         alt={nameOf(member, locale)}
         width={size}
         height={size}
         className="shrink-0 object-cover"
-        style={{ width: size, height: size }}
+        // 멤버 색으로 테두리
+        style={{ width: size, height: size, boxShadow: `0 0 0 3px ${member.color}` }}
       />
     );
   }

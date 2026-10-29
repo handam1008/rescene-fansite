@@ -5,6 +5,7 @@ import type { Song, StreamingLink } from "@/types";
  * 발매일이 아직 안 된 곡은 숨겨져 있다가 발매 시각이 지나면 자동으로 나타나요.
  *
  * youtubeId: 리센느 공식 채널의 뮤직비디오 ID (youtube.com/watch?v=여기)
+ * image: 뮤직비디오가 나오기 전에 홈 "최신 신곡" 칸에 대신 보여줄 사진
  * 음원 링크: 곡별 고유 주소 대신 각 사이트의 "리센느 + 곡명" 검색 결과로 연결합니다.
  *            곡 페이지 주소로 바꾸고 싶으면 streamingLinks에 직접 넣으면 돼요.
  */
@@ -27,6 +28,7 @@ export const songs: Song[] = [
     album: "미니 4집 PULSE",
     releaseDate: "2026-11-03T18:00:00+09:00",
     youtubeId: "", // 발매 후 공식 MV ID를 넣어주세요
+    image: "/images/hero/pulse-blue.jpg",
     streamingLinks: searchLinks("With"),
   },
   {

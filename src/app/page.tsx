@@ -3,6 +3,7 @@ import HomeHero from "@/components/HomeHero";
 import PokedexNews from "@/components/PokedexNews";
 import PopularPosts from "@/components/PopularPosts";
 import UpcomingSchedule from "@/components/UpcomingSchedule";
+import YouTubeLite from "@/components/YouTubeLite";
 import { VoteStatusBadge } from "@/components/VoteCard";
 import { EmptyState, MoreLink, SampleBadge } from "@/components/ui";
 import { getContributorRanking, getPokedexNews, getPopularPosts } from "@/lib/community";
@@ -69,9 +70,21 @@ export default async function HomePage() {
           </div>
           {latestSong ? (
             <div className="mt-4 flex-1">
-              <div className="flex aspect-[2/1] items-center justify-center bg-gradient-to-br from-lilac-200 via-blush-100 to-sky-dream-100 text-4xl">
-                ♪
-              </div>
+              {/* 뮤직비디오가 있으면 눌러서 바로 재생, 없으면 앨범 사진, 둘 다 없으면 그라데이션 */}
+              {latestSong.youtubeId ? (
+                <YouTubeLite
+                  videoId={latestSong.youtubeId}
+                  title={fmt(m.songs.mvTitle, { title: latestSong.title })}
+                  playLabel={fmt(m.songs.playAria, { title: latestSong.title })}
+                />
+              ) : latestSong.image ? (
+                // eslint-disable-next-line @next/next/no-img-element -- 작은 앨범 사진 한 장
+                <img src={latestSong.image} alt="" className="aspect-video w-full object-cover" />
+              ) : (
+                <div className="flex aspect-video items-center justify-center bg-gradient-to-br from-lilac-200 via-blush-100 to-sky-dream-100 text-4xl">
+                  ♪
+                </div>
+              )}
               <p className="mt-3 text-lg font-semibold">{latestSong.title}</p>
               <p className="text-sm text-ink-soft">
                 {albumLabel(latestSong.album, locale)} · {formatDate(latestSong.releaseDate, locale)}

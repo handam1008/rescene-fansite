@@ -19,7 +19,7 @@ export const members = [
     nationality: "대한민국",
     note: "리더",
     color: "#c9b6f7",
-    image: "",
+    image: "/images/members/woni.jpg",
   },
   {
     slug: "liv",
@@ -30,7 +30,7 @@ export const members = [
     nationality: "대한민국",
     note: "",
     color: "#f5a3c4",
-    image: "",
+    image: "/images/members/liv.jpg",
   },
   {
     slug: "minami",
@@ -41,7 +41,7 @@ export const members = [
     nationality: "일본",
     note: "",
     color: "#9fd3f5",
-    image: "",
+    image: "/images/members/minami.jpg",
   },
   {
     slug: "may",
@@ -52,7 +52,7 @@ export const members = [
     nationality: "대한민국",
     note: "",
     color: "#a8e6cf",
-    image: "",
+    image: "/images/members/may.jpg",
   },
   {
     slug: "zena",
@@ -63,7 +63,7 @@ export const members = [
     nationality: "대한민국",
     note: "막내",
     color: "#ffd59e",
-    image: "",
+    image: "/images/members/zena.jpg",
   },
 ] as const;
 

@@ -38,6 +38,7 @@ const ko = {
     previous: "이전 곡",
     thumbAlt: "{title} 뮤직비디오 썸네일",
     mvPreparing: "뮤직비디오 준비 중",
+    playAria: "{title} 뮤직비디오 재생",
   },
   votes: {
     title: "투표 안내",
@@ -86,6 +87,7 @@ const ja: PagesMessages = {
     previous: "これまでの曲",
     thumbAlt: "{title} MVのサムネイル",
     mvPreparing: "MV準備中",
+    playAria: "{title} MVを再生",
   },
   votes: {
     title: "投票ガイド",
@@ -132,6 +134,7 @@ const en: PagesMessages = {
     previous: "Earlier songs",
     thumbAlt: "{title} music video thumbnail",
     mvPreparing: "Music video coming soon",
+    playAria: "Play the {title} music video",
   },
   votes: {
     title: "Voting guide",
