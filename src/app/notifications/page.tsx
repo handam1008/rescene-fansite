@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 type NotificationRow = {
   id: number;
-  type: "comment";
+  type: "comment" | "inquiry";
   post_id: number | null;
   created_at: string;
   read_at: string | null;
@@ -25,7 +25,7 @@ type NotificationRow = {
   actor: { nickname: string } | null;
 };
 
-/** 내 글에 달린 댓글 알림. 이 화면을 열면 모두 읽음으로 바뀜 */
+/** 내 글에 달린 댓글 알림과 문의 답변 알림. 이 화면을 열면 모두 읽음으로 바뀜 */
 export default async function NotificationsPage() {
   if (!isSupabaseConfigured) return <SupabaseNotice />;
 
@@ -58,15 +58,21 @@ export default async function NotificationsPage() {
           {items.map((n) => (
             <li key={n.id}>
               <Link
-                href={n.post_id ? `/board/${n.post_id}` : "/board"}
+                href={n.type === "inquiry" ? "/contact" : n.post_id ? `/board/${n.post_id}` : "/board"}
                 className={`flex items-start gap-3 px-4 py-3 text-sm hover:bg-lilac-50 ${n.read_at ? "" : "bg-lilac-50"}`}
               >
-                <span aria-hidden>💬</span>
+                <span aria-hidden>{n.type === "inquiry" ? "📮" : "💬"}</span>
                 <span className="min-w-0 flex-1">
-                  <b>{n.actor?.nickname ?? m.notice.someone}</b>
-                  {m.notice.commentMid}
-                  <b className="text-lilac-700">{fmt(m.notice.commentQuote, { t: n.post?.title ?? m.notice.deletedPost })}</b>
-                  {m.notice.commentEnd}
+                  {n.type === "inquiry" ? (
+                    m.notice.inquiryReply
+                  ) : (
+                    <>
+                      <b>{n.actor?.nickname ?? m.notice.someone}</b>
+                      {m.notice.commentMid}
+                      <b className="text-lilac-700">{fmt(m.notice.commentQuote, { t: n.post?.title ?? m.notice.deletedPost })}</b>
+                      {m.notice.commentEnd}
+                    </>
+                  )}
                   <span className="mt-0.5 block text-xs text-ink-soft">{formatFullDateTime(n.created_at)}</span>
                 </span>
                 {!n.read_at && <span className="shrink-0 bg-blush-400 px-1.5 text-[10px] leading-4 font-bold text-white">NEW</span>}

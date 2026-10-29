@@ -18,8 +18,9 @@ import {
   getPendingProofs,
   proofImageUrls,
 } from "@/lib/community";
-import type { CatalogCard, ReportReason } from "@/types";
+import type { Author, CatalogCard, ReportReason } from "@/types";
 import { formatFullDateTime } from "@/lib/format";
+import { inquiryStatus, type Inquiry } from "@/lib/inquiries";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import {
@@ -28,11 +29,14 @@ import {
   approveProof,
   banMember,
   clearReports,
+  closeInquiry,
   deleteCatalogCard,
+  deleteInquiry,
   deleteLiveLink,
   endLiveLink,
   hidePost,
   rejectProof,
+  replyInquiry,
   restorePost,
   setAdmin,
   unbanMember,
@@ -61,6 +65,7 @@ const TABS = [
   { key: "members", label: "회원" },
   { key: "pokedex", label: "포카 도감" },
   { key: "live", label: "라이브" },
+  { key: "inquiries", label: "문의" },
 ] as const;
 type AdminTab = (typeof TABS)[number]["key"];
 
@@ -80,7 +85,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="space-y-8">
-      <PageHeader eyebrow="Admin" title="운영자" description="운영자만 볼 수 있는 화면이에요. 게시판·회원·포카 도감을 관리해요." />
+      <PageHeader eyebrow="Admin" title="운영자" description="운영자만 볼 수 있는 화면이에요. 게시판·회원·포카 도감·라이브·문의를 관리해요." />
 
       <nav aria-label="운영자 메뉴" className="flex border-b-2 border-lilac-500">
         {TABS.map((t) => (
@@ -100,6 +105,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {tab === "members" && <MembersSection q={q ?? ""} myId={user.id} />}
       {tab === "pokedex" && <PokedexSection />}
       {tab === "live" && <LiveSection />}
+      {tab === "inquiries" && <InquiriesSection />}
     </div>
   );
 }
@@ -116,6 +122,7 @@ async function SummarySection() {
     { label: "신고 들어온 글", value: s.reportedPosts, href: "/admin?tab=board", alert: s.reportedPosts > 0 },
     { label: "숨김 글", value: s.hiddenPosts, href: "/admin?tab=board", alert: s.hiddenPosts > 0 },
     { label: "포카 인증 대기", value: s.pendingProofs, href: "/admin?tab=pokedex", alert: s.pendingProofs > 0 },
+    { label: "답변 안 한 문의", value: s.openInquiries, href: "/admin?tab=inquiries", alert: s.openInquiries > 0 },
     { label: "이용 제한 중", value: s.bannedMembers, href: "/admin?tab=members" },
     { label: "도감 채운 카드", value: s.filledCards, href: "/photocards" },
   ];
@@ -637,5 +644,125 @@ async function LiveSection() {
         )}
       </section>
     </div>
+  );
+}
+
+/* ───────── 문의 ───────── */
+
+const inquiryCategoryLabels: Record<Inquiry["category"], string> = {
+  suggestion: "건의·제안",
+  report: "신고",
+  bug: "오류 제보",
+  other: "기타",
+};
+
+type AdminInquiry = Inquiry & { profiles: Author };
+
+async function InquiriesSection() {
+  const supabase = await createClient();
+  // 답변 안 한 문의는 전부, 처리한 문의는 최근 30개
+  const [{ data: open }, { data: done }] = await Promise.all([
+    supabase
+      .from("inquiries")
+      .select("*, profiles(*)")
+      .is("replied_at", null)
+      .is("closed_at", null)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("inquiries")
+      .select("*, profiles(*)")
+      .or("replied_at.not.is.null,closed_at.not.is.null")
+      .order("created_at", { ascending: false })
+      .limit(30),
+  ]);
+  const openRows = (open ?? []) as unknown as AdminInquiry[];
+  const doneRows = (done ?? []) as unknown as AdminInquiry[];
+
+  return (
+    <div className="space-y-8">
+      <section>
+        <h2 className={sectionTitle}>
+          답변 안 한 문의 <span className="text-lilac-500">{openRows.length}</span>건
+        </h2>
+        <p className="mb-3 text-sm text-ink-soft">
+          오래된 문의가 위에 있어요. 답변을 보내면 회원에게 알림이 가고, 회원은 문의 화면에서 답변을 봐요.
+        </p>
+        {openRows.length === 0 ? (
+          <EmptyState>답변할 문의가 없어요. 👍</EmptyState>
+        ) : (
+          <ul className="space-y-3">
+            {openRows.map((q) => (
+              <InquiryItem key={q.id} q={q} />
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2 className={sectionTitle}>처리한 문의 (최근 30개)</h2>
+        {doneRows.length === 0 ? (
+          <EmptyState>아직 처리한 문의가 없어요.</EmptyState>
+        ) : (
+          <ul className="space-y-3">
+            {doneRows.map((q) => (
+              <InquiryItem key={q.id} q={q} />
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function InquiryItem({ q }: { q: AdminInquiry }) {
+  const status = inquiryStatus(q);
+  return (
+    <li className={`card p-4 text-sm ${status === "open" ? "border-lilac-500" : ""}`}>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+        <span className={`px-1.5 py-0.5 font-bold ${q.category === "report" ? "bg-blush-400 text-white" : "bg-lilac-100 text-lilac-700"}`}>
+          {inquiryCategoryLabels[q.category] ?? q.category}
+        </span>
+        <Nickname author={q.profiles} className="font-semibold" />
+        <span className="text-ink-soft tabular-nums">{formatFullDateTime(q.created_at)}</span>
+        {status === "answered" && <span className="font-bold text-lilac-700">답변 완료</span>}
+        {status === "closed" && <span className="font-bold text-ink-soft">답변 없이 처리</span>}
+      </div>
+      <p className="mt-2 break-words whitespace-pre-wrap">{q.content}</p>
+
+      <form action={replyInquiry} className="mt-3 space-y-2">
+        <input type="hidden" name="id" value={q.id} />
+        <textarea
+          name="reply"
+          required
+          maxLength={2000}
+          rows={3}
+          defaultValue={q.reply ?? ""}
+          placeholder="답변을 적어주세요. 회원에게 그대로 보여요."
+          className={`${inputClass} leading-relaxed`}
+        />
+        <div className="flex flex-wrap justify-end gap-2">
+          <button type="submit" className="border border-lilac-500 bg-lilac-500 px-3 py-1.5 font-bold text-white">
+            {q.reply ? "답변 고치기" : "답변 보내기"}
+          </button>
+        </div>
+      </form>
+      <div className="mt-2 flex flex-wrap justify-end gap-2 text-xs">
+        {status !== "answered" && (
+          <form action={closeInquiry}>
+            <input type="hidden" name="id" value={q.id} />
+            {status === "closed" && <input type="hidden" name="reopen" value="1" />}
+            <button type="submit" className="border border-lilac-300 bg-white px-2.5 py-1">
+              {status === "closed" ? "다시 열기" : "답변 없이 처리"}
+            </button>
+          </form>
+        )}
+        <form action={deleteInquiry}>
+          <input type="hidden" name="id" value={q.id} />
+          <button type="submit" className="border border-lilac-200 bg-white px-2.5 py-1 text-ink-soft">
+            삭제
+          </button>
+        </form>
+      </div>
+    </li>
   );
 }

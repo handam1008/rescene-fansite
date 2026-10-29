@@ -221,3 +221,42 @@ export async function deleteLiveLink(formData: FormData) {
   await supabase.from("live_links").delete().eq("id", Number(formData.get("id")));
   revalidateLive();
 }
+
+/* ───────── 문의 (0015) ───────── */
+
+function revalidateInquiries() {
+  revalidatePath("/admin");
+  revalidatePath("/contact");
+}
+
+/** 답변 달기·고치기. 처음 답변하면 보낸 회원에게 알림이 감 (DB 트리거) */
+export async function replyInquiry(formData: FormData) {
+  await requireAdmin();
+  const reply = String(formData.get("reply") ?? "").trim();
+  if (!reply || reply.length > 2000) throw new Error("답변은 1~2000자로 적어주세요.");
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("inquiries")
+    .update({ reply, replied_at: new Date().toISOString(), closed_at: null })
+    .eq("id", Number(formData.get("id")));
+  if (error) throw new Error("답변을 저장하지 못했어요.");
+  revalidateInquiries();
+}
+
+/** 답변 없이 처리 끝 (도배·이미 처리한 일 등). reopen=1 이면 다시 "확인 중"으로 */
+export async function closeInquiry(formData: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  await supabase
+    .from("inquiries")
+    .update({ closed_at: formData.get("reopen") === "1" ? null : new Date().toISOString() })
+    .eq("id", Number(formData.get("id")));
+  revalidateInquiries();
+}
+
+export async function deleteInquiry(formData: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  await supabase.from("inquiries").delete().eq("id", Number(formData.get("id")));
+  revalidateInquiries();
+}

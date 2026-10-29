@@ -262,7 +262,7 @@ export async function getAdminSummary() {
   const today = new Date(new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }) + "T00:00:00+09:00").toISOString();
   const count = async (q: PromiseLike<{ count: number | null }>) => (await q).count ?? 0;
   const head = { count: "exact" as const, head: true };
-  const [members, newMembersToday, posts, postsToday, reportedPosts, hiddenPosts, pendingProofs, bannedMembers, filledCards] =
+  const [members, newMembersToday, posts, postsToday, reportedPosts, hiddenPosts, pendingProofs, bannedMembers, filledCards, openInquiries] =
     await Promise.all([
       count(supabase.from("profiles").select("id", head)),
       count(supabase.from("profiles").select("id", head).gte("created_at", today)),
@@ -273,8 +273,10 @@ export async function getAdminSummary() {
       count(supabase.from("photocard_collections").select("id", head).eq("status", "pending")),
       count(supabase.from("profiles").select("id", head).gt("banned_until", new Date().toISOString())),
       count(supabase.from("photocard_catalog").select("id", head).not("image_path", "is", null)),
+      // 0015 SQL 전이면 0
+      count(supabase.from("inquiries").select("id", head).is("replied_at", null).is("closed_at", null)),
     ]);
-  return { members, newMembersToday, posts, postsToday, reportedPosts, hiddenPosts, pendingProofs, bannedMembers, filledCards };
+  return { members, newMembersToday, posts, postsToday, reportedPosts, hiddenPosts, pendingProofs, bannedMembers, filledCards, openInquiries };
 }
 
 /** 운영자: 비추천을 많이 받은 글 (숨긴 글 포함) */
