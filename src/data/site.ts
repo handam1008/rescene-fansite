@@ -32,6 +32,9 @@ const PRETTY_GIRL: L10n = {
   en: "Photo: THE MUZE Entertainment (Special Single 'Pretty Girl' concept photo)",
 };
 
+/** 멤버 프로필 사진(public/images/members/)도 'PULSE' 개인 콘셉트 포토에서 얼굴 부분만 잘라 씀 */
+export const PULSE_PHOTO_CREDIT = PULSE;
+
 /** 문구(tagline)는 언어별로 src/i18n/messages/shell.ts 의 hero.tagline */
 export const hero: { title: string; slides: HeroSlide[] } = {
   title: "RESCENE",

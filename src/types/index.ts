@@ -65,6 +65,8 @@ export type Song = SampleFlag & {
    * 비워두면 영상 자리에 안내 문구가 나옵니다.
    */
   youtubeId?: string;
+  /** 뮤직비디오가 아직 없을 때 대신 보여줄 사진 (public/ 아래 주소) */
+  image?: string;
   streamingLinks: StreamingLink[];
 };
 
