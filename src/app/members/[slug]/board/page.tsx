@@ -43,7 +43,7 @@ export default async function MemberBoardPage({
   }
 
   const q = cleanSearch(query.q);
-  const [{ posts, total }, user] = await Promise.all([getPosts(page, tab, member.slug, q), getCurrentUser()]);
+  const [{ posts, total, notices }, user] = await Promise.all([getPosts(page, tab, member.slug, q), getCurrentUser()]);
   const newPath = `/board/new?member=${member.slug}`;
 
   return (
@@ -51,6 +51,7 @@ export default async function MemberBoardPage({
       <MemberHeader member={member} active="board" />
       <BoardList
         posts={posts}
+        notices={notices}
         total={total}
         page={page}
         tab={tab}

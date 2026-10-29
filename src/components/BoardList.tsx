@@ -113,8 +113,11 @@ export default async function BoardList({
   showMember = true,
   currentPostId,
   q = "",
+  notices = [],
 }: {
   posts: PostSummary[];
+  /** 운영자 글: 맨 위에 공지로 고정 */
+  notices?: PostSummary[];
   total: number;
   page: number;
   tab: BoardTab;
@@ -176,7 +179,7 @@ export default async function BoardList({
         </p>
       )}
 
-      {posts.length === 0 ? (
+      {posts.length === 0 && notices.length === 0 ? (
         <p className="border-b border-lilac-200 bg-white py-16 text-center text-sm text-ink-soft">
           {q ? m.board.noResults : m.board.empty}
         </p>
@@ -195,6 +198,24 @@ export default async function BoardList({
               </tr>
             </thead>
             <tbody>
+              {notices.map((post) => (
+                <tr key={`notice-${post.id}`} className={`border-b border-lilac-100 ${post.id === currentPostId ? "bg-lilac-100" : "bg-lilac-50 hover:bg-lilac-100"}`}>
+                  <td className="py-2 text-center">
+                    <span className="bg-lilac-500 px-1.5 py-0.5 text-[11px] font-bold text-white">{m.board.notice}</span>
+                  </td>
+                  <td className="py-2 pr-3 font-bold">
+                    <Link href={`/board/${post.id}`} className="block hover:underline">
+                      <PostTitle post={post} now={now} showMember={showMember} m={m} locale={locale} />
+                    </Link>
+                  </td>
+                  <td className="py-2 text-center">
+                    <Nickname author={post.profiles} className="max-w-full justify-center" />
+                  </td>
+                  <td className="py-2 text-center text-xs text-ink-soft tabular-nums">{formatBoardDate(post.created_at)}</td>
+                  <td className="py-2 text-center text-xs text-ink-soft tabular-nums">{post.view_count ?? 0}</td>
+                  <td className="py-2 text-center text-xs text-ink-soft tabular-nums">{post.like_count ?? 0}</td>
+                </tr>
+              ))}
               {posts.map((post) => (
                 <tr key={post.id} className={`border-b border-lilac-100 last:border-0 ${rowClass(post.id)}`}>
                   <td className="py-2 text-center text-xs text-ink-soft tabular-nums">{post.id}</td>
@@ -216,6 +237,16 @@ export default async function BoardList({
 
           {/* 휴대폰: 두 줄 목록 */}
           <ul className="border-b border-lilac-200 bg-white sm:hidden">
+            {notices.map((post) => (
+              <li key={`notice-${post.id}`} className={`border-b border-lilac-100 ${post.id === currentPostId ? "bg-lilac-100" : "bg-lilac-50"}`}>
+                <Link href={`/board/${post.id}`} className="block px-3 py-2.5">
+                  <span className="flex items-center gap-1.5 text-[15px] font-bold">
+                    <span className="shrink-0 bg-lilac-500 px-1.5 py-0.5 text-[11px] text-white">{m.board.notice}</span>
+                    <PostTitle post={post} now={now} showMember={showMember} m={m} locale={locale} />
+                  </span>
+                </Link>
+              </li>
+            ))}
             {posts.map((post) => (
               <li key={post.id} className={`border-b border-lilac-100 last:border-0 ${rowClass(post.id)}`}>
                 <Link href={`/board/${post.id}`} className="block px-3 py-2.5">
