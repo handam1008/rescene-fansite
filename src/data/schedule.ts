@@ -43,6 +43,11 @@ export const placeI18n: Record<string, { ja: string; en: string }> = {
   "일본 오사카 교세라 돔": { ja: "大阪 京セラドーム", en: "Kyocera Dome Osaka, Japan" },
   "대만 가오슝 내셔널 스타디움": { ja: "台湾 高雄国家体育場", en: "Kaohsiung National Stadium, Taiwan" },
   "프랑스 파리 라데팡스 아레나": { ja: "フランス パリ ラ・デファンス・アリーナ", en: "Paris La Défense Arena, France" },
+  "안원잘부 몰 (helloiamwoni.com)": { ja: "안원잘부 モール（helloiamwoni.com）", en: "안원잘부 Mall (helloiamwoni.com)" },
+  "유튜브 안녕하세요원이입니다잘부탁드립니다 · 이후 약 3주 휴재(컴백 활동·연말 무대 준비)": {
+    ja: "YouTube「안녕하세요원이입니다잘부탁드립니다」・その後約3週間お休み（カムバック活動・年末ステージ準備）",
+    en: "YouTube: 안녕하세요원이입니다잘부탁드립니다 · then a ~3-week break (comeback promotions, year-end stages)",
+  },
   "유튜브 안녕하세요원이입니다잘부탁드립니다": {
     ja: "YouTube「안녕하세요원이입니다잘부탁드립니다」",
     en: "YouTube: 안녕하세요원이입니다잘부탁드립니다 (Woni's channel)",
@@ -321,15 +326,40 @@ export const schedule: ScheduleEvent[] = [
     place: "유튜브 안녕하세요원이입니다잘부탁드립니다",
     link: "https://www.youtube.com/watch?v=1kHqK1oqHzc",
   },
+  // ── 안원잘부 11월 일정: 원이 유튜브 채널 고정 댓글 공지(2026-10-26) ──
+  {
+    id: "2026-11-01-anwonjalbu-mall",
+    date: "2026-11-01T00:00:00+09:00",
+    endDate: "2026-11-05T23:59:00+09:00",
+    allDay: true,
+    title: "[안원잘부] 굿즈 몰 2차 예약 판매",
+    i18n: { ja: "[안원잘부] グッズモール 第2次予約販売", en: "[안원잘부] Merch mall: 2nd pre-order" },
+    type: "etc",
+    place: "안원잘부 몰 (helloiamwoni.com)",
+    link: "https://helloiamwoni.com/",
+  },
+  {
+    id: "2026-11-03-anwonjalbu",
+    date: "2026-11-03T00:00:00+09:00",
+    endDate: "2026-11-06T23:59:00+09:00",
+    allDay: true,
+    tentative: true,
+    title: "[안원잘부] 새 영상 업로드 (11/3 또는 11/6)",
+    i18n: { ja: "[안원잘부] 新しい動画公開（11/3または11/6）", en: "[안원잘부] New video (Nov 3 or Nov 6)" },
+    type: "content",
+    place: "유튜브 안녕하세요원이입니다잘부탁드립니다 · 이후 약 3주 휴재(컴백 활동·연말 무대 준비)",
+    link: "https://www.youtube.com/@helloiamwoninicetomeetyou",
+  },
 ];
 
 /**
  * 안원잘부 예상 업로드: 솔파스튜디오 공지(2026-10 초) "연말까지 매주 금요일을 목표로 하되, 상황에 따라 주기와 요일이 바뀔 수 있음".
+ * 11월 공지(2026-10-26 채널 고정 댓글): 다음 영상은 11/3 또는 11/6, 그 뒤 약 3주 휴재 → 예상은 12월 첫 금요일부터.
  * 이 기간의 금요일마다 "미확정" 일정으로 달력에 자동 표시됩니다(lib/schedule.ts).
  * 지난 날짜와, 그 주에 실제 업로드([안원잘부] 일정)가 이미 적혀 있는 주는 자동으로 빠집니다.
  */
 export const anwonjalbuPlan = {
-  from: "2026-10-30",
+  from: "2026-11-28",
   until: "2026-12-31",
   link: "https://www.youtube.com/post/UgkxYZhaOWAFY3P8Zb6YbEYPXX7_lEb6kR61",
 };
