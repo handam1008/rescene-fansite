@@ -6,6 +6,7 @@ import BanNotice from "@/components/BanNotice";
 import { CommentForm } from "@/components/BoardForms";
 import Nickname from "@/components/Nickname";
 import PostReactions from "@/components/PostReactions";
+import TranslateButton from "@/components/TranslateButton";
 import ViewCounter from "@/components/ViewCounter";
 import { SupabaseNotice } from "@/components/ui";
 import { getMember, nameOf } from "@/data/members";
@@ -13,6 +14,8 @@ import { fmt } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
 import { getPost, getPostPreview, getPosts, postImageUrl } from "@/lib/community";
 import { formatFullDateTime } from "@/lib/format";
+import { isTranslationEnabled } from "@/lib/translate";
+import { needsTranslation } from "@/lib/translate-detect";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { adminDeletePost, hidePost, restorePost } from "../../admin/actions";
@@ -114,6 +117,9 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             </div>
           )}
           <div className="text-[15px] leading-relaxed break-words whitespace-pre-wrap">{post.content}</div>
+          {isTranslationEnabled && needsTranslation(`${post.title}\n${post.content}`, locale) && (
+            <TranslateButton kind="post" id={post.id} />
+          )}
         </div>
 
         <PostReactions
@@ -181,7 +187,10 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             {comments.map((c) => (
               <li key={c.id} className="flex flex-col gap-1 border-b border-lilac-100 px-4 py-2.5 text-sm sm:flex-row sm:gap-4 sm:px-5">
                 <Nickname author={c.profiles} className="shrink-0 font-semibold sm:w-36" />
-                <p className="min-w-0 flex-1 break-words whitespace-pre-wrap">{c.content}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="break-words whitespace-pre-wrap">{c.content}</p>
+                  {isTranslationEnabled && needsTranslation(c.content, locale) && <TranslateButton kind="comment" id={c.id} />}
+                </div>
                 <span className="flex shrink-0 items-start gap-2 text-xs text-ink-soft">
                   {formatFullDateTime(c.created_at).slice(5)}
                   {(user?.id === c.user_id || user?.isAdmin) && (
