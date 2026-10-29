@@ -86,7 +86,7 @@ const ko = {
     save: "저장",
     saving: "저장 중…",
     deleteDesc:
-      "탈퇴하면 계정과 내가 쓴 글·댓글·추천·신고·포카 인증 기록, 올린 사진이 바로 지워지고 되돌릴 수 없어요. 도감 이미지로 공개에 동의해 쓰인 사진은 도감에 남고, 제공자 표시(닉네임)만 지워져요.",
+      "탈퇴하면 계정과 내가 쓴 글·댓글·추천·신고·문의·포카 인증 기록, 올린 사진이 바로 지워지고 되돌릴 수 없어요. 도감 이미지로 공개에 동의해 쓰인 사진은 도감에 남고, 제공자 표시(닉네임)만 지워져요.",
     deleteWord: "탈퇴",
     deletePlaceholder: "탈퇴 라고 적어주세요",
     deleteAria: "탈퇴 확인",
@@ -99,13 +99,14 @@ const ko = {
   },
   notice: {
     title: "알림",
-    desc: "내 글에 달린 댓글을 알려드려요. 최근 50개까지 보여요.",
+    desc: "내 글에 달린 댓글과 문의 답변을 알려드려요. 최근 50개까지 보여요.",
     empty: "아직 알림이 없어요.",
     someone: "누군가",
     deletedPost: "삭제된 글",
     commentMid: "님이 내 글 ",
     commentQuote: "‘{t}’",
     commentEnd: "에 댓글을 남겼어요.",
+    inquiryReply: "운영자가 내 문의에 답변했어요.",
   },
   error: {
     title: "잠시 문제가 생겼어요",
@@ -207,7 +208,7 @@ const ja: AccountMessages = {
     save: "保存",
     saving: "保存中…",
     deleteDesc:
-      "退会するとアカウントと、あなたの投稿・コメント・いいね・通報・トレカ申請の記録、アップした写真がすぐに削除され、元に戻せません。図鑑画像として公開に同意した写真は図鑑に残り、提供者の表示（ニックネーム）だけが消えます。",
+      "退会するとアカウントと、あなたの投稿・コメント・いいね・通報・お問い合わせ・トレカ申請の記録、アップした写真がすぐに削除され、元に戻せません。図鑑画像として公開に同意した写真は図鑑に残り、提供者の表示（ニックネーム）だけが消えます。",
     deleteWord: "退会",
     deletePlaceholder: "「退会」と入力してください",
     deleteAria: "退会の確認",
@@ -220,13 +221,14 @@ const ja: AccountMessages = {
   },
   notice: {
     title: "お知らせ",
-    desc: "あなたの投稿についたコメントをお知らせします。最新50件まで表示されます。",
+    desc: "あなたの投稿へのコメントとお問い合わせへの返信をお知らせします。最新50件まで表示されます。",
     empty: "まだお知らせはありません。",
     someone: "誰か",
     deletedPost: "削除された投稿",
     commentMid: "さんがあなたの投稿",
     commentQuote: "「{t}」",
     commentEnd: "にコメントしました。",
+    inquiryReply: "管理者があなたのお問い合わせに返信しました。",
   },
   error: {
     title: "問題が発生しました",
@@ -326,7 +328,7 @@ const en: AccountMessages = {
     save: "Save",
     saving: "Saving…",
     deleteDesc:
-      "Deleting your account immediately and permanently removes it along with your posts, comments, votes, reports, photocard submissions and uploaded photos. Photos you agreed to share as collection images stay in the collection; only the credit (your nickname) is removed.",
+      "Deleting your account immediately and permanently removes it along with your posts, comments, votes, reports, messages to the admin, photocard submissions and uploaded photos. Photos you agreed to share as collection images stay in the collection; only the credit (your nickname) is removed.",
     deleteWord: "DELETE",
     deletePlaceholder: "Type DELETE",
     deleteAria: "Confirm account deletion",
@@ -339,13 +341,14 @@ const en: AccountMessages = {
   },
   notice: {
     title: "Notifications",
-    desc: "We'll let you know when someone comments on your posts. Showing the latest 50.",
+    desc: "Comments on your posts and replies to your messages. Showing the latest 50.",
     empty: "No notifications yet.",
     someone: "Someone",
     deletedPost: "deleted post",
     commentMid: " commented on your post ",
     commentQuote: "‘{t}’",
     commentEnd: ".",
+    inquiryReply: "The admin replied to your message.",
   },
   error: {
     title: "Something went wrong",

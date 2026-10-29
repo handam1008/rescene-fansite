@@ -16,6 +16,9 @@ export default async function Footer() {
           <Link href="/board/rules" className="underline">
             {m.footer.rules}
           </Link>
+          <Link href="/contact" className="underline">
+            {m.footer.contact}
+          </Link>
         </p>
       </div>
     </footer>

@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { useI18n } from "@/i18n/client";
 import { fmt } from "@/i18n/config";
-import { BellIcon, LoginIcon, LogoutIcon, PencilIcon, ShieldIcon, UserIcon } from "./Icons";
+import { BellIcon, LoginIcon, LogoutIcon, MailIcon, PencilIcon, ShieldIcon, UserIcon } from "./Icons";
 
 /**
  * 헤더 오른쪽의 로그인 상태.
@@ -21,6 +21,8 @@ export default function AuthStatus() {
   const [nickname, setNickname] = useState<string | null | undefined>(undefined);
   const [isAdmin, setIsAdmin] = useState(false);
   const [unread, setUnread] = useState(0);
+  // 운영자: 답변 안 한 문의 수
+  const [openInquiries, setOpenInquiries] = useState(0);
   const [needsNickname, setNeedsNickname] = useState(false);
 
   useEffect(() => {
@@ -31,6 +33,7 @@ export default function AuthStatus() {
       if (!userId) {
         setIsAdmin(false);
         setUnread(0);
+        setOpenInquiries(0);
         return setNickname(null);
       }
       // "*" : 관리자 컬럼(0003 SQL)이 없어도 동작하도록
@@ -44,6 +47,17 @@ export default function AuthStatus() {
       setNeedsNickname(data?.nickname_set === false);
       setIsAdmin(data?.is_admin === true);
       setUnread(count ?? 0);
+      if (data?.is_admin === true) {
+        // 0015 SQL 전이면 0
+        const { count: open } = await supabase
+          .from("inquiries")
+          .select("id", { count: "exact", head: true })
+          .is("replied_at", null)
+          .is("closed_at", null);
+        setOpenInquiries(open ?? 0);
+      } else {
+        setOpenInquiries(0);
+      }
     }
 
     supabase.auth.getUser().then(({ data }) => load(data.user?.id));
@@ -68,7 +82,18 @@ export default function AuthStatus() {
 
   return (
     <div className={rowClass}>
-      {isAdmin && <Action href="/admin" icon={<ShieldIcon />} label={m.auth.admin} />}
+      {/* 운영자는 운영자 화면, 그 외 회원은 같은 자리에 문의 */}
+      {isAdmin ? (
+        <Action
+          href={openInquiries ? "/admin?tab=inquiries" : "/admin"}
+          icon={<ShieldIcon />}
+          label={m.auth.admin}
+          badge={openInquiries > 0 ? String(openInquiries) : undefined}
+          ariaLabel={openInquiries ? fmt(m.auth.adminAria, { n: openInquiries }) : undefined}
+        />
+      ) : (
+        <Action href="/contact" icon={<MailIcon />} label={m.auth.contact} short={m.auth.contactShort} />
+      )}
       <Action href="/board/new" icon={<PencilIcon />} label={m.auth.write} hideOnPhone />
       <Action
         href="/notifications"

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/ui";
 import { PRIVACY_EFFECTIVE_DATE, privacyOfficer } from "@/data/privacy";
@@ -62,7 +63,7 @@ export default async function PrivacyPage() {
                   <td className={td}>사이트를 쓰는 동안</td>
                   <td className={td}>
                     내가 쓴 글·댓글·첨부 사진, 추천·비추천과 신고 기록, 포카 인증 사진과 도감 이미지 공개 동의 여부,
-                    가입·로그인 시각
+                    운영자에게 보낸 문의와 답변, 가입·로그인 시각
                   </td>
                 </tr>
                 <tr>
@@ -81,7 +82,7 @@ export default async function PrivacyPage() {
           <ul className="list-inside list-disc space-y-0.5">
             <li>회원 확인과 로그인 유지, 가입 인증 메일 보내기</li>
             <li>게시판·포카 도감·칭호·랭킹 같은 사이트 기능 제공</li>
-            <li>신고 처리, 도배·광고·부정 이용 막기, 게시판 규칙 위반 대응</li>
+            <li>신고·문의 처리와 답변, 도배·광고·부정 이용 막기, 게시판 규칙 위반 대응</li>
           </ul>
           <p>광고나 마케팅에는 쓰지 않고, 사이트로 돈을 벌지 않아요.</p>
         </Section>
@@ -89,7 +90,7 @@ export default async function PrivacyPage() {
         <Section n={3} title="보관 기간과 파기">
           <ul className="list-inside list-disc space-y-0.5">
             <li>
-              <b>회원 탈퇴하면 바로 지워요.</b> 계정과 함께 글·댓글·추천·신고·포카 인증 기록, 내가 올린 사진 파일이
+              <b>회원 탈퇴하면 바로 지워요.</b> 계정과 함께 글·댓글·추천·신고·문의·포카 인증 기록, 내가 올린 사진 파일이
               삭제돼요. (내 정보 → 회원 탈퇴)
             </li>
             <li>
@@ -159,7 +160,7 @@ export default async function PrivacyPage() {
             <li>내 정보 보기와 닉네임 바꾸기: 로그인 → 위쪽 닉네임 → 내 정보</li>
             <li>글·댓글 지우기: 각 글에서 직접 삭제</li>
             <li>모든 정보 지우기: 내 정보 → 회원 탈퇴</li>
-            <li>그 밖에 열람·정정·삭제·처리 정지 요청: 아래 연락처로 요청하면 지체 없이 처리해요</li>
+            <li>그 밖에 열람·정정·삭제·처리 정지 요청: 문의 화면이나 아래 연락처로 요청하면 지체 없이 처리해요</li>
           </ul>
         </Section>
 
@@ -182,7 +183,10 @@ export default async function PrivacyPage() {
               {privacyOfficer.name} ({privacyOfficer.role})
             </b>
             <br />
-            연락처: {privacyOfficer.contact || "준비 중이에요. 그동안은 사이트 운영자에게 게시판으로 알려주세요."}
+            연락처: {privacyOfficer.contact || "사이트의 문의 화면"}{" "}
+            <Link href="/contact" className="underline">
+              (문의하기)
+            </Link>
           </p>
           <p>개인정보 침해로 도움이 필요하면 아래 기관에도 문의할 수 있어요.</p>
           <ul className="list-inside list-disc space-y-0.5">
