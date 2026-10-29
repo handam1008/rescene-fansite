@@ -135,6 +135,12 @@ export default async function PrivacyPage() {
                   <td className={td}>접속 기록(IP, 브라우저 정보), 요청에 담긴 로그인 쿠키</td>
                   <td className={td}>일본 (도쿄) 및 전 세계 전송망</td>
                 </tr>
+                <tr>
+                  <td className={td}>DeepL SE (독일)</td>
+                  <td className={td}>게시판 글·댓글 번역 (방문자가 번역 버튼을 누를 때)</td>
+                  <td className={td}>번역할 글 제목·본문 또는 댓글 내용 (닉네임·계정 정보는 보내지 않음)</td>
+                  <td className={td}>독일 (EU)</td>
+                </tr>
               </tbody>
             </table>
           </div>

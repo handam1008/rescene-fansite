@@ -174,6 +174,12 @@ const ko = {
     errAlreadyReported: "이미 신고한 글이에요.",
     errReport: "신고하지 못했어요. 로그인 상태를 확인해 주세요.",
     reportedOk: "신고했어요. 운영자가 확인할게요.",
+    translate: "한국어로 번역",
+    showOriginal: "번역 접기",
+    translating: "번역 중…",
+    translatedBy: "DeepL 자동 번역이라 뜻이 조금 다를 수 있어요.",
+    trError: "번역하지 못했어요. 잠시 후 다시 시도해 주세요.",
+    trQuota: "이번 달 번역 한도를 다 썼어요. 다음 달에 다시 쓸 수 있어요.",
   },
 };
 
@@ -355,6 +361,12 @@ const ja: BoardMessages = {
     errAlreadyReported: "すでに通報した投稿です。",
     errReport: "通報できませんでした。ログイン状態を確認してください。",
     reportedOk: "通報しました。管理者が確認します。",
+    translate: "日本語に翻訳",
+    showOriginal: "翻訳を閉じる",
+    translating: "翻訳中…",
+    translatedBy: "DeepLによる自動翻訳のため、意味が少し異なる場合があります。",
+    trError: "翻訳できませんでした。しばらくしてからもう一度お試しください。",
+    trQuota: "今月の翻訳上限に達しました。来月またご利用いただけます。",
   },
 };
 
@@ -540,6 +552,12 @@ const en: BoardMessages = {
     errAlreadyReported: "You've already reported this post.",
     errReport: "Couldn't report. Please check that you're logged in.",
     reportedOk: "Reported. The admin will take a look.",
+    translate: "Translate to English",
+    showOriginal: "Hide translation",
+    translating: "Translating…",
+    translatedBy: "Automatically translated by DeepL; the meaning may differ slightly.",
+    trError: "Couldn't translate. Please try again in a moment.",
+    trQuota: "This month's translation limit has been reached. It resets next month.",
   },
 };
 
