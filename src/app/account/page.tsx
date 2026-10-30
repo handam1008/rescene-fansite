@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PROFILE_COLUMNS } from "@/lib/profile-columns";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DeleteAccountForm, NicknameForm } from "@/components/AccountForms";
@@ -29,7 +30,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const { setup, next } = await searchParams;
   const { locale, m } = await getI18n();
   const [{ data: profile }, { data: favRows }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", user.id).maybeSingle(),
     // 0012 SQL 전이면 비어 있음
     supabase.from("favorite_members").select("member_slug"),
   ]);

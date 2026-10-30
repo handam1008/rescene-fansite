@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PROFILE_COLUMNS } from "@/lib/profile-columns";
 import { redirect } from "next/navigation";
 import CardImage from "@/components/CardImage";
 import CatalogForm from "@/components/CatalogForm";
@@ -664,13 +665,13 @@ async function InquiriesSection() {
   const [{ data: open }, { data: done }] = await Promise.all([
     supabase
       .from("inquiries")
-      .select("*, profiles(*)")
+      .select(`*, profiles(${PROFILE_COLUMNS})`)
       .is("replied_at", null)
       .is("closed_at", null)
       .order("created_at", { ascending: true }),
     supabase
       .from("inquiries")
-      .select("*, profiles(*)")
+      .select(`*, profiles(${PROFILE_COLUMNS})`)
       .or("replied_at.not.is.null,closed_at.not.is.null")
       .order("created_at", { ascending: false })
       .limit(30),
