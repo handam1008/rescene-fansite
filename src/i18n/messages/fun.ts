@@ -1,4 +1,4 @@
-/** 나만의 리마인 카드 · 컴백 응원 롤링페이퍼 */
+/** 나만의 리마인 카드 · 컴백 응원 롤링페이퍼 · 홈 원클릭 투표 */
 
 const ko = {
   card: {
@@ -54,6 +54,14 @@ const ko = {
     homeLink: "💌 컴백 응원 롤링페이퍼",
     // 공유 미리보기 이미지
     ogInvite: "응원 한마디 남겨줘!",
+  },
+  poll: {
+    label: "원클릭 투표",
+    hint: "로그인 없이 눌러서 바로 참여! 다시 누르면 바꿀 수 있어요.",
+    count: "{n}명 참여",
+    mine: "내 선택",
+    error: "투표하지 못했어요. 잠시 후 다시 눌러 주세요.",
+    talk: "왜 골랐는지 게시판에 남겨주세요 →",
   },
 };
 
@@ -112,6 +120,14 @@ const ja: FunMessages = {
     homeLink: "💌 カムバック応援寄せ書き",
     ogInvite: "応援メッセージを書いてね！",
   },
+  poll: {
+    label: "ワンクリック投票",
+    hint: "ログインなしでタップするだけ！もう一度押すと変更できます。",
+    count: "{n}人が参加",
+    mine: "自分の選択",
+    error: "投票できませんでした。しばらくしてからもう一度押してください。",
+    talk: "選んだ理由を掲示板で教えてください →",
+  },
 };
 
 const en: FunMessages = {
@@ -166,6 +182,14 @@ const en: FunMessages = {
     errCreate: "Couldn't make your cheer board. Please try again in a moment.",
     homeLink: "💌 Comeback cheer board",
     ogInvite: "Leave a cheer!",
+  },
+  poll: {
+    label: "One-tap poll",
+    hint: "No login needed — just tap! Tap again to change your pick.",
+    count: "{n} {n|vote|votes}",
+    mine: "Your pick",
+    error: "Couldn't save your vote. Please try again in a moment.",
+    talk: "Tell us why on the board →",
   },
 };
 
