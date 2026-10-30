@@ -1,3 +1,4 @@
+import ShareButtons from "@/components/ShareButtons";
 import type { Metadata } from "next";
 import Countdown from "@/components/Countdown";
 import { EmptyState, PageHeader, SampleBadge } from "@/components/ui";
@@ -36,6 +37,7 @@ export default async function ComebackPage() {
   return (
     <>
       <PageHeader eyebrow="Comeback" title={m.comeback.title} description={m.comeback.desc} />
+      <ShareButtons text={`RESCENE ${comeback.albumTitle} · ${m.comeback.title}`} className="-mt-3 mb-5" />
 
       <div className="grid gap-5 md:grid-cols-5">
         <section className="card p-6 md:col-span-3">
