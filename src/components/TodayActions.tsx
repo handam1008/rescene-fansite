@@ -59,7 +59,7 @@ export default function TodayActions({ imageUrl, fileName, postText }: { imageUr
         </button>
       </div>
       <p className="text-xs text-ink-soft">{m.today.xHint}</p>
-      <pre className="border border-lilac-200 bg-white p-3 text-xs leading-relaxed whitespace-pre-wrap text-ink-soft">{postText}</pre>
+      <pre className="border border-lilac-200 bg-white p-3 text-xs leading-relaxed break-all whitespace-pre-wrap text-ink-soft">{postText}</pre>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import TodayActions from "@/components/TodayActions";
 import { PageHeader } from "@/components/ui";
 import { fmt } from "@/i18n/config";
@@ -37,6 +38,14 @@ export default async function TodayPage() {
       {/* eslint-disable-next-line @next/next/no-img-element -- 직접 만든 카드 이미지 */}
       <img src={imageUrl} alt={m.today.cardAlt} width={1080} height={1350} className="mb-4 h-auto w-full border border-lilac-200 bg-white" />
       <TodayActions imageUrl={imageUrl} fileName={`rescene-today-${card.dateKey}.png`} postText={lines.join("\n")} />
+      <div className="mt-6 grid gap-2 sm:grid-cols-2">
+        <Link href="/card" className="btn border border-lilac-300 bg-white py-2.5 text-center text-sm font-bold text-lilac-700 hover:bg-lilac-50">
+          {m.card.homeLink}
+        </Link>
+        <Link href="/cheer" className="btn border border-lilac-300 bg-white py-2.5 text-center text-sm font-bold text-lilac-700 hover:bg-lilac-50">
+          {m.cheer.homeLink}
+        </Link>
+      </div>
     </div>
   );
 }
