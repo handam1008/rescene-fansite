@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import Footer from "@/components/Footer";
@@ -85,6 +86,7 @@ export default async function RootLayout({
           <Footer />
           <ScrollTopButton />
         </I18nProvider>
+        <Analytics />
       </body>
     </html>
   );
