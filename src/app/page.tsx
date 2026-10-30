@@ -3,6 +3,7 @@ import Countdown from "@/components/Countdown";
 import HomeHero from "@/components/HomeHero";
 import PokedexNews from "@/components/PokedexNews";
 import PopularPosts from "@/components/PopularPosts";
+import QuickPoll from "@/components/QuickPoll";
 import UpcomingSchedule from "@/components/UpcomingSchedule";
 import YouTubeLite from "@/components/YouTubeLite";
 import { VoteStatusBadge } from "@/components/VoteCard";
@@ -40,6 +41,8 @@ export default async function HomePage() {
   return (
     <div className="space-y-8">
       <HomeHero />
+
+      <QuickPoll />
 
       {/* 공유해서 퍼지는 이벤트: 나만의 리마인 카드 · 컴백 응원 롤링페이퍼 */}
       <div className="grid gap-3 sm:grid-cols-2">
