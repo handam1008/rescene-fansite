@@ -131,7 +131,7 @@ export default async function PrivacyPage() {
                 </tr>
                 <tr>
                   <td className={td}>Vercel Inc. (미국)</td>
-                  <td className={td}>웹사이트 호스팅</td>
+                  <td className={td}>웹사이트 호스팅, 쿠키 없는 방문 통계(어느 페이지·어느 사이트에서 왔는지)</td>
                   <td className={td}>접속 기록(IP, 브라우저 정보), 요청에 담긴 로그인 쿠키</td>
                   <td className={td}>일본 (도쿄) 및 전 세계 전송망</td>
                 </tr>
