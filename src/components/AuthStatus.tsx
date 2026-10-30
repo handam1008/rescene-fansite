@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { PROFILE_COLUMNS } from "@/lib/profile-columns";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -36,9 +37,8 @@ export default function AuthStatus() {
         setOpenInquiries(0);
         return setNickname(null);
       }
-      // "*" : 관리자 컬럼(0003 SQL)이 없어도 동작하도록
       const [{ data }, { count }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+        supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", userId).maybeSingle(),
         // 안 읽은 댓글 알림 수 (0010 SQL 전이면 0)
         supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
       ]);

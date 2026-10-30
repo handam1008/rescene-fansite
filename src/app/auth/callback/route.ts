@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { PROFILE_COLUMNS } from "@/lib/profile-columns";
 import { afterLoginPath, safeNext } from "@/lib/auth-providers";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error && data.user) {
-      const { data: profile } = await supabase.from("profiles").select("*").eq("id", data.user.id).maybeSingle();
+      const { data: profile } = await supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", data.user.id).maybeSingle();
       const target = next ? safeNext(next) : "/?welcome=1";
       return NextResponse.redirect(`${origin}${afterLoginPath(target, profile?.nickname_set !== false)}`);
     }

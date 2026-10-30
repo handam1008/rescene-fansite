@@ -1,4 +1,5 @@
 import { members, type Member } from "@/data/members";
+import { PROFILE_COLUMNS } from "@/lib/profile-columns";
 import { contributorTitleFor, titleFor, titleName } from "@/data/titles";
 import type { Locale } from "@/i18n/config";
 import { dictionaries } from "@/i18n/messages";
@@ -26,7 +27,7 @@ export async function getCardData(p: CardParams, locale: Locale): Promise<CardDa
   let pioneer: number | undefined;
 
   if (p.u) {
-    const { data } = await createPublicClient().from("profiles").select("*").eq("id", p.u).maybeSingle();
+    const { data } = await createPublicClient().from("profiles").select(PROFILE_COLUMNS).eq("id", p.u).maybeSingle();
     if (data) {
       name = String(data.nickname ?? name);
       if (data.is_admin) badges.push(m.auth.admin);

@@ -6,16 +6,17 @@ import { cache } from "react";
 import { PROOF_BUCKET } from "@/lib/supabase/env";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
+import { PROFILE_COLUMNS } from "@/lib/profile-columns";
 import type { CatalogCard, CollectionEntry, Post, PostComment, PostSummary } from "@/types";
 
 export const POSTS_PER_PAGE = 20;
 
 export type BoardTab = "all" | "best";
 
-// "*" 로 읽는 이유: 새 컬럼(조회수·사진·멤버·칭호)용 SQL이 아직 실행 전이어도 게시판이 깨지지 않게
-const POST_SUMMARY_COLUMNS = "*, profiles(*), comments(count)";
+// 글은 "*" 로 읽음: 새 컬럼(조회수·사진·멤버·칭호)용 SQL이 아직 실행 전이어도 게시판이 깨지지 않게. 글쓴이는 공개 칸만 (0018)
+const POST_SUMMARY_COLUMNS = `*, profiles(${PROFILE_COLUMNS}), comments(count)`;
 /** 글쓴이가 운영자인지로 거를 때 (profiles 가 꼭 있어야 하는 inner join) */
-const POST_NOTICE_COLUMNS = "*, profiles!inner(*), comments(count)";
+const POST_NOTICE_COLUMNS = `*, profiles!inner(${PROFILE_COLUMNS}), comments(count)`;
 
 export { catalogImageUrl, postImageUrl } from "@/lib/storage-url";
 
@@ -120,10 +121,10 @@ export async function getPostPreview(id: number) {
 export async function getPost(id: number) {
   const supabase = await createClient();
   const [{ data: post }, { data: comments }, mine] = await Promise.all([
-    supabase.from("posts").select("*, profiles(*)").eq("id", id).maybeSingle(),
+    supabase.from("posts").select(`*, profiles(${PROFILE_COLUMNS})`).eq("id", id).maybeSingle(),
     supabase
       .from("comments")
-      .select("id, user_id, content, created_at, profiles(*)")
+      .select(`id, user_id, content, created_at, profiles(${PROFILE_COLUMNS})`)
       .eq("post_id", id)
       .order("created_at", { ascending: true }),
     getMyReaction(id),
@@ -156,7 +157,7 @@ export async function getModerationQueue(): Promise<ModerationPost[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("posts")
-    .select("*, profiles(*), post_reports(reason, detail)")
+    .select(`*, profiles(${PROFILE_COLUMNS}), post_reports(reason, detail)`)
     .or("hidden_at.not.is.null,report_count.gt.0")
     .order("created_at", { ascending: false })
     .limit(50);
@@ -291,7 +292,8 @@ export async function getAdminSummary() {
       count(supabase.from("posts").select("id", head).gt("report_count", 0).is("hidden_at", null)),
       count(supabase.from("posts").select("id", head).not("hidden_at", "is", null)),
       count(supabase.from("photocard_collections").select("id", head).eq("status", "pending")),
-      count(supabase.from("profiles").select("id", head).gt("banned_until", new Date().toISOString())),
+      // 이용 제한 정보는 운영자 함수로만 읽음 (0018)
+      supabase.rpc("admin_bans").then(({ data }) => (Array.isArray(data) ? data.length : 0)),
       count(supabase.from("photocard_catalog").select("id", head).not("image_path", "is", null)),
       // 0015 SQL 전이면 0
       count(supabase.from("inquiries").select("id", head).is("replied_at", null).is("closed_at", null)),
@@ -304,7 +306,7 @@ export async function getMostDislikedPosts(limit = 20): Promise<Post[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("posts")
-    .select("*, profiles(*)")
+    .select(`*, profiles(${PROFILE_COLUMNS})`)
     .gt("dislike_count", 0)
     .order("dislike_count", { ascending: false })
     .order("created_at", { ascending: false })
@@ -330,10 +332,21 @@ export type AdminMember = {
 /** 운영자: 회원 목록 (최근 가입 순 50명, 닉네임 검색) */
 export async function getMembersForAdmin(q: string): Promise<AdminMember[]> {
   const supabase = await createClient();
-  let query = supabase.from("profiles").select("*, posts(count), comments(count)");
+  let query = supabase.from("profiles").select(`${PROFILE_COLUMNS}, posts(count), comments(count)`);
   const search = cleanSearch(q);
   if (search) query = query.ilike("nickname", `%${search}%`);
-  const { data, error } = await query.order("created_at", { ascending: false }).limit(50);
+  // 이용 제한 기간·사유는 공개 칸이 아니라서 운영자 함수로 따로 가져와 붙임 (0018)
+  const [{ data, error }, { data: bans }] = await Promise.all([
+    query.order("created_at", { ascending: false }).limit(50),
+    supabase.rpc("admin_bans"),
+  ]);
   if (error) return [];
-  return (data ?? []) as unknown as AdminMember[];
+  const banOf = new Map(
+    ((bans ?? []) as { id: string; banned_until: string; ban_reason: string | null }[]).map((b) => [b.id, b]),
+  );
+  return ((data ?? []) as unknown as AdminMember[]).map((m) => ({
+    ...m,
+    banned_until: banOf.get(m.id)?.banned_until ?? null,
+    ban_reason: banOf.get(m.id)?.ban_reason ?? null,
+  }));
 }
