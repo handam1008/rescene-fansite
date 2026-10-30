@@ -38,6 +38,7 @@ export type ScheduleEvent = {
 
 /** 장소 번역 (한국어 장소 이름 그대로를 열쇠로) */
 export const placeI18n: Record<string, { ja: string; en: string }> = {
+  "유튜브 KBS Kpop": { ja: "YouTube KBS Kpop", en: "YouTube: KBS Kpop" },
   "각종 음원 사이트": { ja: "各音楽配信サイト", en: "Major streaming platforms" },
   "서울 고척스카이돔": { ja: "ソウル 高尺スカイドーム", en: "Gocheok Sky Dome, Seoul" },
   "일본 오사카 교세라 돔": { ja: "大阪 京セラドーム", en: "Kyocera Dome Osaka, Japan" },
@@ -140,6 +141,19 @@ export const schedule: ScheduleEvent[] = [
     important: true,
     place: "각종 음원 사이트",
     link: "https://www.mediapen.com/news/view/1132218",
+  },
+
+  // ── 방송 출연 ──
+  // 리센느 유튜브 커뮤니티 공지(2026-10-30): 리무진서비스 240회 리브 출연, 맛보기 쇼츠 2개
+  {
+    id: "2026-11-04-limousine-liv",
+    date: "2026-11-04T18:00:00+09:00",
+    title: "리무진서비스 240회 리브 출연",
+    i18n: { ja: "「イ・ムジンサービス」第240回 リブ出演", en: "LeeMujin Service Ep. 240 · Liv" },
+    type: "broadcast",
+    members: ["liv"],
+    place: "유튜브 KBS Kpop",
+    link: "https://www.youtube.com/shorts/yQWGzkM_bhA",
   },
 
   // ── 시상식 · 행사 (출연 확정 보도 기준) ──
