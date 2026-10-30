@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { isLocale, type Locale } from "@/i18n/config";
 import { dictionaries } from "@/i18n/messages";
+import { OG_BACKGROUND, ogFonts, Sparkle } from "@/lib/og-fonts";
 import { SITE_URL } from "@/lib/site-url";
 import { getTodayCard } from "@/lib/today";
 
@@ -15,23 +16,6 @@ const INK = "#3d3558";
 const INK_SOFT = "#6f6890";
 const LILAC = "#9b84d9";
 const LILAC_DEEP = "#6a55a8";
-
-// 한글은 Pretendard, 일본어는 Pretendard JP (이미지 생성기는 woff2 를 못 읽어서 otf)
-const KR = "https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/public/static/Pretendard-";
-const JP = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard-jp/dist/public/static/PretendardJP-";
-async function load(url: string) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`font ${res.status} ${url}`);
-  return res.arrayBuffer();
-}
-
-function Sparkle({ size, color }: { size: number; color: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24">
-      <path d="M12 0C13 7 17 11 24 12C17 13 13 17 12 24C11 17 7 13 0 12C7 11 11 7 12 0Z" fill={color} />
-    </svg>
-  );
-}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -52,8 +36,7 @@ export async function GET(request: Request) {
   const m = dictionaries[locale].today;
   const card = await getTodayCard(locale);
 
-  const fonts = await Promise.all([load(`${KR}Bold.otf`), load(`${KR}ExtraBold.otf`)]);
-  const jp = locale === "ja" ? await Promise.all([load(`${JP}Bold.otf`), load(`${JP}ExtraBold.otf`)]) : null;
+  const { fonts, fontFamily } = await ogFonts(locale);
 
   return new ImageResponse(
     (
@@ -64,11 +47,9 @@ export async function GET(request: Request) {
           display: "flex",
           flexDirection: "column",
           padding: "64px 72px",
-          fontFamily: jp ? "Pretendard, PretendardJP" : "Pretendard",
+          fontFamily,
           color: INK,
-          backgroundColor: "#f8f5ff",
-          backgroundImage:
-            "radial-gradient(circle at 0% 0%, #ffd3e4 0%, rgba(255,211,228,0) 45%), radial-gradient(circle at 100% 0%, #cbe6ff 0%, rgba(203,230,255,0) 45%), radial-gradient(circle at 100% 100%, #e0d4ff 0%, rgba(224,212,255,0) 55%)",
+          ...OG_BACKGROUND,
         }}
       >
         {/* 위: 제목 + 날짜 */}
@@ -150,16 +131,7 @@ export async function GET(request: Request) {
     {
       width: W,
       height: H,
-      fonts: [
-        { name: "Pretendard", data: fonts[0], weight: 700, style: "normal" },
-        { name: "Pretendard", data: fonts[1], weight: 800, style: "normal" },
-        ...(jp
-          ? [
-              { name: "PretendardJP", data: jp[0], weight: 700 as const, style: "normal" as const },
-              { name: "PretendardJP", data: jp[1], weight: 800 as const, style: "normal" as const },
-            ]
-          : []),
-      ],
+      fonts,
       // 10분마다 새로 (날짜·일정이 바뀌므로)
       headers: { "Cache-Control": "public, max-age=0, s-maxage=600, stale-while-revalidate=600" },
     },

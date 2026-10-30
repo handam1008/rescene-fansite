@@ -63,7 +63,7 @@ export default async function PrivacyPage() {
                   <td className={td}>사이트를 쓰는 동안</td>
                   <td className={td}>
                     내가 쓴 글·댓글·첨부 사진, 추천·비추천과 신고 기록, 포카 인증 사진과 도감 이미지 공개 동의 여부,
-                    운영자에게 보낸 문의와 답변, 가입·로그인 시각
+                    운영자에게 보낸 문의와 답변, 응원 롤링페이퍼에 남긴 응원, 가입·로그인 시각
                   </td>
                 </tr>
                 <tr>
