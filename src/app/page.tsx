@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Countdown from "@/components/Countdown";
 import HomeHero from "@/components/HomeHero";
 import PokedexNews from "@/components/PokedexNews";
@@ -59,6 +60,9 @@ export default async function HomePage() {
           )}
           <div className="mt-4">
             <MoreLink href="/comeback">{m.home.comebackMore}</MoreLink>
+            <Link href="/today" className="mt-2 block text-sm font-semibold text-lilac-700 hover:underline">
+              {m.today.homeLink} →
+            </Link>
           </div>
         </section>
 

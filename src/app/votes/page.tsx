@@ -1,3 +1,4 @@
+import ShareButtons from "@/components/ShareButtons";
 import type { Metadata } from "next";
 import VoteCard from "@/components/VoteCard";
 import { EmptyState, PageHeader } from "@/components/ui";
@@ -23,6 +24,7 @@ export default async function VotesPage() {
         title={m.votes.title}
         description={m.votes.desc}
       />
+      <ShareButtons text={m.votes.title + " · RESCENE"} className="-mt-3 mb-5" />
       {votes.length > 0 ? (
         <div className="grid gap-5 md:grid-cols-2">
           {votes.map((vote) => (

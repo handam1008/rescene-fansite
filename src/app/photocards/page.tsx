@@ -1,3 +1,4 @@
+import ShareButtons from "@/components/ShareButtons";
 import type { Metadata } from "next";
 import Link from "next/link";
 import CardImage from "@/components/CardImage";
@@ -167,6 +168,7 @@ export default async function PhotocardsPage({
         title={m.pokedex.title}
         description={m.pokedex.desc}
       />
+      <ShareButtons text={m.pokedex.title + " · RESCENE"} className="-mt-3 mb-5" />
 
       {/* 다 같이 채우는 도감 */}
       <section className="mb-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_300px]">

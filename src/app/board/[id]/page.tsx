@@ -6,6 +6,7 @@ import BanNotice from "@/components/BanNotice";
 import { CommentForm } from "@/components/BoardForms";
 import Nickname from "@/components/Nickname";
 import PostReactions from "@/components/PostReactions";
+import ShareButtons from "@/components/ShareButtons";
 import TranslateButton from "@/components/TranslateButton";
 import ViewCounter from "@/components/ViewCounter";
 import { SupabaseNotice } from "@/components/ui";
@@ -120,6 +121,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           {isTranslationEnabled && needsTranslation(`${post.title}\n${post.content}`, locale) && (
             <TranslateButton kind="post" id={post.id} />
           )}
+          <ShareButtons text={post.title} className="mt-6" />
         </div>
 
         <PostReactions

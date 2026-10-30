@@ -1,3 +1,4 @@
+import ShareButtons from "@/components/ShareButtons";
 import type { Metadata } from "next";
 import Link from "next/link";
 import ScheduleCalendar from "@/components/ScheduleCalendar";
@@ -40,6 +41,12 @@ export default async function SchedulePage({
   return (
     <>
       <PageHeader eyebrow="Schedule" title={m.schedule.title} description={m.schedule.desc} />
+      <div className="-mt-3 mb-5 flex flex-wrap items-center gap-2">
+        <ShareButtons text={m.schedule.title + " · RESCENE"} />
+        <Link href="/today" className="inline-flex items-center border border-lilac-500 bg-lilac-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-lilac-700">
+          {m.today.homeLink}
+        </Link>
+      </div>
 
       {/* 멤버 개인 일정은 생일 정도라 멤버별로 나누지 않고 한 번에 보여줌 (멤버 페이지에서는 그 멤버 일정만) */}
       <div className="mb-5 flex justify-end">
