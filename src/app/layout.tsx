@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import BottomNav from "@/components/BottomNav";
 import ScrollTopButton from "@/components/ScrollTopButton";
 import { LeftRail, RightRail } from "@/components/SideRails";
 import TopBar from "@/components/TopBar";
@@ -63,6 +64,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export const viewport: Viewport = {
   // 디스코드 미리보기 왼쪽 띠 색, 휴대폰 브라우저 주소창 색
   themeColor: "#9b84d9",
+  // 아이폰 아래 홈 막대 영역까지 화면을 쓰고, 아래 고정 메뉴가 그만큼 위로 올라오게 (safe-area-inset)
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({
@@ -73,7 +76,7 @@ export default async function RootLayout({
   const { locale, m } = await getI18n();
   return (
     <html lang={locale} className={`${maruBuri.variable} ${paperlogy.variable}`}>
-      <body className="flex min-h-dvh flex-col antialiased">
+      <body className="flex min-h-dvh flex-col pb-[calc(3.75rem+env(safe-area-inset-bottom))] antialiased sm:pb-0">
         <I18nProvider locale={locale} messages={m}>
           <TopBar />
           <Header />
@@ -85,6 +88,7 @@ export default async function RootLayout({
           </div>
           <Footer />
           <ScrollTopButton />
+          <BottomNav />
         </I18nProvider>
         <Analytics />
       </body>

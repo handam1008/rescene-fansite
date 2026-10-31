@@ -9,11 +9,11 @@ import { LiveStrip } from "./LiveStatus";
 import { useI18n } from "@/i18n/client";
 import type { Messages } from "@/i18n/messages";
 
-type NavLink = { label: string; href: string; desc?: string };
+export type NavLink = { label: string; href: string; desc?: string };
 type NavItem = NavLink | { label: string; children: NavLink[] };
 
 /** PC 에서는 컴백·신곡·투표·LIVE 를 "소식" 아래로 묶어 메뉴를 6개로 줄임 (휴대폰은 전부 펼쳐서 가로 스크롤) */
-function navItems(m: Messages): NavItem[] {
+export function navItems(m: Messages): NavItem[] {
   return [
     { label: m.nav.home, href: "/" },
     { label: m.nav.schedule, href: "/schedule" },
@@ -33,7 +33,7 @@ function navItems(m: Messages): NavItem[] {
   ];
 }
 
-const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+export const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
 export default function Header() {
   const pathname = usePathname();
@@ -87,11 +87,11 @@ export default function Header() {
         <AuthStatus />
       </div>
 
-      {/* 휴대폰·태블릿: 둘째 줄에 메뉴 전부 (가로로 밀어서 보기) */}
+      {/* 태블릿: 둘째 줄에 메뉴 전부 (가로로 밀어서 보기). 휴대폰은 화면 아래 고정 메뉴(BottomNav)를 씀 */}
       <nav
         ref={mobileNav}
         aria-label={m.nav.mainMenu}
-        className="no-scrollbar relative overflow-x-auto border-t border-lilac-100 xl:hidden">
+        className="no-scrollbar relative hidden overflow-x-auto border-t border-lilac-100 sm:block xl:hidden">
         <ul className="flex gap-1 px-2 whitespace-nowrap">
           {flatItems.map((item) => {
             const active = isActive(pathname, item.href);
