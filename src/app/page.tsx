@@ -17,6 +17,18 @@ import { albumLabel } from "@/lib/album";
 import { localizeComeback, localizeVote } from "@/lib/localize";
 import { getSchedule } from "@/lib/schedule";
 import { formatDate, formatDateTime } from "@/lib/format";
+import { SITE_URL } from "@/lib/site-url";
+
+/**
+ * 구글 검색 결과 위에 "Vercel" 대신 사이트 이름이 나오게 하는 정보 (구글 사이트 이름 구조화 데이터, 홈에만)
+ */
+const SITE_JSON_LD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "RESCENE 팬사이트",
+  alternateName: ["리센느 팬사이트", "RESCENE Fan Site", "리센느 비공식 팬사이트"],
+  url: `${SITE_URL}/`,
+});
 
 // 인기글·투표 상태가 시간에 따라 바뀌므로 5분마다 다시 생성
 export const revalidate = 300;
@@ -41,6 +53,8 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-8">
+      {/* 직접 만든 고정 JSON (사용자 입력 없음) */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SITE_JSON_LD }} />
       <HomeHero />
 
       {/* 들어오자마자 보이게: 실시간 대기 인원이 보이는 퀴즈 배틀 배너 */}
