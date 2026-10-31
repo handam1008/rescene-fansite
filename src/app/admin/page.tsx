@@ -67,6 +67,7 @@ const TABS = [
   { key: "pokedex", label: "포카 도감" },
   { key: "live", label: "라이브" },
   { key: "inquiries", label: "문의" },
+  { key: "quiz", label: "퀴즈" },
 ] as const;
 type AdminTab = (typeof TABS)[number]["key"];
 
@@ -107,6 +108,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {tab === "pokedex" && <PokedexSection />}
       {tab === "live" && <LiveSection />}
       {tab === "inquiries" && <InquiriesSection />}
+      {tab === "quiz" && <QuizSection />}
     </div>
   );
 }
@@ -765,5 +767,87 @@ function InquiryItem({ q }: { q: AdminInquiry }) {
         </form>
       </div>
     </li>
+  );
+}
+
+type QuizGameRow = {
+  id: number;
+  created_at: string;
+  name: string;
+  nickname: string | null;
+  mode: "duel" | "solo";
+  score: number;
+  ms: number;
+  opponent: string | null;
+  opponent_score: number | null;
+  result: "win" | "lose" | "draw" | "forfeit" | "unknown" | null;
+  locale: string | null;
+};
+
+const QUIZ_RESULT: Record<string, string> = { win: "🏆 승", lose: "패", draw: "무", forfeit: "🏆 부전승", unknown: "결과 모름" };
+const LOCALE_FLAG: Record<string, string> = { ko: "🇰🇷", ja: "🇯🇵", en: "🌐" };
+
+/** 퀴즈 배틀 대전 기록 (0021 SQL). 비회원 포함 최근 150판 */
+async function QuizSection() {
+  const supabase = await createClient();
+  const [{ data: statRows }, { data }] = await Promise.all([supabase.rpc("admin_quiz_stats"), supabase.rpc("admin_quiz_games", { p_limit: 150 })]);
+  const st = (Array.isArray(statRows) ? statRows[0] : null) as { today: number; total: number; duels: number; member_games: number; avg_score: number | null } | null;
+  const rows = (data ?? []) as QuizGameRow[];
+  const stats = [
+    { label: "오늘 판 수", value: st?.today ?? 0 },
+    { label: "전체 판 수", value: st?.total ?? 0 },
+    { label: "대결 판 수", value: st?.duels ?? 0 },
+    { label: "회원이 한 판", value: st?.member_games ?? 0 },
+    { label: "평균 점수", value: st?.avg_score ?? "-" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <section>
+        <h2 className={sectionTitle}>퀴즈 배틀 요약</h2>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {stats.map((x) => (
+            <div key={x.label} className="card p-3">
+              <p className="text-xs text-ink-soft">{x.label}</p>
+              <p className="text-xl font-extrabold tabular-nums">{x.value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section>
+        <h2 className={sectionTitle}>최근 대전 기록 (최근 150판)</h2>
+        <p className="mb-3 text-xs text-ink-soft">
+          비회원 판도 포함돼요. 대결은 두 사람이 각자 기록을 남겨서 한 대결이 두 줄로 보여요. 이름은 각자 정한 별명이고, 회원이면 옆에 닉네임이 붙어요.
+        </p>
+        {rows.length === 0 ? (
+          <EmptyState>아직 기록이 없어요.</EmptyState>
+        ) : (
+          <ul className="space-y-1.5">
+            {rows.map((r) => (
+              <li key={r.id} className="card flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm">
+                <span className="w-28 shrink-0 text-xs text-ink-soft tabular-nums">{formatFullDateTime(r.created_at).slice(5, 16)}</span>
+                <span className="min-w-0 font-semibold">
+                  {r.locale && <span className="mr-1">{LOCALE_FLAG[r.locale] ?? ""}</span>}
+                  {r.name}
+                  {r.nickname && <span className="ml-1 bg-lilac-100 px-1 text-xs text-lilac-700">회원 {r.nickname}</span>}
+                </span>
+                <span className="font-bold tabular-nums">
+                  {r.score}/10 · {(r.ms / 1000).toFixed(1)}초
+                </span>
+                {r.mode === "duel" ? (
+                  <span className="text-xs text-ink-soft">
+                    vs {r.opponent ?? "?"}
+                    {r.opponent_score !== null && ` (${r.opponent_score}/10)`} ·{" "}
+                    <span className={r.result === "win" || r.result === "forfeit" ? "font-bold text-lilac-700" : ""}>{QUIZ_RESULT[r.result ?? "unknown"]}</span>
+                  </span>
+                ) : (
+                  <span className="text-xs text-ink-soft">혼자 풀기</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
   );
 }

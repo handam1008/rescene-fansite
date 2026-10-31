@@ -60,6 +60,8 @@ export default function QuizBattle() {
   const [feedback, setFeedback] = useState<Answer | null>(null);
   /** 이번 판 기록을 랭킹에 남겼는지 (한 판에 한 번만) · 남긴 뒤 랭킹 새로고침용 */
   const submitted = useRef(false);
+  /** 운영자용 대전 기록을 남겼는지 (한 판에 한 번만, 비회원 포함) */
+  const logged = useRef(false);
   const [lbKey, setLbKey] = useState(0);
   /** 로그인한 회원 (랭킹은 회원만). undefined = 확인 중 */
   const [me, setMe] = useState<{ id: string; nickname: string } | null | undefined>(undefined);
@@ -132,6 +134,7 @@ export default function QuizBattle() {
 
   const resetGame = useCallback(() => {
     submitted.current = false;
+    logged.current = false;
     setSaved(false);
     setQi(0);
     setAnswers([]);
@@ -278,12 +281,41 @@ export default function QuizBattle() {
     },
     [answers.length, me, score, totalMs, solo],
   );
+  // 운영자 화면용 대전 기록 (0021 SQL). 비회원도 남김
+  const logGame = useCallback(
+    (result: "win" | "lose" | "draw" | "forfeit" | "unknown" | null) => {
+      if (logged.current || answers.length < QUESTION_COUNT) return;
+      logged.current = true;
+      createClient()
+        .rpc("log_quiz_game", {
+          p_name: displayName,
+          p_mode: solo ? "solo" : "duel",
+          p_score: score,
+          p_ms: totalMs,
+          p_opponent: solo ? null : (opponent?.name ?? null),
+          p_opponent_score: solo || !opp.finished ? null : opp.score,
+          p_result: solo ? null : result,
+          p_locale: locale,
+        })
+        .then(() => {});
+    },
+    [answers.length, displayName, solo, score, totalMs, opponent, opp, locale],
+  );
+  const finishRecords = useCallback(
+    (result: "win" | "lose" | "draw" | "forfeit" | "unknown" | null) => {
+      logGame(result);
+      submitScore(result === null || result === "unknown" ? null : result === "win" || result === "forfeit");
+    },
+    [logGame, submitScore],
+  );
   useEffect(() => {
     if (phase !== "done") return;
-    if (solo) submitScore(null);
-    else if (opp.finished) submitScore(score > opp.score || (score === opp.score && totalMs < opp.ms));
-    else if (oppLeft) submitScore(true);
-  }, [phase, solo, opp, oppLeft, score, totalMs, submitScore]);
+    if (solo) finishRecords(null);
+    else if (opp.finished) {
+      const result = score > opp.score || (score === opp.score && totalMs < opp.ms) ? "win" : score === opp.score && totalMs === opp.ms ? "draw" : "lose";
+      finishRecords(result);
+    } else if (oppLeft) finishRecords("forfeit");
+  }, [phase, solo, opp, oppLeft, score, totalMs, finishRecords]);
 
   // 시간 초과
   const remaining = Math.max(0, SECONDS_PER_QUESTION - (now - qStart) / 1000);
@@ -299,7 +331,7 @@ export default function QuizBattle() {
     } catch {}
   }
   function findMatch() {
-    if (phaseRef.current === "done") submitScore(null);
+    if (phaseRef.current === "done") finishRecords(solo ? null : "unknown");
     leaveRoom();
     resetGame();
     setOpponent(null);
@@ -312,7 +344,7 @@ export default function QuizBattle() {
     track("idle");
   }
   function playSolo() {
-    if (phaseRef.current === "done") submitScore(null);
+    if (phaseRef.current === "done") finishRecords(solo ? null : "unknown");
     leaveRoom();
     resetGame();
     setOpponent(null);
@@ -324,7 +356,7 @@ export default function QuizBattle() {
     track("idle");
   }
   function backToLobby() {
-    if (phaseRef.current === "done") submitScore(null);
+    if (phaseRef.current === "done") finishRecords(solo ? null : "unknown");
     leaveRoom();
     setOpponent(null);
     setPhase("lobby");
