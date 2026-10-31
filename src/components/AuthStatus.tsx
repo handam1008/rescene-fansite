@@ -24,6 +24,8 @@ export default function AuthStatus() {
   const [unread, setUnread] = useState(0);
   // 운영자: 답변 안 한 문의 수
   const [openInquiries, setOpenInquiries] = useState(0);
+  // 운영자: 승인 기다리는 포카 인증 수
+  const [pendingProofs, setPendingProofs] = useState(0);
   const [needsNickname, setNeedsNickname] = useState(false);
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export default function AuthStatus() {
         setIsAdmin(false);
         setUnread(0);
         setOpenInquiries(0);
+        setPendingProofs(0);
         return setNickname(null);
       }
       const [{ data }, { count }] = await Promise.all([
@@ -48,15 +51,16 @@ export default function AuthStatus() {
       setIsAdmin(data?.is_admin === true);
       setUnread(count ?? 0);
       if (data?.is_admin === true) {
-        // 0015 SQL 전이면 0
-        const { count: open } = await supabase
-          .from("inquiries")
-          .select("id", { count: "exact", head: true })
-          .is("replied_at", null)
-          .is("closed_at", null);
+        // 답변 안 한 문의 (0015 SQL 전이면 0) + 승인 기다리는 포카 인증
+        const [{ count: open }, { count: proofs }] = await Promise.all([
+          supabase.from("inquiries").select("id", { count: "exact", head: true }).is("replied_at", null).is("closed_at", null),
+          supabase.from("photocard_collections").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        ]);
         setOpenInquiries(open ?? 0);
+        setPendingProofs(proofs ?? 0);
       } else {
         setOpenInquiries(0);
+        setPendingProofs(0);
       }
     }
 
@@ -85,11 +89,13 @@ export default function AuthStatus() {
       {/* 운영자는 운영자 화면, 그 외 회원은 같은 자리에 문의 */}
       {isAdmin ? (
         <Action
-          href={openInquiries ? "/admin?tab=inquiries" : "/admin"}
+          href={openInquiries ? "/admin?tab=inquiries" : pendingProofs ? "/admin?tab=pokedex" : "/admin"}
           icon={<ShieldIcon />}
           label={m.auth.admin}
-          badge={openInquiries > 0 ? String(openInquiries) : undefined}
-          ariaLabel={openInquiries ? fmt(m.auth.adminAria, { n: openInquiries }) : undefined}
+          badge={openInquiries + pendingProofs > 0 ? String(openInquiries + pendingProofs) : undefined}
+          ariaLabel={
+            openInquiries + pendingProofs ? fmt(m.auth.adminAria, { n: openInquiries, p: pendingProofs }) : undefined
+          }
         />
       ) : (
         <Action href="/contact" icon={<MailIcon />} label={m.auth.contact} short={m.auth.contactShort} />
