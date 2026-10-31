@@ -45,11 +45,18 @@ export default async function HomePage() {
       <QuickPoll />
 
       {/* 컴백 응원 가이드 · 공유해서 퍼지는 이벤트(나만의 리마인 카드 · 컴백 응원 롤링페이퍼) */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Link href="/guide" className="card btn flex items-center justify-between gap-3 border-lilac-400 p-4 hover:bg-lilac-50">
           <span>
             <span className="block font-extrabold">{m.guide.homeLink}</span>
             <span className="mt-0.5 block text-xs text-ink-soft">{m.guide.homeDesc}</span>
+          </span>
+          <span aria-hidden className="text-lilac-500">→</span>
+        </Link>
+        <Link href="/battle" className="card btn flex items-center justify-between gap-3 p-4 hover:bg-lilac-50">
+          <span>
+            <span className="block font-extrabold">{m.battle.homeLink}</span>
+            <span className="mt-0.5 block text-xs text-ink-soft">{m.battle.homeDesc}</span>
           </span>
           <span aria-hidden className="text-lilac-500">→</span>
         </Link>

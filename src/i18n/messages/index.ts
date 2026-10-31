@@ -1,5 +1,6 @@
 import type { Locale } from "../config";
 import account from "./account";
+import battle from "./battle";
 import board from "./board";
 import contact from "./contact";
 import fun from "./fun";
@@ -15,7 +16,7 @@ import today from "./today";
  * ja·en 은 ko 와 같은 모양이어야 해서, 빠진 문구가 있으면 타입 검사에서 걸림.
  */
 function build(l: Locale) {
-  return { ...shell[l], ...home[l], ...pages[l], ...pokedex[l], ...board[l], ...account[l], ...contact[l], ...today[l], ...fun[l], ...guide[l] };
+  return { ...shell[l], ...home[l], ...pages[l], ...pokedex[l], ...board[l], ...account[l], ...contact[l], ...today[l], ...fun[l], ...guide[l], ...battle[l] };
 }
 
 export const dictionaries = { ko: build("ko"), ja: build("ja"), en: build("en") };
