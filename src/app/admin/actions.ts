@@ -56,6 +56,21 @@ export async function approveProof(formData: FormData) {
   revalidatePath("/");
 }
 
+/**
+ * 회원이 카드를 잘못 골라 올린 인증을 맞는 카드로 옮김 (예: 리센느빵 1탄 → 2탄). 승인 전에만.
+ * 그 회원이 옮길 카드를 이미 인증했으면 옮길 수 없어서 안내와 함께 돌아감
+ */
+export async function moveProof(formData: FormData) {
+  await requireAdmin();
+  const id = Number(formData.get("id"));
+  const cardId = Number(formData.get("cardId"));
+  if (!id || !cardId) return;
+  const supabase = await createClient();
+  const { error } = await supabase.from("photocard_collections").update({ card_id: cardId }).eq("id", id).eq("status", "pending");
+  revalidatePath("/admin");
+  if (error) redirect(`/admin?tab=pokedex&move=${error.code === "23505" ? "dup" : "fail"}`);
+}
+
 export async function rejectProof(formData: FormData) {
   await requireAdmin();
   const reason = String(formData.get("reason") ?? "").trim().slice(0, 200) || "사진으로 확인이 어려워요. 카드가 잘 보이게 다시 찍어주세요.";

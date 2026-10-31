@@ -28,6 +28,7 @@ import {
   addLiveLink,
   adminDeletePost,
   approveProof,
+  moveProof,
   banMember,
   clearReports,
   closeInquiry,
@@ -73,7 +74,7 @@ type AdminTab = (typeof TABS)[number]["key"];
 
 const sectionTitle = "mb-3 border-b-2 border-lilac-500 pb-1.5 font-bold";
 
-export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; q?: string }> }) {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; q?: string; move?: string }> }) {
   if (!isSupabaseConfigured) return <SupabaseNotice />;
 
   const user = await getCurrentUser();
@@ -82,7 +83,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     return <EmptyState>운영자만 들어올 수 있는 페이지예요.</EmptyState>;
   }
 
-  const { tab: rawTab, q } = await searchParams;
+  const { tab: rawTab, q, move } = await searchParams;
   const tab: AdminTab = TABS.find((t) => t.key === rawTab)?.key ?? "summary";
 
   return (
@@ -105,7 +106,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {tab === "summary" && <SummarySection />}
       {tab === "board" && <BoardSection />}
       {tab === "members" && <MembersSection q={q ?? ""} myId={user.id} />}
-      {tab === "pokedex" && <PokedexSection />}
+      {tab === "pokedex" && <PokedexSection move={move} />}
       {tab === "live" && <LiveSection />}
       {tab === "inquiries" && <InquiriesSection />}
       {tab === "quiz" && <QuizSection />}
@@ -372,10 +373,11 @@ async function MembersSection({ q, myId }: { q: string; myId: string }) {
 
 /* ───────── 포카 도감: 인증 확인, 카드 등록, 등록된 카드 ───────── */
 
-async function PokedexSection() {
+async function PokedexSection({ move }: { move?: string }) {
   const [pending, catalog] = await Promise.all([getPendingProofs(), getCatalog()]);
   const proofUrls = await proofImageUrls(pending.map((p) => p.photo_path));
   const albums = [...new Set([...KNOWN_ALBUMS, ...catalog.map((c) => c.album)])];
+  const catalogAlbums = [...new Set(catalog.map((c) => c.album))];
 
   return (
     <div className="space-y-10">
@@ -384,6 +386,13 @@ async function PokedexSection() {
         <h2 className="mb-3 border-b-2 border-lilac-500 pb-1.5 font-bold">
           인증 대기 <span className="text-lilac-500">{pending.length}</span>건
         </h2>
+        {move && (
+          <p className="mb-3 border border-blush-400 bg-blush-100 px-3 py-2 text-sm">
+            {move === "dup"
+              ? "그 회원은 옮기려는 카드를 이미 인증했어요. 이 인증은 반려하거나, 기존 인증을 먼저 정리해 주세요."
+              : "카드를 옮기지 못했어요. 이미 처리된 인증인지 확인해 주세요."}
+          </p>
+        )}
         {pending.length === 0 ? (
           <EmptyState>확인할 인증이 없어요.</EmptyState>
         ) : (
@@ -418,6 +427,27 @@ async function PokedexSection() {
                       {p.photocard_catalog.label && ` · ${p.photocard_catalog.label}`}
                     </p>
                   )}
+                  {/* 회원이 카드를 잘못 골랐으면 맞는 카드로 옮기기 */}
+                  <form action={moveProof} className="flex flex-wrap items-center gap-2 text-xs">
+                    <input type="hidden" name="id" value={p.id} />
+                    <select name="cardId" defaultValue={p.card_id} className="min-w-0 max-w-full flex-1 border border-lilac-200 bg-white px-2 py-1.5">
+                      {catalogAlbums.map((al) => (
+                        <optgroup key={al} label={al}>
+                          {catalog
+                            .filter((c) => c.album === al)
+                            .map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {pokedexMemberName(c.member)}
+                                {c.label ? ` · ${c.label}` : ""}
+                              </option>
+                            ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                    <button type="submit" className="border border-lilac-300 bg-white px-3 py-1.5 font-semibold text-lilac-700 hover:bg-lilac-50">
+                      카드 바꾸기
+                    </button>
+                  </form>
                   <p className="text-xs">
                     {p.share_image ? (
                       <span className="font-semibold text-lilac-700">✓ 도감 이미지 공개 동의</span>
