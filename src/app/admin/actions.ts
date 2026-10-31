@@ -71,6 +71,46 @@ export async function moveProof(formData: FormData) {
   if (error) redirect(`/admin?tab=pokedex&move=${error.code === "23505" ? "dup" : "fail"}`);
 }
 
+/**
+ * 도감 이미지를 다른 (비어 있는) 카드로 옮김: 잘못된 카드로 승인했을 때 (예: 리센느빵 1탄 → 2탄).
+ * 이미지·제공자·첫 제공자·채운 때를 그대로 옮기고 원래 카드는 빈 카드로 되돌림.
+ * 그 사진을 올린 회원의 인증(수집 기록)도 같은 카드로 옮김 (이미 그 카드를 인증했으면 그대로 둠)
+ */
+export async function moveCatalogImage(formData: FormData) {
+  await requireAdmin();
+  const fromId = Number(formData.get("id"));
+  const toId = Number(formData.get("toId"));
+  if (!fromId || !toId || fromId === toId) return;
+  const supabase = await createClient();
+  const [{ data: from }, { data: to }] = await Promise.all([
+    supabase.from("photocard_catalog").select("image_path, image_contributor, first_contributor, filled_at").eq("id", fromId).maybeSingle(),
+    supabase.from("photocard_catalog").select("image_path").eq("id", toId).maybeSingle(),
+  ]);
+  if (!from?.image_path || !to) redirect("/admin?tab=pokedex&move=fail");
+  if (to.image_path) redirect("/admin?tab=pokedex&move=imgfull");
+
+  const { error } = await supabase
+    .from("photocard_catalog")
+    .update({
+      image_path: from.image_path,
+      image_contributor: from.image_contributor,
+      first_contributor: from.first_contributor,
+      filled_at: from.filled_at,
+    })
+    .eq("id", toId);
+  if (error) redirect("/admin?tab=pokedex&move=fail");
+  await supabase
+    .from("photocard_catalog")
+    .update({ image_path: null, image_contributor: null, first_contributor: null, filled_at: null })
+    .eq("id", fromId);
+  if (from.image_contributor) {
+    await supabase.from("photocard_collections").update({ card_id: toId }).eq("card_id", fromId).eq("user_id", from.image_contributor);
+  }
+  revalidatePath("/admin");
+  revalidatePath("/photocards");
+  redirect("/admin?tab=pokedex&move=imgok");
+}
+
 export async function rejectProof(formData: FormData) {
   await requireAdmin();
   const reason = String(formData.get("reason") ?? "").trim().slice(0, 200) || "사진으로 확인이 어려워요. 카드가 잘 보이게 다시 찍어주세요.";
