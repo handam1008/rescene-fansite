@@ -8,6 +8,7 @@ import { fmt } from "@/i18n/config";
 import { BATTLE_LOBBY, buildQuiz, gradeIndex, latestMeta, newSeed, QUESTION_COUNT, SECONDS_PER_QUESTION } from "@/lib/quiz";
 import { buzz, isMuted, setMuted, sfx, unlockAudio } from "@/lib/sfx";
 import { createClient } from "@/lib/supabase/client";
+import QuizHallOfFame from "./QuizHallOfFame";
 import QuizLeaderboard from "./QuizLeaderboard";
 import ShareButtons from "./ShareButtons";
 import { buttonClass, inputClass } from "./ui";
@@ -585,6 +586,7 @@ export default function QuizBattle() {
         </section>
 
         <QuizLeaderboard refreshKey={lbKey} myUserId={me?.id} />
+        <QuizHallOfFame refreshKey={lbKey} myUserId={me?.id} />
       </div>
     );
   }
@@ -740,6 +742,7 @@ export default function QuizBattle() {
       </section>
 
       <QuizLeaderboard refreshKey={lbKey} myUserId={me?.id} />
+        <QuizHallOfFame refreshKey={lbKey} myUserId={me?.id} />
     </div>
   );
 }

@@ -119,6 +119,10 @@ export type Author = {
   /** 도감 첫 제공 장수와 기여 순위 (0006) */
   contributed_count?: number;
   contributor_rank?: number | null;
+  /** 퀴즈 배틀 이번 주 순위(1~3)와 그 주의 월요일, 명예의 전당 1등 여부 (0022) */
+  quiz_rank?: number | null;
+  quiz_rank_week?: string | null;
+  quiz_fame?: boolean;
 } | null;
 
 export type PostSummary = {

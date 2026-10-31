@@ -50,6 +50,7 @@ export default function QuizLeaderboard({ refreshKey = 0, myUserId }: { refreshK
         </ol>
       )}
       <p className="mt-3 text-xs text-ink-soft">{b.lbHint}</p>
+      <p className="mt-1 text-xs text-ink-soft">{b.lbTitles}</p>
     </section>
   );
 }

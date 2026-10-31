@@ -8,7 +8,7 @@ import type { ContributorRank } from "@/lib/community";
 import type { CatalogCard } from "@/types";
 import { MoreLink } from "./ui";
 
-/** 홈 화면: 다 같이 채우는 도감 진행률 · 최근 채워진 카드 · 랭킹 TOP3 */
+/** 홈 화면: 다 같이 채우는 도감 진행률 · 최근 채워진 카드 · 랭킹 TOP10 */
 export default async function PokedexNews({
   total,
   filled,

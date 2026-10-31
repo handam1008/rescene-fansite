@@ -29,7 +29,7 @@ export default async function HomePage() {
     getPopularPosts(5),
     getSchedule(),
     getPokedexNews(5),
-    getContributorRanking(3),
+    getContributorRanking(10),
   ]);
   const { m, locale } = await getI18n();
   const comeback = rawComeback && localizeComeback(rawComeback, locale);
