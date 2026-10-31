@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const pages: Page[] = [
     { path: "/", changeFrequency: "daily", priority: 1 },
     { path: "/schedule", changeFrequency: "daily", priority: 0.9 },
+    { path: "/guide", changeFrequency: "daily", priority: 0.9 },
     { path: "/comeback", changeFrequency: "weekly", priority: 0.9 },
     { path: "/votes", changeFrequency: "daily", priority: 0.8 },
     { path: "/live", changeFrequency: "daily", priority: 0.7 },
