@@ -105,7 +105,6 @@ export default function ProofForm({
         <input
           type="file"
           accept="image/*"
-          capture="environment"
           className="sr-only"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
