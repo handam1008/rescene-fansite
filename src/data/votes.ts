@@ -46,9 +46,11 @@ export const votes: Vote[] = [
   },
   {
     id: "mama2026-fans-choice-2",
-    i18n: { ja: {"category": "FANS' CHOICE 女性部門 2次", "steps": ["Mnet Plusアプリをインストールしてログインします。", "2026 MAMA AWARDS → FANS' CHOICE → 女性部門に入ります。", "RESCENEに投票します。", "Xで #2026MAMAVOTE と #RESCENE の両方のハッシュタグを入れて投稿すると追加投票になります。（公開アカウントにつき1日1回）"], "note": "Mnet Plus 90%＋X 10%の合算。RESCENEの2次進出は、1次の結果発表後にMnet Plusで確認してください。"}, en: {"category": "FANS' CHOICE Female, round 2", "steps": ["Install the Mnet Plus app and log in.", "Go to 2026 MAMA AWARDS → FANS' CHOICE → Female.", "Vote for RESCENE.", "On X, post with both #2026MAMAVOTE and #RESCENE for an extra vote. (Once a day per public account)"], "note": "Mnet Plus 90% + X 10%. Check Mnet Plus after the round 1 results to see whether RESCENE advanced to round 2."} },
+    i18n: { ja: {"category": "FANS' CHOICE 女性部門 2次", "steps": ["Mnet Plusアプリをインストールしてログインします。", "2026 MAMA AWARDS → FANS' CHOICE → 女性部門に入ります。", "RESCENEに投票します。", "Xで #2026MAMAVOTE と #RESCENE の両方のハッシュタグを入れて投稿すると追加投票になります。（公開アカウントにつき1日1回）"], "note": "Mnet Plus 90%＋X 10%の合算。RESCENEの2次進出は、1次の結果発表後にMnet Plusで確認してください。", "alert": "投票前の広告はスキップせず最後まで見てください！途中でスキップすると投票が反映されないことがあります。毎日投票できます。"}, en: {"category": "FANS' CHOICE Female, round 2", "steps": ["Install the Mnet Plus app and log in.", "Go to 2026 MAMA AWARDS → FANS' CHOICE → Female.", "Vote for RESCENE.", "On X, post with both #2026MAMAVOTE and #RESCENE for an extra vote. (Once a day per public account)"], "note": "Mnet Plus 90% + X 10%. Check Mnet Plus after the round 1 results to see whether RESCENE advanced to round 2.", "alert": "Watch the ad before voting all the way through — don't skip! Skipping may mean your vote isn't counted. You can vote every day."} },
     awardName: "2026 MAMA AWARDS",
     category: "FANS' CHOICE 여자 부문 2차",
+    // 게시판 제보(2026-10-31): 광고를 건너뛰면 투표가 안 들어간다는 점을 강조해 달라는 요청
+    alert: "투표 전에 나오는 광고는 건너뛰지 말고 끝까지 봐 주세요! 중간에 건너뛰면 투표가 반영되지 않을 수 있어요. 매일 투표할 수 있어요.",
     startDate: "2026-10-28T18:00:00+09:00",
     endDate: "2026-11-08T23:59:00+09:00",
     links: [

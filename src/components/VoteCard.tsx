@@ -30,6 +30,12 @@ export default async function VoteCard({ vote: raw }: { vote: VoteWithStatus }) 
       <h2 className="mt-2 text-lg font-bold">{vote.awardName}</h2>
       {vote.category && <p className="text-sm text-ink-soft">{vote.category}</p>}
 
+      {!ended && vote.alert && (
+        <p role="note" className="mt-3 border-2 border-blush-400 bg-blush-100 px-3 py-2 text-sm font-bold text-ink">
+          ⚠️ {vote.alert}
+        </p>
+      )}
+
       <p className="mt-3 bg-lilac-50 px-3 py-2 text-sm">
         <span className="font-semibold">{m.vote.period} </span>
         {formatDateTime(vote.startDate, locale)} ~ {formatDateTime(vote.endDate, locale)}

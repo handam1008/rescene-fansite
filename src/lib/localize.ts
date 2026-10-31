@@ -6,6 +6,8 @@ import type { Comeback, Vote } from "@/types";
 const LINK_LABELS: Record<string, Record<"ja" | "en", string>> = {
   멜론: { ja: "Melon", en: "Melon" },
   "X 해시태그 투표": { ja: "Xハッシュタグ投票", en: "X hashtag vote" },
+  "X 인증 헬퍼 (음원총공팀)": { ja: "X認証ヘルパー（音源総攻撃チーム）", en: "X verification helper (streaming team)" },
+  "연합 인증 헬퍼 (음원총공팀)": { ja: "連合認証ヘルパー（音源総攻撃チーム）", en: "Ally verification helper (streaming team)" },
 };
 
 /** 화면 언어에 맞춘 투표 정보 (번역이 없는 칸은 한국어 그대로) */
@@ -18,6 +20,7 @@ export function localizeVote<T extends Vote>(v: T, locale: Locale): T {
     category: t?.category ?? v.category,
     steps: t?.steps ?? v.steps,
     note: t?.note ?? v.note,
+    alert: t?.alert ?? v.alert,
     links: v.links.map((l) => ({ ...l, label: LINK_LABELS[l.label]?.[locale] ?? l.label })),
   };
 }
