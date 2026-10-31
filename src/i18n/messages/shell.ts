@@ -9,6 +9,10 @@ const ko = {
   nav: {
     mainMenu: "주요 메뉴",
     logoSuffix: "팬사이트",
+    menu: "전체",
+    menuTitle: "전체 메뉴",
+    closeMenu: "메뉴 닫기",
+    guideShort: "응원",
     home: "홈",
     schedule: "일정",
     favorite: "최애",
@@ -118,6 +122,10 @@ const ja: ShellMessages = {
   nav: {
     mainMenu: "メインメニュー",
     logoSuffix: "ファンサイト",
+    menu: "メニュー",
+    menuTitle: "すべてのメニュー",
+    closeMenu: "メニューを閉じる",
+    guideShort: "応援",
     home: "ホーム",
     schedule: "日程",
     favorite: "推し",
@@ -225,6 +233,10 @@ const en: ShellMessages = {
   nav: {
     mainMenu: "Main menu",
     logoSuffix: "Fan Site",
+    menu: "Menu",
+    menuTitle: "All pages",
+    closeMenu: "Close menu",
+    guideShort: "Guide",
     home: "Home",
     schedule: "Schedule",
     favorite: "Bias",

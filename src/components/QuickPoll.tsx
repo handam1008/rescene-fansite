@@ -89,35 +89,40 @@ export default function QuickPoll() {
       <h2 className="mt-1 text-lg font-extrabold">{quickPoll.question[locale]}</h2>
       <p className="mt-0.5 text-xs text-ink-soft">{m.poll.hint}</p>
 
-      <ul className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-        {quickPoll.options.map((o) => {
+      <ul className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-5">
+        {quickPoll.options.map((o, i) => {
           const n = counts.get(o.key) ?? 0;
           const pct = total ? Math.round((n / total) * 100) : 0;
           const picked = mine === o.key;
           return (
-            <li key={o.key}>
+            <li key={o.key} className={i === quickPoll.options.length - 1 && i % 2 === 0 ? "col-span-2 lg:col-span-1" : undefined}>
               <button
                 type="button"
                 onClick={() => vote(o.key)}
                 disabled={pending}
                 aria-pressed={picked}
-                className={`relative w-full overflow-hidden border-2 px-3 py-2.5 text-left text-sm font-bold transition ${
+                className={`relative w-full overflow-hidden border-2 px-2.5 py-2.5 text-left text-[13px] font-bold transition sm:px-3 sm:text-sm ${
                   picked ? "border-lilac-500 bg-white" : "border-lilac-200 bg-white hover:border-lilac-400"
                 } disabled:opacity-70`}
               >
                 {showResults && (
                   <span aria-hidden className="absolute inset-y-0 left-0 bg-lilac-100 transition-[width] duration-500" style={{ width: `${pct}%` }} />
                 )}
-                <span className="relative flex items-center justify-between gap-2">
-                  <span>
+                {/* 휴대폰은 두 칸씩이라 좁아서 보기 이름 아래 줄에 %·내 선택 표시, 넓은 화면은 한 줄 */}
+                <span className="relative flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                  <span className="whitespace-nowrap">
                     {o.emoji} {o.label[locale]}
-                    {picked && (
-                      <span className="ml-1 text-lilac-700">
-                        ✓<span className="sr-only">{m.poll.mine}</span>
-                      </span>
-                    )}
                   </span>
-                  {showResults && <span className="tabular-nums text-ink-soft">{pct}%</span>}
+                  {(showResults || picked) && (
+                    <span className="tabular-nums text-ink-soft">
+                      {picked && (
+                        <span className="mr-1 text-lilac-700">
+                          ✓<span className="sr-only">{m.poll.mine}</span>
+                        </span>
+                      )}
+                      {showResults && `${pct}%`}
+                    </span>
+                  )}
                 </span>
               </button>
             </li>
