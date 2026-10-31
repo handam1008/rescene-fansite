@@ -147,6 +147,7 @@ export default async function HomePage() {
                   </div>
                   <p className="mt-1.5 text-sm font-semibold">{vote.awardName}</p>
                   <p className="text-xs text-ink-soft">{fmt(m.home.voteEnds, { date: formatDateTime(vote.endDate, locale) })}</p>
+                  {vote.alert && <p className="mt-1.5 text-xs font-bold text-red-600">⚠️ {vote.alert}</p>}
                 </li>
               ))}
             </ul>

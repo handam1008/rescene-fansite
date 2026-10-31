@@ -89,10 +89,12 @@ export type Vote = SampleFlag & {
   /** 투표 방법을 순서대로 */
   steps: string[];
   note?: string;
+  /** 꼭 지켜야 할 주의 사항 (카드 맨 위에 크게 표시. 예: 광고는 끝까지 보기) */
+  alert?: string;
   /** 연합: 리센느 팬덤이 다른 팬덤과 서로 표를 주기로 한 부문 (총공팀 공지 기준) */
   allies?: VoteAlly[];
   /** 일본어·영어 (없는 칸은 한국어 그대로) */
-  i18n?: Partial<Record<"ja" | "en", { awardName?: string; category?: string; steps?: string[]; note?: string }>>;
+  i18n?: Partial<Record<"ja" | "en", { awardName?: string; category?: string; steps?: string[]; note?: string; alert?: string }>>;
 };
 
 export type VoteAlly = {
