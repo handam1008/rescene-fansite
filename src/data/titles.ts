@@ -40,6 +40,35 @@ export function contributorTitleFor(rank: number | null | undefined, count: numb
   );
 }
 
+/**
+ * 퀴즈 배틀 칭호 (0022 SQL). 이번 주 1·2·3등은 그 주에만 보이고(월요일 0시 한국 시간에 바뀜),
+ * 명예의 전당 1등(역대 최고 기록)은 누가 기록을 깰 때까지 계속 보임
+ */
+export const quizFameTitle: ContributorTitle = {
+  name: "🏛️ 퀴즈 명예의 전당",
+  ja: "🏛️ クイズ殿堂入り",
+  en: "🏛️ Quiz Hall of Fame",
+  className: "bg-gradient-to-r from-amber-400 to-lilac-500 text-white",
+};
+
+const quizWeekTitles: ContributorTitle[] = [
+  { name: "🥇 이번 주 퀴즈왕", ja: "🥇 今週のクイズ王", en: "🥇 Quiz King this week", className: "bg-amber-400 text-white" },
+  { name: "🥈 퀴즈 2위", ja: "🥈 クイズ2位", en: "🥈 Quiz #2", className: "bg-slate-300 text-ink" },
+  { name: "🥉 퀴즈 3위", ja: "🥉 クイズ3位", en: "🥉 Quiz #3", className: "bg-orange-200 text-orange-800" },
+];
+
+/** 이번 주 월요일 (한국 시간) "YYYY-MM-DD" */
+export function kstWeekStart(now: Date = new Date()) {
+  const kst = new Date(now.getTime() + 9 * 3600_000);
+  const day = (kst.getUTCDay() + 6) % 7; // 월요일 0
+  return new Date(Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate() - day)).toISOString().slice(0, 10);
+}
+
+export function quizWeekTitleFor(rank: number | null | undefined, week: string | null | undefined): ContributorTitle | undefined {
+  if (!rank || rank > 3 || week !== kstWeekStart()) return undefined;
+  return quizWeekTitles[rank - 1];
+}
+
 /** 다음 칭호까지 남은 장수 (최고 단계면 undefined) */
 export function nextTitle(count: number) {
   const next = [...titles].reverse().find((t) => count < t.min);

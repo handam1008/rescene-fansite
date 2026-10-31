@@ -29,7 +29,7 @@ const ko = {
     noFilledLink: "첫 번째로 채워주세요",
     noFilledAfter: "!",
     filledBy: "🎉 {name}님이 채움",
-    rankingTitle: "🏆 개척 랭킹 TOP3",
+    rankingTitle: "🏆 개척 랭킹 TOP10",
   },
   countdown: {
     done: "컴백 완료! 🎉",
@@ -113,7 +113,7 @@ const ja: HomeMessages = {
     noFilledLink: "最初に埋めてください",
     noFilledAfter: "！",
     filledBy: "🎉 {name}さんが登録",
-    rankingTitle: "🏆 開拓ランキング TOP3",
+    rankingTitle: "🏆 開拓ランキング TOP10",
   },
   countdown: {
     done: "カムバック完了！🎉",
@@ -195,7 +195,7 @@ const en: HomeMessages = {
     noFilledLink: "be the first to fill one",
     noFilledAfter: "!",
     filledBy: "🎉 Filled by {name}",
-    rankingTitle: "🏆 Top 3 pioneers",
+    rankingTitle: "🏆 Top 10 pioneers",
   },
   countdown: {
     done: "Comeback is here! 🎉",
