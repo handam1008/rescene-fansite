@@ -24,18 +24,25 @@ export const votes: Vote[] = [
   },
   {
     id: "mma2026-category",
-    i18n: { ja: {"awardName": "MMA 2026（メロンミュージックアワード）", "category": "部門別投票", "steps": ["Melonアプリ → MMAタブに入ります。", "部門別投票で、RESCENEがノミネートされた部門を選びます。", "RESCENEを選んで投票します。"], "note": "報道に基づく日程です。RESCENEがノミネートされた部門は、投票開始後にMelonのお知らせで確認してください。"}, en: {"awardName": "MMA 2026 (Melon Music Awards)", "category": "Category votes", "steps": ["Melon app → open the MMA tab.", "In category voting, pick the categories RESCENE is nominated in.", "Choose RESCENE and vote."], "note": "Dates are based on press reports. Once voting opens, check Melon's notice for the categories RESCENE is nominated in."} },
+    i18n: { ja: {"awardName": "MMA 2026（メロンミュージックアワード）", "category": "部門別投票", "steps": ["Melonアプリ → MMAタブ → 部門別投票に入ります。", "必須の3部門すべてに投票します：グローバルTOP10はRESCENE、残り2部門は下の連合チームへ。", "Melonの投票履歴をキャプチャして、連合認証ヘルパーで認証します。"], "note": "RESCENE音源総攻撃チーム（@ResceneStream）のお知らせに基づきます。連合は変わることがあるので、投票前にヘルパーサイトを確認してください。"}, en: {"awardName": "MMA 2026 (Melon Music Awards)", "category": "Category votes", "steps": ["Melon app → MMA tab → category voting.", "Vote in all 3 required categories: RESCENE for Global TOP10, and the ally teams below for the other two.", "Screenshot your Melon voting history and submit it on the ally verification helper."], "note": "Based on the RESCENE streaming team (@ResceneStream) notice. Allies can change, so check the helper site before voting."} },
     awardName: "MMA 2026 (멜론뮤직어워드)",
     category: "부문별 투표",
     startDate: "2026-10-30T00:00:00+09:00",
     endDate: "2026-11-13T23:59:00+09:00",
-    links: [{ label: "멜론", url: "https://www.melon.com/" }],
-    steps: [
-      "멜론 앱 → MMA 탭으로 들어가요.",
-      "부문별 투표에서 리센느가 후보로 오른 부문을 골라요.",
-      "RESCENE(리센느)를 선택해 투표해요.",
+    links: [
+      { label: "멜론", url: "https://www.melon.com/" },
+      { label: "연합 인증 헬퍼 (음원총공팀)", url: "https://rescene-team.github.io/mama-vote/" },
     ],
-    note: "보도 기준 일정이에요. 리센느가 오른 부문은 투표가 열리면 멜론 공지로 확인해 주세요.",
+    steps: [
+      "멜론 앱 → MMA 탭 → 부문별 투표로 들어가요.",
+      "필수 3개 부문을 모두 투표해요: 글로벌 TOP10은 RESCENE(리센느), 나머지 두 부문은 아래 연합 팀에게.",
+      "멜론 투표 이력을 캡처해서 연합 인증 헬퍼에서 인증해요.",
+    ],
+    note: "리센느 음원총공팀(@ResceneStream) 공지 기준이에요. 연합은 바뀔 수 있으니 투표 전에 헬퍼 사이트를 확인해 주세요.",
+    allies: [
+      { category: "올해의 신인", team: "알파드라이브원", hashtag: "#리마인_앨리즈_함께달려", i18n: { ja: "今年の新人", en: "New Artist of the Year" } },
+      { category: "올해의 베스트송", team: "코르티스 'RED RED'", i18n: { ja: "今年のベストソング", en: "Best Song of the Year" } },
+    ],
   },
   {
     id: "mama2026-fans-choice-2",
@@ -46,8 +53,9 @@ export const votes: Vote[] = [
     endDate: "2026-11-08T23:59:00+09:00",
     links: [
       { label: "Mnet Plus", url: "https://www.mnetplus.world/" },
-      { label: "X 해시태그 투표", url: "https://x.com/" },
+      { label: "X 인증 헬퍼 (음원총공팀)", url: "https://rescene-team.github.io/mama-vote/" },
     ],
+    allies: [{ category: "연합 팀 투표", team: "앤더블 (AND2BLE)", hashtag: "#리마인과_앤클로의_HappyBloom", i18n: { ja: "連合チームへの投票", en: "Ally team vote" } }],
     steps: [
       "Mnet Plus 앱을 설치하고 로그인해요.",
       "2026 MAMA AWARDS → FANS' CHOICE → 여자 부문으로 들어가요.",
