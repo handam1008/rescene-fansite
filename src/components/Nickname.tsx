@@ -1,32 +1,18 @@
-import { contributorTitleFor, quizFameTitle, quizWeekTitleFor, titleFor, titleName } from "@/data/titles";
 import { getI18n } from "@/i18n/server";
 import type { Author } from "@/types";
+import TitleBadges from "./TitleBadges";
 
-/** 닉네임 + 운영자 표시 + 퀴즈 칭호(명예의 전당·이번 주 순위) + 도감 기여 칭호 + 포카 수집 칭호 */
+/** 닉네임 + 운영자 표시 + 칭호(퀴즈·도감 기여·포카 수집) */
 export default async function Nickname({ author, className = "" }: { author: Author; className?: string }) {
   const { m, locale } = await getI18n();
   if (!author) return <span className={className}>{m.home.unknownUser}</span>;
-  const title = titleFor(author.collected_count);
-  const contributor = contributorTitleFor(author.contributor_rank, author.contributed_count);
-  const quizWeek = quizWeekTitleFor(author.quiz_rank, author.quiz_rank_week);
-  const quiz = [author.quiz_fame ? quizFameTitle : undefined, quizWeek].filter((t) => t !== undefined);
 
   return (
     <span className={`inline-flex min-w-0 items-center gap-1 ${className}`}>
       {author.is_admin && (
         <span className="shrink-0 bg-ink px-1 text-[10px] leading-4 font-bold text-white">{m.auth.admin}</span>
       )}
-      {quiz.map((t) => (
-        <span key={t.name} className={`shrink-0 px-1 text-[10px] leading-4 font-bold ${t.className}`}>
-          {titleName(t, locale)}
-        </span>
-      ))}
-      {contributor && (
-        <span className={`shrink-0 px-1 text-[10px] leading-4 font-bold ${contributor.className}`}>{titleName(contributor, locale)}</span>
-      )}
-      {title && (
-        <span className={`shrink-0 px-1 text-[10px] leading-4 font-bold ${title.className}`}>{titleName(title, locale)}</span>
-      )}
+      <TitleBadges author={author} locale={locale} />
       <span className="truncate">{author.nickname}</span>
     </span>
   );
