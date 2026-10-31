@@ -43,6 +43,8 @@ const ko = {
     upcoming: "예정",
     ended: "종료",
     period: "투표 기간",
+    allies: "🤝 연합 투표",
+    alliesHint: "리센느 팬들이 다른 팬덤과 서로 표를 주기로 약속한 부문이에요. 이 팀에게 투표하면 상대 팬덤도 리센느에게 투표해 줘요.",
   },
   schedule: {
     title: "일정",
@@ -125,6 +127,8 @@ const ja: HomeMessages = {
     upcoming: "予定",
     ended: "終了",
     period: "投票期間",
+    allies: "🤝 連合投票",
+    alliesHint: "REMINEが他のファンダムとお互いに投票し合う約束をした部門です。このチームに投票すると、相手のファンダムもRESCENEに投票してくれます。",
   },
   schedule: {
     title: "スケジュール",
@@ -205,6 +209,8 @@ const en: HomeMessages = {
     upcoming: "Upcoming",
     ended: "Closed",
     period: "Voting period",
+    allies: "🤝 Ally votes",
+    alliesHint: "Categories where REMINE agreed to swap votes with other fandoms. Vote for these teams, and their fans vote for RESCENE in return.",
   },
   schedule: {
     title: "Schedule",

@@ -50,6 +50,21 @@ export default async function VoteCard({ vote: raw }: { vote: VoteWithStatus }) 
 
       {vote.note && <p className="mt-3 text-xs text-ink-soft">※ {vote.note}</p>}
 
+      {!ended && vote.allies && vote.allies.length > 0 && (
+        <div className="mt-4 border border-lilac-200 bg-lilac-50 p-3">
+          <p className="text-sm font-bold">{m.vote.allies}</p>
+          <ul className="mt-2 space-y-1.5 text-sm">
+            {vote.allies.map((a) => (
+              <li key={a.category + a.team}>
+                <span className="text-ink-soft">{(locale !== "ko" && a.i18n?.[locale]) || a.category}</span> → <span className="font-semibold">{a.team}</span>
+                {a.hashtag && <span className="ml-1.5 text-xs break-all text-lilac-700">{a.hashtag}</span>}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-ink-soft">{m.vote.alliesHint}</p>
+        </div>
+      )}
+
       {!ended && vote.links.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
           {vote.links.map((link) => (
