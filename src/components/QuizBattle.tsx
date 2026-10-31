@@ -22,6 +22,8 @@ import { buttonClass, inputClass } from "./ui";
 
 const START_DELAY = 3000;
 const FEEDBACK_MS = 900;
+/** 이 시간 동안 사람이 없으면 AI 와 대결 */
+const AI_WAIT_MS = 8000;
 
 type Phase = "lobby" | "searching" | "matched" | "playing" | "done";
 type Person = { id: string; name: string; state: "idle" | "waiting" | "playing"; since: number };
@@ -51,6 +53,10 @@ export default function QuizBattle() {
   const [solo, setSolo] = useState(false);
   const [seed, setSeed] = useState(0);
   const [opponent, setOpponent] = useState<Opponent | null>(null);
+  /** AI 상대와 대결 중인지 (AI 는 각자 화면에서만 움직임, 승수에는 안 셈) */
+  const [vsBot, setVsBot] = useState(false);
+  const botTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [searchSince, setSearchSince] = useState(0);
   const [opp, setOpp] = useState<Progress>({ done: 0, score: 0, ms: 0, finished: false });
   const [oppLeft, setOppLeft] = useState(false);
   const [startAt, setStartAt] = useState(0);
@@ -137,7 +143,14 @@ export default function QuizBattle() {
     room.current = null;
   }, []);
 
+  const clearBot = useCallback(() => {
+    botTimers.current.forEach(clearTimeout);
+    botTimers.current = [];
+  }, []);
+
   const resetGame = useCallback(() => {
+    clearBot();
+    setVsBot(false);
     submitted.current = false;
     logged.current = false;
     resultPlayed.current = false;
@@ -148,7 +161,7 @@ export default function QuizBattle() {
     setOpp({ done: 0, score: 0, ms: 0, finished: false });
     setOppLeft(false);
     setStartAt(0);
-  }, []);
+  }, [clearBot]);
 
   // ── 방 입장: 두 사람이 다 들어오면 먼저 온 사람(host)이 시작 신호 ──
   const enterRoom = useCallback(
@@ -219,6 +232,42 @@ export default function QuizBattle() {
     };
   }, [enterRoom, b.nicknamePlaceholder]);
 
+  // ── AI 상대: 기다려도 사람이 없으면. 문제당 2.5~9.5초 고민하고, 판마다 정답률 55~80% ──
+  const startBot = useCallback(() => {
+    resetGame();
+    setSolo(false);
+    setVsBot(true);
+    setSeed(newSeed());
+    setOpponent({ id: "bot", name: b.aiName });
+    setPhase("matched");
+    sfx.match();
+    buzz([120, 60, 120]);
+    track("playing");
+    const start = Date.now() + START_DELAY;
+    setStartAt(start);
+    const accuracy = 0.55 + Math.random() * 0.25;
+    let at = START_DELAY;
+    let score = 0;
+    let ms = 0;
+    for (let i = 0; i < QUESTION_COUNT; i++) {
+      const think = Math.min(2500 + Math.random() * 7000, SECONDS_PER_QUESTION * 1000 - 500);
+      at += think;
+      ms += think;
+      if (Math.random() < accuracy) score++;
+      const snapshot = { done: i + 1, score, ms: Math.round(ms), finished: i === QUESTION_COUNT - 1 };
+      botTimers.current.push(setTimeout(() => setOpp(snapshot), at));
+      at += FEEDBACK_MS;
+    }
+  }, [resetGame, setPhase, track, b.aiName]);
+
+  useEffect(() => {
+    if (phase !== "searching") return;
+    const t = setTimeout(() => {
+      if (phaseRef.current === "searching") startBot();
+    }, AI_WAIT_MS);
+    return () => clearTimeout(t);
+  }, [phase, searchSince, startBot]);
+
   // 대기 중일 때: 대기열에서 내 짝이 생기면 (내가 먼저 온 쪽이면) 방을 만듦
   const waiting = useMemo(
     () => people.filter((p) => p.state === "waiting").sort((a, c) => a.since - c.since || a.id.localeCompare(c.id)),
@@ -241,7 +290,7 @@ export default function QuizBattle() {
 
   // ── 시계 (카운트다운·문제 타이머) ──
   useEffect(() => {
-    if (phase !== "matched" && phase !== "playing") return;
+    if (phase !== "matched" && phase !== "playing" && phase !== "searching") return;
     const t = setInterval(() => setNow(Date.now()), 200);
     return () => clearInterval(t);
   }, [phase]);
@@ -324,21 +373,22 @@ export default function QuizBattle() {
           p_mode: solo ? "solo" : "duel",
           p_score: score,
           p_ms: totalMs,
-          p_opponent: solo ? null : (opponent?.name ?? null),
+          p_opponent: solo ? null : vsBot ? "🤖 AI" : (opponent?.name ?? null),
           p_opponent_score: solo || !opp.finished ? null : opp.score,
           p_result: solo ? null : result,
           p_locale: locale,
         })
         .then(() => {});
     },
-    [answers.length, displayName, solo, score, totalMs, opponent, opp, locale],
+    [answers.length, displayName, solo, score, totalMs, opponent, opp, locale, vsBot],
   );
   const finishRecords = useCallback(
     (result: "win" | "lose" | "draw" | "forfeit" | "unknown" | null) => {
       logGame(result);
-      submitScore(result === null || result === "unknown" ? null : result === "win" || result === "forfeit");
+      // AI 와 한 판은 점수는 남기되 승수에는 안 셈
+      submitScore(vsBot || result === null || result === "unknown" ? null : result === "win" || result === "forfeit");
     },
-    [logGame, submitScore],
+    [logGame, submitScore, vsBot],
   );
   useEffect(() => {
     if (phase !== "done") return;
@@ -411,6 +461,8 @@ export default function QuizBattle() {
     resetGame();
     setOpponent(null);
     setSolo(false);
+    setSearchSince(Date.now());
+    setNow(Date.now());
     setPhase("searching");
     track("waiting");
   }
@@ -433,6 +485,7 @@ export default function QuizBattle() {
   }
   function backToLobby() {
     if (phaseRef.current === "done") finishRecords(solo ? null : "unknown");
+    clearBot();
     leaveRoom();
     setOpponent(null);
     setPhase("lobby");
@@ -505,7 +558,7 @@ export default function QuizBattle() {
           {phase === "searching" && (
             <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-lilac-700">
               <span className="inline-block h-2.5 w-2.5 animate-pulse bg-lilac-500" aria-hidden />
-              {b.searching}
+              {fmt(b.aiSearching, { n: Math.max(0, Math.ceil((searchSince + AI_WAIT_MS - now) / 1000)) })}
             </p>
           )}
           {status === "connecting" && <p className="mt-3 text-sm text-ink-soft">{b.connecting}</p>}
@@ -517,18 +570,18 @@ export default function QuizBattle() {
             <h2 className="font-bold">⏳ {b.waitingTitle} · {waiting.length}</h2>
             {status === "ok" && <span className="text-xs text-ink-soft">{fmt(b.online, { n: others })}</span>}
           </div>
-          {waiting.length === 0 ? (
-            <p className="mt-3 text-sm text-ink-soft">{b.waitingEmpty}</p>
-          ) : (
-            <ul className="mt-3 flex flex-wrap gap-2">
+          {waiting.length === 0 && <p className="mt-3 text-sm text-ink-soft">{b.waitingEmpty}</p>}
+          <ul className="mt-3 flex flex-wrap gap-2">
               {waiting.map((p) => (
                 <li key={p.id} className={`border-2 px-3 py-1.5 text-sm font-semibold ${p.id === myId.current ? "border-lilac-500 bg-lilac-50 text-lilac-700" : "border-lilac-200 bg-white"}`}>
                   {p.name || b.nicknamePlaceholder}
                   {p.id === myId.current && <span className="ml-1 text-xs">({b.you})</span>}
                 </li>
               ))}
+              <li className="border-2 border-dashed border-lilac-200 bg-white px-3 py-1.5 text-sm font-semibold text-ink-soft">
+                {b.aiName} <span className="text-xs">· {b.aiAlways}</span>
+              </li>
             </ul>
-          )}
         </section>
 
         <QuizLeaderboard refreshKey={lbKey} myUserId={me?.id} />
