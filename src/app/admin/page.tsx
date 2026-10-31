@@ -310,11 +310,11 @@ async function MembersSection({ q, myId }: { q: string; myId: string }) {
                   <Nickname author={m} className="font-semibold" />
                   {m.id === myId && <span className="text-xs text-ink-soft">(나)</span>}
                   <span className="text-xs text-ink-soft">
-                    가입 {formatFullDateTime(m.created_at).slice(0, 13)} · 글 {m.posts[0]?.count ?? 0} · 댓글 {m.comments[0]?.count ?? 0}
+                    가입 {formatFullDateTime(m.created_at)} · 글 {m.posts[0]?.count ?? 0} · 댓글 {m.comments[0]?.count ?? 0}
                   </span>
                   {banned && (
                     <span className="bg-blush-400 px-1.5 text-xs font-bold text-white">
-                      이용 제한 ~{new Date(m.banned_until!).getFullYear() >= 2999 ? "영구" : formatFullDateTime(m.banned_until!).slice(0, 13)}
+                      이용 제한 ~{new Date(m.banned_until!).getFullYear() >= 2999 ? "영구" : formatFullDateTime(m.banned_until!)}
                     </span>
                   )}
                 </div>
