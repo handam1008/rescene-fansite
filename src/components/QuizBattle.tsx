@@ -4,8 +4,9 @@ import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { fmt } from "@/i18n/config";
-import { buildQuiz, gradeIndex, newSeed, QUESTION_COUNT, SECONDS_PER_QUESTION } from "@/lib/quiz";
+import { BATTLE_LOBBY, buildQuiz, gradeIndex, latestMeta, newSeed, QUESTION_COUNT, SECONDS_PER_QUESTION } from "@/lib/quiz";
 import { createClient } from "@/lib/supabase/client";
+import QuizLeaderboard from "./QuizLeaderboard";
 import ShareButtons from "./ShareButtons";
 import { buttonClass, inputClass } from "./ui";
 
@@ -17,7 +18,6 @@ import { buttonClass, inputClass } from "./ui";
  * 점수는 각자 화면에서 계산하는 놀이용이라 조작을 막지는 않음.
  */
 
-const LOBBY = "battle-lobby-v1";
 const START_DELAY = 3500;
 const FEEDBACK_MS = 900;
 
@@ -57,6 +57,9 @@ export default function QuizBattle() {
   const [qStart, setQStart] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [feedback, setFeedback] = useState<Answer | null>(null);
+  /** 이번 판 기록을 랭킹에 남겼는지 (한 판에 한 번만) · 남긴 뒤 랭킹 새로고침용 */
+  const submitted = useRef(false);
+  const [lbKey, setLbKey] = useState(0);
 
   const setPhase = useCallback((p: Phase) => {
     phaseRef.current = p;
@@ -79,12 +82,12 @@ export default function QuizBattle() {
     myId.current = crypto.randomUUID();
     const client = createClient();
     supabase.current = client;
-    const ch = client.channel(LOBBY, { config: { presence: { key: myId.current } } });
+    const ch = client.channel(BATTLE_LOBBY, { config: { presence: { key: myId.current } } });
     ch.on("presence", { event: "sync" }, () => {
       const state = ch.presenceState<Omit<Person, "id">>();
       setPeople(
         Object.entries(state).flatMap(([id, metas]) => {
-          const last = metas[metas.length - 1];
+          const last = latestMeta(metas);
           return last ? [{ id, name: String(last.name ?? "").slice(0, 12), state: last.state, since: Number(last.since) || 0 }] : [];
         }),
       );
@@ -116,6 +119,7 @@ export default function QuizBattle() {
   }, []);
 
   const resetGame = useCallback(() => {
+    submitted.current = false;
     setQi(0);
     setAnswers([]);
     setFeedback(null);
@@ -247,6 +251,24 @@ export default function QuizBattle() {
     [feedback, quiz, qi, qStart, answers, setPhase],
   );
 
+  // 랭킹에 기록 남기기: 혼자 풀기는 다 풀었을 때, 대결은 승부가 났을 때 (상대가 끝냈거나 나갔을 때)
+  const submitScore = useCallback(
+    (won: boolean | null) => {
+      if (submitted.current || answers.length < QUESTION_COUNT) return;
+      submitted.current = true;
+      createClient()
+        .rpc("submit_quiz_score", { p_name: displayName, p_score: score, p_ms: totalMs, p_mode: solo ? "solo" : "duel", p_won: won })
+        .then(() => setLbKey((k) => k + 1));
+    },
+    [answers.length, displayName, score, totalMs, solo],
+  );
+  useEffect(() => {
+    if (phase !== "done") return;
+    if (solo) submitScore(null);
+    else if (opp.finished) submitScore(score > opp.score || (score === opp.score && totalMs < opp.ms));
+    else if (oppLeft) submitScore(true);
+  }, [phase, solo, opp, oppLeft, score, totalMs, submitScore]);
+
   // 시간 초과
   const remaining = Math.max(0, SECONDS_PER_QUESTION - (now - qStart) / 1000);
   useEffect(() => {
@@ -261,6 +283,7 @@ export default function QuizBattle() {
     } catch {}
   }
   function findMatch() {
+    if (phaseRef.current === "done") submitScore(null);
     leaveRoom();
     resetGame();
     setOpponent(null);
@@ -273,6 +296,7 @@ export default function QuizBattle() {
     track("idle");
   }
   function playSolo() {
+    if (phaseRef.current === "done") submitScore(null);
     leaveRoom();
     resetGame();
     setOpponent(null);
@@ -284,6 +308,7 @@ export default function QuizBattle() {
     track("idle");
   }
   function backToLobby() {
+    if (phaseRef.current === "done") submitScore(null);
     leaveRoom();
     setOpponent(null);
     setPhase("lobby");
@@ -353,6 +378,8 @@ export default function QuizBattle() {
             </ul>
           )}
         </section>
+
+        <QuizLeaderboard refreshKey={lbKey} myName={displayName} />
       </div>
     );
   }
@@ -469,6 +496,8 @@ export default function QuizBattle() {
         </div>
         <ShareButtons text={fmt(b.shareText, { score })} path="/battle" className="mt-4 justify-center" />
       </section>
+
+      <QuizLeaderboard refreshKey={lbKey} myName={displayName} />
     </div>
   );
 }
