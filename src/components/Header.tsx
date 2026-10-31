@@ -21,6 +21,7 @@ function navItems(m: Messages): NavItem[] {
     {
       label: m.nav.news,
       children: [
+        { label: m.nav.guide, href: "/guide", desc: m.nav.guideDesc },
         { label: m.nav.comeback, href: "/comeback", desc: m.nav.comebackDesc },
         { label: m.nav.songs, href: "/songs", desc: m.nav.songsDesc },
         { label: m.nav.votes, href: "/votes", desc: m.nav.votesDesc },

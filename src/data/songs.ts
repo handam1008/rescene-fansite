@@ -9,15 +9,15 @@ import type { Song, StreamingLink } from "@/types";
  * 음원 링크: 곡별 고유 주소 대신 각 사이트의 "리센느 + 곡명" 검색 결과로 연결합니다.
  *            곡 페이지 주소로 바꾸고 싶으면 streamingLinks에 직접 넣으면 돼요.
  */
-function searchLinks(title: string): StreamingLink[] {
-  const q = encodeURIComponent(`리센느 ${title}`);
+export function searchLinks(title: string): StreamingLink[] {
+  const q = encodeURIComponent(`리센느 ${title}`.trim());
   return [
     { platform: "melon", url: `https://www.melon.com/search/total/index.htm?q=${q}` },
     { platform: "genie", url: `https://www.genie.co.kr/search/searchMain?query=${q}` },
     { platform: "bugs", url: `https://music.bugs.co.kr/search/integrated?q=${q}` },
     { platform: "flo", url: `https://www.music-flo.com/search/all?keyword=${q}` },
-    { platform: "spotify", url: `https://open.spotify.com/search/${encodeURIComponent(`RESCENE ${title}`)}` },
-    { platform: "youtube_music", url: `https://music.youtube.com/search?q=${encodeURIComponent(`RESCENE ${title}`)}` },
+    { platform: "spotify", url: `https://open.spotify.com/search/${encodeURIComponent(`RESCENE ${title}`.trim())}` },
+    { platform: "youtube_music", url: `https://music.youtube.com/search?q=${encodeURIComponent(`RESCENE ${title}`.trim())}` },
   ];
 }
 
