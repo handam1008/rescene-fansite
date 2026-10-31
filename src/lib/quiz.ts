@@ -76,8 +76,32 @@ export function buildQuiz(seed: number, locale: Locale, m: Messages): QuizQuesti
   const leader = members.find((x) => x.note === "리더");
   const japanese = members.find((x) => x.nationality === "일본");
 
-  // 문제 종류마다 하나씩 만드는 함수. 섞어서 앞에서 10개를 씀
-  const makers: (() => QuizQuestion | null)[] = [
+  const year = (iso: string) => iso.slice(0, 4);
+  const dated = released.filter((s, i, a) => a.findIndex((x) => x.releaseDate === s.releaseDate) === i);
+  const miniAlbums = [...new Set(released.map((s) => albumBase(s.album)))]
+    .map((al) => ({ al, n: Number(al.match(/미니 (\d+)집/)?.[1]) }))
+    .filter((x) => x.n > 0);
+  const sameAlbumPairs = released.filter((s) => released.some((o) => o.id !== s.id && albumBase(o.album) === albumBase(s.album)));
+  const preRelease = released.find((s) => s.album.includes("(선공개)"));
+  const remake = released.find((s) => s.album.includes("리메이크"));
+  const months = Array.from({ length: 12 }, (_, i) =>
+    new Intl.DateTimeFormat(INTL_LOCALE[locale], { timeZone: "UTC", month: "long" }).format(new Date(Date.UTC(2026, i, 15))),
+  );
+  const songDates = dated.map((s) => monthDay(s.releaseDate.slice(0, 10)));
+
+  // 쉬운 문제: 팬이면 대부분 아는 것
+  const easy: (() => QuizQuestion | null)[] = [
+    () => (leader ? make("leader", q.qLeader, nameOf(leader, locale), allNames, r) : null),
+    () => make("maknae", q.qMaknae, nameOf(byAge[byAge.length - 1], locale), allNames, r),
+    () => (japanese ? make("japanese", q.qJapanese, nameOf(japanese, locale), allNames, r) : null),
+    () => (pulse ? make("pulseTitle", q.qPulseTitle, pulse.titleTrack, pulseTracks, r) : null),
+    () => make("fandom", q.qFandom, "REMINE", ["RESCENT", "SCENEY", "REMIND", "ROSCENE"], r),
+    () => make("count", q.qCount, fmt(q.aCount, { n: members.length }), [4, 6, 7].map((n) => fmt(q.aCount, { n })), r),
+    () => make("meaning", q.qMeaning, q.aMeaning, q.aMeaningFake, r),
+  ];
+
+  // 어려운 문제: 날짜·앨범·순서처럼 꽤 덕질해야 아는 것
+  const hard: (() => QuizQuestion | null)[] = [
     () => {
       const mem = pick([...members], r);
       return make("birthdayOf", fmt(q.qBirthdayOf, { member: nameOf(mem, locale) }), monthDay(mem.birthday), members.map((x) => monthDay(x.birthday)), r);
@@ -86,45 +110,82 @@ export function buildQuiz(seed: number, locale: Locale, m: Messages): QuizQuesti
       const mem = pick([...members], r);
       return make("whoBirthday", fmt(q.qWhoBirthday, { date: monthDay(mem.birthday) }), nameOf(mem, locale), allNames, r);
     },
-    () => (leader ? make("leader", q.qLeader, nameOf(leader, locale), allNames, r) : null),
-    () => make("maknae", q.qMaknae, nameOf(byAge[byAge.length - 1], locale), allNames, r),
     () => make("oldest", q.qOldest, nameOf(byAge[0], locale), allNames, r),
-    () => (japanese ? make("japanese", q.qJapanese, nameOf(japanese, locale), allNames, r) : null),
+    () => {
+      const mem = pick([...members], r);
+      return make("birthYear", fmt(q.qBirthYear, { member: nameOf(mem, locale) }), year(mem.birthday), ["2003", "2004", "2005", "2006", "2007", "2008", "2009"], r);
+    },
+    () => {
+      // 같은 해에 태어난 멤버가 있는 멤버만
+      const withTwin = members.filter((x) => members.some((o) => o.slug !== x.slug && year(o.birthday) === year(x.birthday)));
+      if (!withTwin.length) return null;
+      const mem = pick(withTwin, r);
+      const twin = members.find((o) => o.slug !== mem.slug && year(o.birthday) === year(mem.birthday))!;
+      return make("sameYear", fmt(q.qSameYear, { member: nameOf(mem, locale) }), nameOf(twin, locale), members.filter((o) => year(o.birthday) !== year(mem.birthday)).map((o) => nameOf(o, locale)), r);
+    },
     () => {
       const s = pick(released.filter((x) => x.id !== "with"), r);
       return make("songAlbum", fmt(q.qSongAlbum, { song: s.title }), albumLabel(albumBase(s.album), locale), albums, r);
     },
     () => {
       const s = pick(released, r);
-      const year = Number(s.releaseDate.slice(0, 4));
-      return make("songYear", fmt(q.qSongYear, { song: s.title }), String(year), ["2023", "2024", "2025", "2026", "2027"], r);
+      return make("songYear", fmt(q.qSongYear, { song: s.title }), year(s.releaseDate), ["2023", "2024", "2025", "2026", "2027"], r);
     },
     () => {
-      // 발매일이 서로 다른 곡 4개 중 가장 먼저 나온 곡
-      const distinct = shuffle(released, r).filter((s, i, a) => a.findIndex((x) => x.releaseDate === s.releaseDate) === i).slice(0, 4);
+      const s = pick(dated, r);
+      const mo = Number(s.releaseDate.slice(5, 7)) - 1;
+      return make("releaseMonth", fmt(q.qReleaseMonth, { song: s.title }), months[mo], months, r);
+    },
+    () => {
+      const distinct = shuffle(dated, r).slice(0, 4);
       if (distinct.length < 4) return null;
       const first = [...distinct].sort((a, b) => a.releaseDate.localeCompare(b.releaseDate))[0];
       return make("earliest", q.qEarliest, first.title, distinct.map((s) => s.title), r);
     },
+    () => {
+      // 바로 다음에 나온 곡 (발매일 기준, 마지막 곡 제외)
+      const i = Math.floor(r() * (dated.length - 1));
+      return make("after", fmt(q.qAfter, { song: dated[i].title }), dated[i + 1].title, dated.filter((_, j) => j !== i && j !== i + 1).map((s) => s.title), r);
+    },
     () => make("debut", q.qDebut, released[0].title, released.slice(1).map((s) => s.title), r),
-    () => (pulse ? make("pulseTitle", q.qPulseTitle, pulse.titleTrack, pulseTracks, r) : null),
+    () => make("debutYear", q.qDebutYear, year(released[0].releaseDate), ["2022", "2023", "2024", "2025"], r),
+    () => make("debutDate", q.qDebutDate, monthDay(released[0].releaseDate.slice(0, 10)), songDates.slice(1), r),
+    () => {
+      if (!sameAlbumPairs.length) return null;
+      const s = pick(sameAlbumPairs, r);
+      const mate = sameAlbumPairs.find((o) => o.id !== s.id && albumBase(o.album) === albumBase(s.album))!;
+      return make("sameAlbum", fmt(q.qSameAlbum, { song: s.title }), mate.title, released.filter((o) => albumBase(o.album) !== albumBase(s.album)).map((o) => o.title), r);
+    },
+    () => {
+      if (miniAlbums.length < 2) return null;
+      const a = pick(miniAlbums, r);
+      const label = albumLabel(a.al, locale).replace(/^.*?(집|Album|アルバム)\s*/, "");
+      return make("ordinal", fmt(q.qAlbumOrdinal, { album: label }), fmt(q.aOrdinal, { n: a.n }), [1, 2, 3, 4, 5, 6].map((n) => fmt(q.aOrdinal, { n })), r);
+    },
+    () => (preRelease ? make("preRelease", q.qPreRelease, preRelease.title, released.filter((s) => s.id !== preRelease.id).map((s) => s.title), r) : null),
+    () => (remake ? make("remake", q.qRemake, remake.title, released.filter((s) => s.id !== remake.id).map((s) => s.title), r) : null),
     () => {
       if (pulseTracks.length < 3) return null;
       const other = pick(released.filter((s) => !pulseTracks.includes(s.title)), r);
       return make("notInPulse", q.qNotInPulse, other.title, shuffle(pulseTracks, r).slice(0, 3), r);
     },
-    () => make("fandom", q.qFandom, "REMINE", ["RESCENT", "SCENEY", "REMIND", "ROSCENE"], r),
-    () => make("count", q.qCount, fmt(q.aCount, { n: members.length }), [4, 6, 7].map((n) => fmt(q.aCount, { n })), r),
-    () => make("meaning", q.qMeaning, q.aMeaning, q.aMeaningFake, r),
+    () => (pulseTracks.length ? make("pulseCount", q.qPulseCount, fmt(q.aSongs, { n: pulseTracks.length }), [3, 4, 6, 7].map((n) => fmt(q.aSongs, { n })), r) : null),
+    () => (pulse ? make("pulseDate", q.qPulseDate, monthDay(pulse.releaseDate.slice(0, 10)), ["2026-10-27", "2026-10-30", "2026-11-06", "2026-11-10"].map(monthDay), r) : null),
+    () => make("woniChannel", q.qWoniChannel, "안녕하세요원이입니다잘부탁드립니다", ["원이의하루일기", "WONI LOG", "오늘도원이입니다"], r),
+    () => (leader ? make("kgmaMc", q.qKgmaMc, nameOf(leader, locale), allNames, r) : null),
   ];
 
-  const out: QuizQuestion[] = [];
-  for (const mk of shuffle(makers, r)) {
-    const question = mk();
-    if (question && question.options.length === 4) out.push(question);
-    if (out.length === QUESTION_COUNT) break;
-  }
-  return out;
+  // 쉬운 문제 3개 + 어려운 문제 7개, 섞어서 순서도 랜덤
+  const take = (list: (() => QuizQuestion | null)[], n: number) => {
+    const got: QuizQuestion[] = [];
+    for (const mk of shuffle(list, r)) {
+      const question = mk();
+      if (question && question.options.length === 4 && new Set(question.options).size === 4) got.push(question);
+      if (got.length === n) break;
+    }
+    return got;
+  };
+  return shuffle([...take(easy, 3), ...take(hard, QUESTION_COUNT - 3)], r);
 }
 
 /** 점수 → 칭호 (0~2, 3~4, 5~6, 7~8, 9~10) */
