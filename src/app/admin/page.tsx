@@ -29,6 +29,7 @@ import {
   adminDeletePost,
   approveProof,
   moveProof,
+  moveCatalogImage,
   banMember,
   clearReports,
   closeInquiry,
@@ -386,9 +387,14 @@ async function PokedexSection({ move }: { move?: string }) {
         <h2 className="mb-3 border-b-2 border-lilac-500 pb-1.5 font-bold">
           인증 대기 <span className="text-lilac-500">{pending.length}</span>건
         </h2>
-        {move && (
+        {move === "imgok" && (
+          <p className="mb-3 border border-mint-dream-200 bg-mint-dream-100 px-3 py-2 text-sm">도감 이미지를 옮겼어요. 원래 카드는 빈 카드로 돌아갔어요.</p>
+        )}
+        {move && move !== "imgok" && (
           <p className="mb-3 border border-blush-400 bg-blush-100 px-3 py-2 text-sm">
-            {move === "dup"
+            {move === "imgfull"
+              ? "옮기려는 카드에 이미 도감 이미지가 있어요. 그 카드 이미지를 먼저 지우거나 다른 빈 카드를 골라주세요."
+              : move === "dup"
               ? "그 회원은 옮기려는 카드를 이미 인증했어요. 이 인증은 반려하거나, 기존 인증을 먼저 정리해 주세요."
               : "카드를 옮기지 못했어요. 이미 처리된 인증인지 확인해 주세요."}
           </p>
@@ -542,6 +548,31 @@ async function PokedexSection({ move }: { move?: string }) {
                       <CardImage card={c} />
                       <p className="mt-1 truncate font-semibold">{pokedexMemberName(c.member)}</p>
                       {c.label && <p className="truncate text-ink-soft">{c.label}</p>}
+                      {c.image_path && (
+                        <details className="mt-0.5">
+                          <summary className="cursor-pointer text-lilac-700 underline">다른 카드로 옮기기</summary>
+                          <form action={moveCatalogImage} className="mt-1 space-y-1">
+                            <input type="hidden" name="id" value={c.id} />
+                            <select name="toId" required className="w-full border border-lilac-200 bg-white px-1 py-1">
+                              {catalogAlbums.map((al) => (
+                                <optgroup key={al} label={al}>
+                                  {catalog
+                                    .filter((x) => x.album === al && !x.image_path)
+                                    .map((x) => (
+                                      <option key={x.id} value={x.id}>
+                                        {pokedexMemberName(x.member)}
+                                        {x.label ? ` · ${x.label}` : ""}
+                                      </option>
+                                    ))}
+                                </optgroup>
+                              ))}
+                            </select>
+                            <button type="submit" className="w-full border border-lilac-300 bg-white py-1 font-semibold text-lilac-700 hover:bg-lilac-50">
+                              옮기기
+                            </button>
+                          </form>
+                        </details>
+                      )}
                       <div className="mt-0.5 flex gap-2">
                         <CatalogImageButton cardId={c.id} current={c.image_path} />
                         <form action={deleteCatalogCard}>
