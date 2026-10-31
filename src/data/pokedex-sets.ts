@@ -39,10 +39,16 @@ export const pokedexSets: Record<string, PokedexSet> = {
     link: "https://www.kpoptown.com/brand/147-rescene",
   },
   "CU 리센느빵 1탄": {
-    i18n: { ja: {"how": "CU「BAKE405 RESCENEパン」5種に、クリアトレカ27種からランダム1枚・2026.09.17〜", "note": "メンバーごと4枚＋グループ・スペシャル7枚はファンのまとめに基づいています（公式未発表）。10月26日から第2弾（28種）に変わり、第2弾は構成が公開され次第追加します。"}, en: {"how": "Comes with CU 'BAKE405 RESCENE Bread' (5 kinds): 1 random of 27 clear photocards · from 2026.09.17", "note": "4 per member + 7 group/special cards is based on fan lists (not officially announced). It switched to vol.2 (28 cards) on Oct 26; vol.2 will be added once its lineup is known."} },
+    i18n: { ja: {"how": "CU「BAKE405 RESCENEパン」5種に、クリアトレカ27種からランダム1枚・2026.09.17〜", "note": "メンバーごと4枚＋グループ・スペシャル7枚はファンのまとめに基づいています（公式未発表）。10月26日から第2弾（28種）に変わりました。"}, en: {"how": "Comes with CU 'BAKE405 RESCENE Bread' (5 kinds): 1 random of 27 clear photocards · from 2026.09.17", "note": "4 per member + 7 group/special cards is based on fan lists (not officially announced). It switched to vol.2 (28 cards) on Oct 26."} },
     how: "CU 'BAKE405 리센느빵' 5종에 투명 포토카드 27종 중 랜덤 1장 · 2026.09.17~",
-    note: "멤버별 4장 + 단체·스페셜 7장은 팬 정리 기준이에요(공식 미공개). 10월 26일부터 2탄(28종)으로 바뀌며, 2탄은 구성이 공개되면 추가할게요.",
+    note: "멤버별 4장 + 단체·스페셜 7장은 팬 정리 기준이에요(공식 미공개). 10월 26일부터 2탄(28종)으로 바뀌었어요.",
     link: "https://zdnet.co.kr/view/?no=20260915091011",
+  },
+  "CU 리센느빵 2탄": {
+    i18n: { ja: {"how": "CU「BAKE405 RESCENEパン」に、新しいクリアトレカ28種からランダム1枚・2026.10.26出荷分〜", "note": "全28種は報道で確認済みですが、メンバーごと4枚＋グループ8枚の内訳は仮のものです。実際の構成と違えば直します。"}, en: {"how": "Comes with CU 'BAKE405 RESCENE Bread': 1 random of 28 new clear photocards · from Oct 26, 2026 shipments", "note": "28 cards in total is confirmed by news reports, but the 4-per-member + 8 group split is provisional. It will be corrected if the actual lineup differs."} },
+    how: "CU 'BAKE405 리센느빵'에 새 투명 포토카드 28종 중 랜덤 1장 · 2026.10.26 출고분~",
+    note: "총 28종은 보도로 확인됐지만, 멤버별 4장 + 단체 8장 구성은 임시예요. 실제 구성과 다르면 고칠게요.",
+    link: "https://www.fnnews.com/news/202610191619265229",
   },
   "할리스 리센느 세트 증정": {
     i18n: { ja: {"how": "HOLLYSの店舗でメンバー別RESCENEセット（13,500ウォン）を購入すると5種からランダム1枚・2026.08.26〜なくなり次第終了"}, en: {"how": "Buy a member RESCENE set (₩13,500) at HOLLYS to get 1 random of 5 · from 2026.08.26 while supplies last"} },
@@ -78,6 +84,7 @@ const SOURCE_NAMES: Record<string, Record<"ja" | "en", string>> = {
 
 const SET_NAMES: Record<string, Record<"ja" | "en", string>> = {
   "CU 리센느빵 1탄": { ja: "CU RESCENEパン 第1弾", en: "CU RESCENE Bread vol.1" },
+  "CU 리센느빵 2탄": { ja: "CU RESCENEパン 第2弾", en: "CU RESCENE Bread vol.2" },
   "할리스 리센느 세트 증정": { ja: "HOLLYS RESCENEセット特典", en: "HOLLYS RESCENE set gift" },
   "도미노피자 방문포장 증정": { ja: "ドミノ・ピザ テイクアウト特典", en: "Domino's Pizza takeout gift" },
   "MLB 미야옹비니 증정": { ja: "MLB ミヤオンビーニー特典", en: "MLB 'Miyaong' beanie gift" },
