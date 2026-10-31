@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PROFILE_COLUMNS } from "@/lib/profile-columns";
 import { redirect } from "next/navigation";
+import AdminOnlineCount from "@/components/AdminOnlineCount";
 import CardImage from "@/components/CardImage";
 import CatalogForm from "@/components/CatalogForm";
 import CatalogImageButton from "@/components/CatalogImageButton";
@@ -132,7 +133,8 @@ async function SummarySection() {
     { label: "도감 채운 카드", value: s.filledCards, href: "/photocards" },
   ];
   return (
-    <section>
+    <section className="space-y-4">
+      <AdminOnlineCount />
       <h2 className={sectionTitle}>한눈에 보기</h2>
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {tiles.map((t) => (

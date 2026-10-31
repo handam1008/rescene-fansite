@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import AdminOnlineCount from "./AdminOnlineCount";
 import { PROFILE_COLUMNS } from "@/lib/profile-columns";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -87,6 +88,7 @@ export default function AuthStatus() {
   return (
     <div className={rowClass}>
       {/* 운영자는 운영자 화면, 그 외 회원은 같은 자리에 문의 */}
+      {isAdmin && <AdminOnlineCount compact />}
       {isAdmin ? (
         <Action
           href={openInquiries ? "/admin?tab=inquiries" : pendingProofs ? "/admin?tab=pokedex" : "/admin"}
