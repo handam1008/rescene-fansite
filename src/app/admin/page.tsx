@@ -850,7 +850,8 @@ async function QuizSection() {
                       <QuizPlayer r={r} badge={QUIZ_RESULT[r.result ?? "unknown"]} strong={r.result === "win" || r.result === "forfeit"} />
                       <span className="text-xs text-ink-soft">
                         vs {r.opponent ?? "?"}
-                        {r.opponent_score !== null && ` (${r.opponent_score}/10)`} · 상대 기록 없음
+                        {r.opponent_score !== null && ` (${r.opponent_score}/10)`}
+                        {r.opponent === "🤖 AI" ? " · AI 대결" : " · 상대 기록 없음"}
                       </span>
                     </>
                   ) : (
