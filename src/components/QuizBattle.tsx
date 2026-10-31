@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { fmt } from "@/i18n/config";
 import { BATTLE_LOBBY, buildQuiz, gradeIndex, latestMeta, newSeed, QUESTION_COUNT, SECONDS_PER_QUESTION } from "@/lib/quiz";
+import { buzz, isMuted, setMuted, sfx, unlockAudio } from "@/lib/sfx";
 import { createClient } from "@/lib/supabase/client";
 import QuizLeaderboard from "./QuizLeaderboard";
 import ShareButtons from "./ShareButtons";
@@ -19,7 +20,7 @@ import { buttonClass, inputClass } from "./ui";
  * 점수는 각자 화면에서 계산하는 놀이용이라 조작을 막지는 않음.
  */
 
-const START_DELAY = 3500;
+const START_DELAY = 3000;
 const FEEDBACK_MS = 900;
 
 type Phase = "lobby" | "searching" | "matched" | "playing" | "done";
@@ -66,6 +67,9 @@ export default function QuizBattle() {
   /** 로그인한 회원 (랭킹은 회원만). undefined = 확인 중 */
   const [me, setMe] = useState<{ id: string; nickname: string } | null | undefined>(undefined);
   const [saved, setSaved] = useState(false);
+  const [muted, setMutedState] = useState(false);
+  /** 결과 소리를 이번 판에 냈는지 */
+  const resultPlayed = useRef(false);
 
   const setPhase = useCallback((p: Phase) => {
     phaseRef.current = p;
@@ -85,6 +89,7 @@ export default function QuizBattle() {
     try {
       setName(localStorage.getItem(NAME_KEY) ?? "");
     } catch {}
+    setMutedState(isMuted());
     myId.current = crypto.randomUUID();
     const client = createClient();
     supabase.current = client;
@@ -135,6 +140,7 @@ export default function QuizBattle() {
   const resetGame = useCallback(() => {
     submitted.current = false;
     logged.current = false;
+    resultPlayed.current = false;
     setSaved(false);
     setQi(0);
     setAnswers([]);
@@ -153,6 +159,14 @@ export default function QuizBattle() {
       setSeed(roomSeed);
       setOpponent(other);
       setPhase("matched");
+      // 매칭 알림: 소리 + 진동 + 다른 탭을 보고 있어도 알 수 있게 탭 제목 잠깐 바꿈
+      sfx.match();
+      buzz([120, 60, 120]);
+      const prevTitle = document.title;
+      document.title = m.battle.matchedTitle;
+      setTimeout(() => {
+        if (document.title === m.battle.matchedTitle) document.title = prevTitle;
+      }, 4000);
       track("playing");
       const ch = supabase.current.channel(`battle-room-${roomId}`, { config: { presence: { key: myId.current } } });
       room.current = ch;
@@ -194,7 +208,7 @@ export default function QuizBattle() {
         }
       }, 6000);
     },
-    [displayName, leaveRoom, resetGame, setPhase, track],
+    [displayName, leaveRoom, resetGame, setPhase, track, m.battle.matchedTitle],
   );
 
   // 대기실에서 짝지어 주는 신호 받기 (내가 상대로 뽑혔고 아직 대기 중일 때만)
@@ -234,10 +248,19 @@ export default function QuizBattle() {
 
   useEffect(() => {
     if (phase === "matched" && startAt && now >= startAt) {
+      sfx.go();
       setPhase("playing");
       setQStart(Date.now());
     }
   }, [phase, startAt, now, setPhase]);
+
+  // 카운트다운 3·2·1 마다 째깍
+  const countdown = phase === "matched" && startAt ? Math.max(0, Math.ceil((startAt - now) / 1000)) : null;
+  const lastTick = useRef<number | null>(null);
+  useEffect(() => {
+    if (countdown !== null && countdown > 0 && countdown !== lastTick.current) sfx.tick();
+    lastTick.current = countdown;
+  }, [countdown]);
 
   const score = answers.filter((a) => a.correct).length;
   const totalMs = answers.reduce((s, a) => s + a.ms, 0);
@@ -249,6 +272,15 @@ export default function QuizBattle() {
       const next = [...answers, a];
       setAnswers(next);
       setFeedback(a);
+      if (a.correct) {
+        sfx.correct();
+        // 바로 앞까지 연속으로 맞혔으면 한 음 더
+        if (answers.length > 0 && answers[answers.length - 1].correct) sfx.combo();
+        buzz(30);
+      } else {
+        sfx.wrong();
+        buzz([60, 40, 60]);
+      }
       const finished = next.length === quiz.length;
       room.current?.send({
         type: "broadcast",
@@ -323,6 +355,43 @@ export default function QuizBattle() {
     if (phase === "playing" && !feedback && qStart && remaining <= 0) answer(-1);
   }, [phase, feedback, qStart, remaining, answer]);
 
+  // 남은 시간 3·2·1초 째깍
+  const secLeft = Math.ceil(remaining);
+  const lastHurry = useRef(0);
+  useEffect(() => {
+    if (phase === "playing" && !feedback && secLeft <= 3 && secLeft > 0 && secLeft !== lastHurry.current) sfx.hurry();
+    lastHurry.current = secLeft;
+  }, [phase, feedback, secLeft]);
+
+  // 연속 정답 수 (마지막부터 세어서)
+  let streak = 0;
+  for (let i = answers.length - 1; i >= 0 && answers[i].correct; i--) streak++;
+
+  // 결과 소리 (한 판에 한 번)
+  const outcome: "win" | "lose" | "draw" | null =
+    phase !== "done"
+      ? null
+      : solo
+        ? score >= 7
+          ? "win"
+          : "draw"
+        : opp.finished
+          ? score > opp.score || (score === opp.score && totalMs < opp.ms)
+            ? "win"
+            : score === opp.score && totalMs === opp.ms
+              ? "draw"
+              : "lose"
+          : oppLeft
+            ? "win"
+            : null;
+  useEffect(() => {
+    if (!outcome || resultPlayed.current) return;
+    resultPlayed.current = true;
+    if (outcome === "win") sfx.win();
+    else if (outcome === "lose") sfx.lose();
+    else sfx.correct();
+  }, [outcome]);
+
   // ── 버튼 ──
   function saveName(v: string) {
     setName(v);
@@ -330,7 +399,13 @@ export default function QuizBattle() {
       localStorage.setItem(NAME_KEY, cleanName(v));
     } catch {}
   }
+  function toggleSound() {
+    unlockAudio();
+    setMuted(!muted);
+    setMutedState(!muted);
+  }
   function findMatch() {
+    unlockAudio();
     if (phaseRef.current === "done") finishRecords(solo ? null : "unknown");
     leaveRoom();
     resetGame();
@@ -344,6 +419,7 @@ export default function QuizBattle() {
     track("idle");
   }
   function playSolo() {
+    unlockAudio();
     if (phaseRef.current === "done") finishRecords(solo ? null : "unknown");
     leaveRoom();
     resetGame();
@@ -364,6 +440,33 @@ export default function QuizBattle() {
   }
 
   const card = "card p-5";
+  const soundButton = (
+    <button type="button" onClick={toggleSound} aria-pressed={!muted} className="shrink-0 border border-lilac-200 bg-white px-2 py-1 text-xs font-semibold text-ink-soft hover:border-lilac-400">
+      {muted ? b.soundOff : b.soundOn}
+    </button>
+  );
+  /** 정답·승리 때 터지는 조각 (멤버 색) */
+  const burst = (count: number, spread: number) => (
+    <span aria-hidden className="pointer-events-none absolute top-1/2 left-1/2">
+      {Array.from({ length: count }, (_, i) => {
+        const angle = (i / count) * Math.PI * 2;
+        const dist = spread * (0.6 + ((i * 37) % 10) / 25);
+        return (
+          <span
+            key={i}
+            className="animate-battle-burst absolute h-2 w-2"
+            style={
+              {
+                backgroundColor: ["#c4b5fd", "#f9a8d4", "#a5f3fc", "#a7f3d0", "#ffd59e"][i % 5],
+                "--dx": `${Math.cos(angle) * dist}px`,
+                "--dy": `${Math.sin(angle) * dist}px`,
+              } as React.CSSProperties
+            }
+          />
+        );
+      })}
+    </span>
+  );
   const sec = (ms: number) => (ms / 1000).toFixed(1);
 
   // ── 화면 ──
@@ -372,6 +475,7 @@ export default function QuizBattle() {
     return (
       <div className="space-y-4">
         <section className={card}>
+          <div className="mb-2 flex justify-end">{soundButton}</div>
           <label className="block space-y-1">
             <span className="text-sm font-semibold">{b.nickname}</span>
             <input
@@ -433,11 +537,21 @@ export default function QuizBattle() {
   }
 
   if (phase === "matched") {
-    const left = startAt ? Math.max(0, Math.ceil((startAt - now) / 1000)) : null;
     return (
-      <section className={`${card} py-12 text-center`}>
-        <p className="text-xl font-extrabold">{fmt(b.matched, { name: opponent?.name ?? "" })}</p>
-        <p className="mt-2 text-sm text-ink-soft">{left !== null ? fmt(b.getReady, { n: left }) : b.connecting}</p>
+      <section className={`${card} py-10 text-center`}>
+        <p className="animate-battle-pop text-xl font-extrabold">{fmt(b.matched, { name: opponent?.name ?? "" })}</p>
+        <p className="mt-4 flex items-center justify-center gap-3 text-lg font-bold">
+          <span className="max-w-[40%] truncate">{displayName}</span>
+          <span className="text-blush-400">VS</span>
+          <span className="max-w-[40%] truncate">{opponent?.name}</span>
+        </p>
+        {countdown !== null && countdown > 0 ? (
+          <p key={countdown} className="animate-battle-pop mt-6 text-7xl font-extrabold text-lilac-500 tabular-nums">
+            {countdown}
+          </p>
+        ) : (
+          <p className="mt-6 text-sm text-ink-soft">{b.connecting}</p>
+        )}
       </section>
     );
   }
@@ -457,10 +571,13 @@ export default function QuizBattle() {
     return (
       <div className="space-y-3">
         {oppBar}
-        <section className={card}>
-          <div className="flex items-center justify-between text-sm font-semibold">
+        <section className={`${card} ${feedback && !feedback.correct ? "animate-battle-shake" : ""}`}>
+          <div className="flex items-center justify-between gap-2 text-sm font-semibold">
             <span className="text-lilac-700">{fmt(b.question, { n: qi + 1 })}</span>
-            <span className={`tabular-nums ${remaining < 5 ? "text-red-600" : "text-ink-soft"}`}>{Math.ceil(remaining)}s</span>
+            <span className="flex items-center gap-2">
+              {soundButton}
+              <span className={`tabular-nums ${remaining < 5 ? "text-red-600" : "text-ink-soft"}`}>{Math.ceil(remaining)}s</span>
+            </span>
           </div>
           <div className="mt-2 h-1.5 bg-lilac-100" aria-hidden>
             <div className="h-full bg-lilac-500 transition-[width] duration-200" style={{ width: `${(remaining / SECONDS_PER_QUESTION) * 100}%` }} />
@@ -477,8 +594,10 @@ export default function QuizBattle() {
                     type="button"
                     onClick={() => answer(i)}
                     disabled={show}
-                    className={`w-full border-2 px-4 py-3 text-left text-sm font-bold ${
-                      show && isAnswer
+                    className={`relative w-full border-2 px-4 py-3 text-left text-sm font-bold ${
+                      show && isAnswer && chosen
+                        ? "animate-battle-glow border-emerald-500 bg-mint-dream-100"
+                        : show && isAnswer
                         ? "border-emerald-500 bg-mint-dream-100"
                         : show && chosen
                           ? "border-blush-400 bg-blush-100"
@@ -486,6 +605,14 @@ export default function QuizBattle() {
                     }`}
                   >
                     {o}
+                    {show && isAnswer && chosen && (
+                      <>
+                        {burst(12, 70)}
+                        <span aria-hidden className="animate-battle-float absolute top-1 right-3 text-base font-extrabold text-emerald-600">
+                          +1
+                        </span>
+                      </>
+                    )}
                   </button>
                 </li>
               );
@@ -494,7 +621,10 @@ export default function QuizBattle() {
           <p className="mt-3 h-5 text-sm font-bold" aria-live="polite">
             {feedback &&
               (feedback.correct ? (
-                <span className="text-emerald-700">{b.correct}</span>
+                <span className="animate-battle-pop inline-block text-emerald-700">
+                  {b.correct}
+                  {streak >= 2 && <span className="ml-2 text-lilac-700">{fmt(b.combo, { n: streak })}</span>}
+                </span>
               ) : (
                 <span className="text-blush-400">{feedback.choice < 0 ? b.timeUp : fmt(b.wrong, { answer: q.options[q.answer] })}</span>
               ))}
@@ -513,9 +643,10 @@ export default function QuizBattle() {
   }
   return (
     <div className="space-y-3">
-      <section className={`${card} text-center`}>
+      <section className={`${card} relative overflow-hidden text-center`}>
+        {outcome === "win" && burst(28, 180)}
         <p className="text-sm font-semibold text-lilac-700">{solo ? b.soloResult : b.resultTitle}</p>
-        {verdict ? <p className="mt-2 text-2xl font-extrabold">{verdict}</p> : null}
+        {verdict ? <p className="animate-battle-pop mt-2 text-2xl font-extrabold">{verdict}</p> : null}
         {!solo && opponent && !opp.finished && !oppLeft && (
           <p className="mt-2 text-sm text-ink-soft">{fmt(b.waitingOpponent, { name: opponent.name, done: opp.done })}</p>
         )}

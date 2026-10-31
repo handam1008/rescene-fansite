@@ -793,10 +793,11 @@ async function QuizSection() {
   const [{ data: statRows }, { data }] = await Promise.all([supabase.rpc("admin_quiz_stats"), supabase.rpc("admin_quiz_games", { p_limit: 150 })]);
   const st = (Array.isArray(statRows) ? statRows[0] : null) as { today: number; total: number; duels: number; member_games: number; avg_score: number | null } | null;
   const rows = (data ?? []) as QuizGameRow[];
+  const entries = pairQuizGames(rows);
   const stats = [
     { label: "오늘 판 수", value: st?.today ?? 0 },
     { label: "전체 판 수", value: st?.total ?? 0 },
-    { label: "대결 판 수", value: st?.duels ?? 0 },
+    { label: "대결 수", value: Math.round((st?.duels ?? 0) / 2) },
     { label: "회원이 한 판", value: st?.member_games ?? 0 },
     { label: "평균 점수", value: st?.avg_score ?? "-" },
   ];
@@ -817,37 +818,97 @@ async function QuizSection() {
       <section>
         <h2 className={sectionTitle}>최근 대전 기록 (최근 150판)</h2>
         <p className="mb-3 text-xs text-ink-soft">
-          비회원 판도 포함돼요. 대결은 두 사람이 각자 기록을 남겨서 한 대결이 두 줄로 보여요. 이름은 각자 정한 별명이고, 회원이면 옆에 닉네임이 붙어요.
+          비회원 판도 포함돼요. 대결은 한 줄에 이긴 사람이 왼쪽으로 보여요. 이름은 각자 정한 별명이고, 회원이면 옆에 닉네임이 붙어요.
         </p>
-        {rows.length === 0 ? (
+        {entries.length === 0 ? (
           <EmptyState>아직 기록이 없어요.</EmptyState>
         ) : (
           <ul className="space-y-1.5">
-            {rows.map((r) => (
-              <li key={r.id} className="card flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm">
-                <span className="w-28 shrink-0 text-xs text-ink-soft tabular-nums">{formatFullDateTime(r.created_at).slice(5, 16)}</span>
-                <span className="min-w-0 font-semibold">
-                  {r.locale && <span className="mr-1">{LOCALE_FLAG[r.locale] ?? ""}</span>}
-                  {r.name}
-                  {r.nickname && <span className="ml-1 bg-lilac-100 px-1 text-xs text-lilac-700">회원 {r.nickname}</span>}
-                </span>
-                <span className="font-bold tabular-nums">
-                  {r.score}/10 · {(r.ms / 1000).toFixed(1)}초
-                </span>
-                {r.mode === "duel" ? (
-                  <span className="text-xs text-ink-soft">
-                    vs {r.opponent ?? "?"}
-                    {r.opponent_score !== null && ` (${r.opponent_score}/10)`} ·{" "}
-                    <span className={r.result === "win" || r.result === "forfeit" ? "font-bold text-lilac-700" : ""}>{QUIZ_RESULT[r.result ?? "unknown"]}</span>
-                  </span>
-                ) : (
-                  <span className="text-xs text-ink-soft">혼자 풀기</span>
-                )}
-              </li>
-            ))}
+            {entries.map((e) => {
+              const time = <span className="w-24 shrink-0 text-xs text-ink-soft tabular-nums">{formatFullDateTime(e.a.created_at).slice(5, 16)}</span>;
+              if (e.kind === "pair") {
+                // 이긴 사람을 왼쪽에 (부전승 포함)
+                const wins = (r: QuizGameRow) => r.result === "win" || r.result === "forfeit";
+                const [w, l] = wins(e.b) && !wins(e.a) ? [e.b, e.a] : [e.a, e.b];
+                return (
+                  <li key={e.a.id} className="card flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm">
+                    {time}
+                    <span className="text-xs font-bold text-lilac-700">⚔️ 대결</span>
+                    <QuizPlayer r={w} badge={QUIZ_RESULT[w.result ?? "unknown"]} strong={wins(w)} />
+                    <span className="text-xs font-bold text-blush-400">VS</span>
+                    <QuizPlayer r={l} badge={QUIZ_RESULT[l.result ?? "unknown"]} />
+                  </li>
+                );
+              }
+              const r = e.a;
+              return (
+                <li key={r.id} className="card flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm">
+                  {time}
+                  {r.mode === "duel" ? (
+                    <>
+                      <span className="text-xs font-bold text-lilac-700">⚔️ 대결</span>
+                      <QuizPlayer r={r} badge={QUIZ_RESULT[r.result ?? "unknown"]} strong={r.result === "win" || r.result === "forfeit"} />
+                      <span className="text-xs text-ink-soft">
+                        vs {r.opponent ?? "?"}
+                        {r.opponent_score !== null && ` (${r.opponent_score}/10)`} · 상대 기록 없음
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-xs font-bold text-ink-soft">혼자</span>
+                      <QuizPlayer r={r} />
+                    </>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
     </div>
+  );
+}
+
+/**
+ * 대결은 두 사람이 각자 기록을 남겨서, 서로 상대 이름이 맞고 2분 안에 남은 두 줄을 한 대결로 묶음.
+ * 짝을 못 찾은 대결(상대가 기록 전에 나감 등)과 혼자 풀기는 한 줄 그대로
+ */
+function pairQuizGames(rows: QuizGameRow[]) {
+  const used = new Set<number>();
+  const out: ({ kind: "pair"; a: QuizGameRow; b: QuizGameRow } | { kind: "single"; a: QuizGameRow })[] = [];
+  for (const a of rows) {
+    if (used.has(a.id)) continue;
+    used.add(a.id);
+    if (a.mode === "duel") {
+      const b = rows.find(
+        (x) =>
+          !used.has(x.id) &&
+          x.mode === "duel" &&
+          x.name === a.opponent &&
+          x.opponent === a.name &&
+          Math.abs(Date.parse(x.created_at) - Date.parse(a.created_at)) < 120_000,
+      );
+      if (b) {
+        used.add(b.id);
+        out.push({ kind: "pair", a, b });
+        continue;
+      }
+    }
+    out.push({ kind: "single", a });
+  }
+  return out;
+}
+
+function QuizPlayer({ r, badge, strong = false }: { r: QuizGameRow; badge?: string; strong?: boolean }) {
+  return (
+    <span className="flex flex-wrap items-center gap-1.5">
+      {r.locale && <span>{LOCALE_FLAG[r.locale] ?? ""}</span>}
+      <span className={strong ? "font-extrabold" : "font-semibold"}>{r.name}</span>
+      {r.nickname && <span className="bg-lilac-100 px-1 text-xs text-lilac-700">회원 {r.nickname}</span>}
+      <span className="font-bold tabular-nums">
+        {r.score}/10 · {(r.ms / 1000).toFixed(1)}초
+      </span>
+      {badge && <span className={`text-xs ${strong ? "font-bold text-lilac-700" : "text-ink-soft"}`}>{badge}</span>}
+    </span>
   );
 }

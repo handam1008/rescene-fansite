@@ -124,3 +124,38 @@ body {
     }
   }
 }
+
+/* 퀴즈 배틀 이펙트: 오답 흔들림 · 숫자 튀어나옴 · 정답 빛 · 정답 조각 터짐 (움직임 줄이기 설정이면 끔) */
+@keyframes battle-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-7px); }
+  40%, 80% { transform: translateX(7px); }
+}
+@keyframes battle-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  45% { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes battle-glow {
+  0% { box-shadow: 0 0 0 0 rgb(16 185 129 / 0.55); }
+  100% { box-shadow: 0 0 0 16px rgb(16 185 129 / 0); }
+}
+@keyframes battle-burst {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3); opacity: 0; }
+}
+@keyframes battle-float {
+  0% { transform: translateY(0); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(-28px); opacity: 0; }
+}
+@utility animate-battle-shake { animation: battle-shake 0.45s ease-in-out; }
+@utility animate-battle-pop { animation: battle-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+@utility animate-battle-glow { animation: battle-glow 0.7s ease-out; }
+@utility animate-battle-burst { animation: battle-burst 0.7s ease-out forwards; }
+@utility animate-battle-float { animation: battle-float 0.9s ease-out forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-battle-shake, .animate-battle-pop, .animate-battle-glow, .animate-battle-burst, .animate-battle-float {
+    animation: none;
+  }
+}
