@@ -173,7 +173,24 @@ export async function getCatalog(): Promise<CatalogCard[]> {
   // "*" : 출처 칸(0004 SQL)이 없어도 동작하도록
   const { data, error } = await supabase.from("photocard_catalog").select("*").order("sort").order("id");
   if (error) return [];
-  return (data ?? []) as CatalogCard[];
+  return sortByMember((data ?? []) as CatalogCard[]);
+}
+
+/** 멤버 순서 (원이 → 리브 → 미나미 → 메이 → 제나 → 단체·유닛 등 나머지) */
+const MEMBER_ORDER = ["woni", "liv", "minami", "may", "zena"];
+
+/**
+ * 세트 안에서 멤버별로 나란히 (원이 #1·#2… 다음 리브 #1·#2…). 세트 순서는 원래 순서(처음 나온 순) 그대로,
+ * 같은 멤버 안에서는 운영자가 정한 순서(sort)대로
+ */
+function sortByMember(cards: CatalogCard[]) {
+  const albumIndex = new Map<string, number>();
+  cards.forEach((c) => albumIndex.has(c.album) || albumIndex.set(c.album, albumIndex.size));
+  const memberIndex = (m: string) => (MEMBER_ORDER.includes(m) ? MEMBER_ORDER.indexOf(m) : MEMBER_ORDER.length);
+  return [...cards].sort(
+    (a, b) =>
+      albumIndex.get(a.album)! - albumIndex.get(b.album)! || memberIndex(a.member) - memberIndex(b.member) || a.sort - b.sort || a.id - b.id,
+  );
 }
 
 export async function getCatalogCard(id: number): Promise<CatalogCard | null> {
