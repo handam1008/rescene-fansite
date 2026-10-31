@@ -3,23 +3,32 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { fmt } from "@/i18n/config";
+import { fetchAuthors } from "@/lib/profile-titles";
 import { createClient } from "@/lib/supabase/client";
+import type { Author } from "@/types";
+import TitleBadges from "./TitleBadges";
 
 type Row = { userId: string; name: string; score: number; ms: number; wins: number };
 
 /** 퀴즈 배틀 이번 주 랭킹 (0019·0020 SQL, 회원만). refreshKey 가 바뀌면 다시 불러옴 (내 기록을 남긴 뒤) */
 export default function QuizLeaderboard({ refreshKey = 0, myUserId }: { refreshKey?: number; myUserId?: string | null }) {
-  const { m } = useI18n();
+  const { m, locale } = useI18n();
   const b = m.battle;
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [authors, setAuthors] = useState<Map<string, NonNullable<Author>>>(new Map());
 
   useEffect(() => {
     let alive = true;
-    createClient()
+    const client = createClient();
+    client
       .rpc("quiz_leaderboard", { p_limit: 10 })
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (!alive) return;
-        setRows(error || !Array.isArray(data) ? [] : data.map((r) => ({ userId: String(r.user_id), name: String(r.name), score: Number(r.score), ms: Number(r.ms), wins: Number(r.wins) })));
+        const list = error || !Array.isArray(data) ? [] : data.map((r) => ({ userId: String(r.user_id), name: String(r.name), score: Number(r.score), ms: Number(r.ms), wins: Number(r.wins) }));
+        setRows(list);
+        // 닉네임 옆 칭호용 회원 정보
+        const map = await fetchAuthors(client, list.map((r) => r.userId));
+        if (alive) setAuthors(map);
       });
     return () => {
       alive = false;
@@ -39,8 +48,9 @@ export default function QuizLeaderboard({ refreshKey = 0, myUserId }: { refreshK
           {rows.map((r, i) => (
             <li key={r.userId} className={`flex items-center gap-3 py-2 text-sm ${myUserId && r.userId === myUserId ? "bg-lilac-50" : ""}`}>
               <span className="w-7 shrink-0 text-center font-extrabold text-lilac-700 tabular-nums">{medal[i] ?? i + 1}</span>
-              <span className="min-w-0 flex-1 truncate font-semibold">
-                {r.name}
+              <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1 font-semibold">
+                {authors.get(r.userId) && <TitleBadges author={authors.get(r.userId)!} locale={locale} />}
+                <span className="truncate">{r.name}</span>
                 {myUserId && r.userId === myUserId && <span className="ml-1 text-xs text-lilac-700">({b.lbMine})</span>}
               </span>
               {r.wins > 0 && <span className="shrink-0 text-xs text-ink-soft">{fmt(b.lbWins, { n: r.wins })}</span>}
