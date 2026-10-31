@@ -4,6 +4,8 @@ const ko = {
   members: {
     title: "최애",
     desc: "최애 멤버를 골라주세요. 여러 명도 괜찮고 언제든 바꿀 수 있어요. 멤버를 누르면 프로필·개인 일정·멤버 게시판을 볼 수 있어요.",
+    fanTube: "추천 {name} 팬튜브",
+    fanTubeVisit: "채널 보러 가기",
     memberFallback: "멤버",
     profile: "프로필",
     name: "이름",
@@ -53,6 +55,8 @@ const ja: PagesMessages = {
   members: {
     title: "推し",
     desc: "推しメンを選んでください。何人でもOK、いつでも変更できます。メンバーを押すとプロフィール・個人の予定・メンバー掲示板が見られます。",
+    fanTube: "おすすめ{name}ファンチャンネル",
+    fanTubeVisit: "チャンネルを見る",
     memberFallback: "メンバー",
     profile: "プロフィール",
     name: "名前",
@@ -100,6 +104,8 @@ const en: PagesMessages = {
   members: {
     title: "Bias",
     desc: "Pick your bias — more than one is fine, and you can change it anytime. Tap a member to see their profile, schedule and member board.",
+    fanTube: "Recommended {name} fan channel",
+    fanTubeVisit: "Visit channel",
     memberFallback: "Member",
     profile: "Profile",
     name: "Name",
