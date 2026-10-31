@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BattleBanner from "@/components/BattleBanner";
 import Countdown from "@/components/Countdown";
 import HomeHero from "@/components/HomeHero";
 import PokedexNews from "@/components/PokedexNews";
@@ -42,21 +43,17 @@ export default async function HomePage() {
     <div className="space-y-8">
       <HomeHero />
 
+      {/* 들어오자마자 보이게: 실시간 대기 인원이 보이는 퀴즈 배틀 배너 */}
+      <BattleBanner />
+
       <QuickPoll />
 
       {/* 컴백 응원 가이드 · 공유해서 퍼지는 이벤트(나만의 리마인 카드 · 컴백 응원 롤링페이퍼) */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-3">
         <Link href="/guide" className="card btn flex items-center justify-between gap-3 border-lilac-400 p-4 hover:bg-lilac-50">
           <span>
             <span className="block font-extrabold">{m.guide.homeLink}</span>
             <span className="mt-0.5 block text-xs text-ink-soft">{m.guide.homeDesc}</span>
-          </span>
-          <span aria-hidden className="text-lilac-500">→</span>
-        </Link>
-        <Link href="/battle" className="card btn flex items-center justify-between gap-3 p-4 hover:bg-lilac-50">
-          <span>
-            <span className="block font-extrabold">{m.battle.homeLink}</span>
-            <span className="mt-0.5 block text-xs text-ink-soft">{m.battle.homeDesc}</span>
           </span>
           <span aria-hidden className="text-lilac-500">→</span>
         </Link>

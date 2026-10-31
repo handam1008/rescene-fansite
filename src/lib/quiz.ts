@@ -10,6 +10,17 @@ import { INTL_LOCALE, fmt, type Locale } from "@/i18n/config";
 import type { Messages } from "@/i18n/messages";
 import { albumLabel } from "@/lib/album";
 
+/** 실시간 대기실 채널 이름 (배틀 화면과 홈 배너가 같이 씀) */
+// 로컬 테스트 때는 NEXT_PUBLIC_BATTLE_LOBBY 로 다른 채널을 써서 실제 사이트 대기실과 섞이지 않게
+export const BATTLE_LOBBY = process.env.NEXT_PUBLIC_BATTLE_LOBBY || "battle-lobby-v1";
+/**
+ * 대기실 한 사람의 presence 기록 중 가장 최근 것. 상태를 바꾸면 잠깐 옛 기록과 새 기록이 같이 있어서
+ * 배열 순서가 아니라 since(시각)로 고름
+ */
+export function latestMeta<T extends { since?: number }>(metas: T[]): T | undefined {
+  return metas.reduce<T | undefined>((a, m) => (!a || (Number(m.since) || 0) >= (Number(a.since) || 0) ? m : a), undefined);
+}
+
 export const QUESTION_COUNT = 10;
 export const SECONDS_PER_QUESTION = 15;
 
