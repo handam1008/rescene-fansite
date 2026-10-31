@@ -1,6 +1,7 @@
 "use client";
 
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { fmt } from "@/i18n/config";
@@ -60,6 +61,9 @@ export default function QuizBattle() {
   /** 이번 판 기록을 랭킹에 남겼는지 (한 판에 한 번만) · 남긴 뒤 랭킹 새로고침용 */
   const submitted = useRef(false);
   const [lbKey, setLbKey] = useState(0);
+  /** 로그인한 회원 (랭킹은 회원만). undefined = 확인 중 */
+  const [me, setMe] = useState<{ id: string; nickname: string } | null | undefined>(undefined);
+  const [saved, setSaved] = useState(false);
 
   const setPhase = useCallback((p: Phase) => {
     phaseRef.current = p;
@@ -82,6 +86,14 @@ export default function QuizBattle() {
     myId.current = crypto.randomUUID();
     const client = createClient();
     supabase.current = client;
+    client.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return setMe(null);
+      const { data: p } = await client.from("profiles").select("nickname").eq("id", data.user.id).maybeSingle();
+      const nickname = cleanName(String(p?.nickname ?? ""));
+      setMe({ id: data.user.id, nickname });
+      // 이름을 따로 정한 적 없으면 닉네임으로
+      setName((cur) => cur || nickname);
+    });
     const ch = client.channel(BATTLE_LOBBY, { config: { presence: { key: myId.current } } });
     ch.on("presence", { event: "sync" }, () => {
       const state = ch.presenceState<Omit<Person, "id">>();
@@ -120,6 +132,7 @@ export default function QuizBattle() {
 
   const resetGame = useCallback(() => {
     submitted.current = false;
+    setSaved(false);
     setQi(0);
     setAnswers([]);
     setFeedback(null);
@@ -254,13 +267,16 @@ export default function QuizBattle() {
   // 랭킹에 기록 남기기: 혼자 풀기는 다 풀었을 때, 대결은 승부가 났을 때 (상대가 끝냈거나 나갔을 때)
   const submitScore = useCallback(
     (won: boolean | null) => {
-      if (submitted.current || answers.length < QUESTION_COUNT) return;
+      if (submitted.current || answers.length < QUESTION_COUNT || !me) return;
       submitted.current = true;
       createClient()
-        .rpc("submit_quiz_score", { p_name: displayName, p_score: score, p_ms: totalMs, p_mode: solo ? "solo" : "duel", p_won: won })
-        .then(() => setLbKey((k) => k + 1));
+        .rpc("submit_quiz_score", { p_score: score, p_ms: totalMs, p_mode: solo ? "solo" : "duel", p_won: won })
+        .then(({ error }) => {
+          if (!error) setSaved(true);
+          setLbKey((k) => k + 1);
+        });
     },
-    [answers.length, displayName, score, totalMs, solo],
+    [answers.length, me, score, totalMs, solo],
   );
   useEffect(() => {
     if (phase !== "done") return;
@@ -379,7 +395,7 @@ export default function QuizBattle() {
           )}
         </section>
 
-        <QuizLeaderboard refreshKey={lbKey} myName={displayName} />
+        <QuizLeaderboard refreshKey={lbKey} myUserId={me?.id} />
       </div>
     );
   }
@@ -494,10 +510,20 @@ export default function QuizBattle() {
             {b.backToLobby}
           </button>
         </div>
+        {me === null ? (
+          <p className="mt-3 text-sm text-ink-soft">
+            {b.lbLogin}{" "}
+            <Link href="/login?next=/battle" className="font-semibold text-lilac-700 underline">
+              {b.lbLoginLink}
+            </Link>
+          </p>
+        ) : (
+          saved && <p className="mt-3 text-sm font-semibold text-emerald-700">✓ {b.lbSaved}</p>
+        )}
         <ShareButtons text={fmt(b.shareText, { score })} path="/battle" className="mt-4 justify-center" />
       </section>
 
-      <QuizLeaderboard refreshKey={lbKey} myName={displayName} />
+      <QuizLeaderboard refreshKey={lbKey} myUserId={me?.id} />
     </div>
   );
 }
