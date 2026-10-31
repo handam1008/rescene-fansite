@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import PopularPosts from "@/components/PopularPosts";
 import UpcomingSchedule from "@/components/UpcomingSchedule";
+import { supporters } from "@/data/supporters";
 import { getI18n } from "@/i18n/server";
 import { getPopularPosts } from "@/lib/community";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -31,6 +32,22 @@ export async function LeftRail() {
       <Suspense fallback={null}>
         <PopularRail />
       </Suspense>
+      {supporters.length > 0 && (
+        <section className="card mt-4 p-4">
+          <h2 className="font-bold">{m.common.thanksTitle}</h2>
+          <p className="mt-1 text-xs text-ink-soft">{m.common.thanksDesc}</p>
+          <ul className="mt-2 divide-y divide-lilac-100">
+            {supporters.map((s) => (
+              <li key={s.url}>
+                <a href={s.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-2 py-2 text-sm hover:bg-lilac-50">
+                  <span className="font-semibold">▶ {s.name}</span>
+                  <span className="text-xs text-ink-soft">YouTube ↗</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </aside>
   );
 }
