@@ -26,6 +26,7 @@ export function navItems(m: Messages): NavItem[] {
         { label: m.nav.songs, href: "/songs", desc: m.nav.songsDesc },
         { label: m.nav.votes, href: "/votes", desc: m.nav.votesDesc },
         { label: m.nav.live, href: "/live", desc: m.nav.liveDesc },
+        { label: m.battle.title, href: "/battle", desc: m.battle.homeDesc },
       ],
     },
     { label: m.nav.photocards, href: "/photocards" },
