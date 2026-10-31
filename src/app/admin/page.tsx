@@ -827,7 +827,8 @@ async function QuizSection() {
   const stats = [
     { label: "오늘 판 수", value: st?.today ?? 0 },
     { label: "전체 판 수", value: st?.total ?? 0 },
-    { label: "대결 수", value: Math.round((st?.duels ?? 0) / 2) },
+    // 사람끼리 대결은 두 줄, AI 대결은 한 줄이라 나누지 않고 기록 수 그대로
+    { label: "대결 기록 (AI 포함)", value: st?.duels ?? 0 },
     { label: "회원이 한 판", value: st?.member_games ?? 0 },
     { label: "평균 점수", value: st?.avg_score ?? "-" },
   ];
