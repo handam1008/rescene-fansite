@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import ScrollTopButton from "@/components/ScrollTopButton";
+import SitePresence from "@/components/SitePresence";
 import { LeftRail, RightRail } from "@/components/SideRails";
 import TopBar from "@/components/TopBar";
 import { I18nProvider } from "@/i18n/client";
@@ -89,6 +90,7 @@ export default async function RootLayout({
           <Footer />
           <ScrollTopButton />
           <BottomNav />
+          <SitePresence />
         </I18nProvider>
         <Analytics />
       </body>
